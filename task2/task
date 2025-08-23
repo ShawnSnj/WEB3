@@ -1,0 +1,224 @@
+package main
+
+import (
+	"fmt"
+	"math"
+	"sync"
+	"sync/atomic"
+)
+
+type Task struct {
+	Name string
+	Job  func()
+}
+
+type Shape interface {
+	Area() float64
+	Perimeter() float64
+}
+type Rectangle struct {
+	Width  float32
+	Height float32
+}
+
+func (r Rectangle) Area() float64 {
+	return float64(r.Width * r.Height)
+}
+func (r Rectangle) Perimeter() float64 {
+	return float64(2 * (r.Width + r.Height))
+}
+
+type Circle struct {
+	Radius float32
+}
+
+func (c Circle) Area() float64 {
+	return float64(math.Pi * c.Radius * c.Radius)
+}
+func (c Circle) Perimeter() float64 {
+	return float64(2 * math.Pi * c.Radius)
+}
+
+type Person struct {
+	Name string
+	Age  int
+}
+type Employee struct {
+	person     Person
+	employeeID string
+}
+
+func (e Employee) printInfo() {
+	fmt.Printf("員工姓名: %s, 年齡: %d, 員工ID: %s\n", e.person.Name, e.person.Age, e.employeeID)
+}
+func main() {
+
+	//指针1
+	// x := 5
+	// fmt.Println("傳入前:", x)
+	// numberByPoint(&x)
+	// fmt.Println("傳入後:", x)
+
+	//指针2
+	// nums := []int{1, 2, 3, 4, 5}
+	// fmt.Println("傳入前：", nums)
+	// numberBySlice(nums)
+	// fmt.Println("傳入後：", nums)
+
+	//Goroutine1
+	// var wg sync.WaitGroup
+	// wg.Add(2)
+	// go func() {
+	// 	defer wg.Done()
+	// 	for i := 1; i < 10; i += 2 {
+	// 		fmt.Println("奇數：", i)
+	// 	}
+	// }()
+	// go func() {
+	// 	defer wg.Done()
+	// 	for j := 0; j < 10; j += 2 {
+	// 		fmt.Println("偶數：", j)
+	// 	}
+	// }()
+	// wg.Wait()
+
+	//Goroutine2
+	// tasks := []Task{
+	// 	{
+	// 		Name: "Task 1",
+	// 		Job: func() {
+	// 			time.Sleep(1 * time.Second)
+	// 			fmt.Println("執行完任務: 1")
+	// 		},
+	// 	},
+	// 	{
+	// 		Name: "Task 2",
+	// 		Job: func() {
+	// 			time.Sleep(2 * time.Second)
+	// 			fmt.Println("執行完任務: 2")
+	// 		},
+	// 	},
+	// 	{
+	// 		Name: "Task 3",
+	// 		Job: func() {
+	// 			time.Sleep(1500 * time.Millisecond)
+	// 			fmt.Println("執行完任務: 3")
+	// 		},
+	// 	},
+	// }
+	// var wg sync.WaitGroup
+	// wg.Add((len(tasks)))
+	// results := make(chan string, len(tasks))
+	// for _, task := range tasks {
+	// 	go func(t Task) {
+	// 		defer wg.Done()
+	// 		start := time.Now()
+	// 		t.Job()
+	// 		duration := time.Since(start)
+	// 		results <- fmt.Sprintf("任務 %s 執行完成，耗時：%s", t.Name, duration)
+	// 	}(task)
+	// }
+	// wg.Wait()
+	// close(results)
+	// fmt.Println("\n任務執行時間統計：")
+	// for result := range results {
+	// 	fmt.Println(result)
+	// }
+
+	// 面向對象1
+	// rect := Rectangle{Width: 10, Height: 5}
+	// circle := Circle{Radius: 7}
+	// var s Shape
+	// s = rect
+	// fmt.Printf("矩形 面積: %.2f, 周長: %.2f\n", s.Area(), s.Perimeter())
+	// s = circle
+	// fmt.Printf("圓形 面積: %.2f, 周長: %.2f\n", s.Area(), s.Perimeter())
+
+	//面向對象2
+	// person := Person{Name: "Shawn", Age: 37}
+	// employee := Employee{person: person, employeeID: "E12345"}
+	// employee.printInfo()
+
+	// channel1
+	//創建一個沒有緩衝的通道
+	// ch := make(chan int)
+	// //生產者攜程：生產1到10的整數並發送到通道
+	// go func() {
+	// 	for i := 0; i < 10; i++ {
+	// 		ch <- i
+	// 		fmt.Println("生產者生產數字:", i)
+	// 	}
+	// 	close(ch) //關閉通道，表示不再有更多數據發送
+	// }()
+	// for num := range ch {
+	// 	fmt.Println("消費者消費數字:", num)
+	// }
+
+	// //channel2
+	// //創建一個有緩衝的通道，緩衝區大小為10
+	// bufferSize := 10
+	// ch := make(chan int, bufferSize)
+	// //生產者攜程：生產1到100的整數並發送到通道
+	// go func() {
+	// 	for i := 1; i <= 100; i++ {
+	// 		ch <- i
+	// 		fmt.Println("發送數字:", i)
+	// 	}
+	// 	close(ch) //關閉通道，表示不再有更多數據發送
+	// }()
+	// // 消費者攜程：從通道接收數字並打印
+	// for num := range ch {
+	// 	fmt.Println("接收數字:", num)
+	// }
+
+	// //鎖機制1
+	// var counter int
+	// var mu sync.RWMutex   //互斥鎖
+	// var wg sync.WaitGroup //等待多個 goroutine 完成。
+
+	// wg.Add(10)
+
+	// for i := 0; i < 10; i++ {
+	// 	go func() {
+	// 		defer wg.Done()
+	// 		for j := 0; j < 1000; j++ {
+	// 			mu.Lock()   //加鎖
+	// 			counter++   //對共享變量進行操作
+	// 			mu.Unlock() //解鎖
+	// 		}
+	// 	}()
+	// }
+	// wg.Wait() //等待所有 goroutine 完成
+	// fmt.Println("最終計數器值:", counter)
+
+	//鎖機制2
+	var counter int64 = 0 // 計數器，必須是 int64 或 uint64
+	var wg sync.WaitGroup
+
+	numGoroutines := 10
+	increments := 1000
+
+	wg.Add(numGoroutines)
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j < increments; j++ {
+				// 使用 atomic.AddInt64 進行原子加法操作
+				atomic.AddInt64(&counter, 1)
+			}
+		}()
+	}
+	wg.Wait() // 等待所有 goroutine 完成
+	fmt.Println("最終計數器值:", counter)
+}
+
+func numberBySlice(nums []int) {
+	for i := 0; i < len(nums); i++ {
+		nums[i] = nums[i] * 10
+	}
+	fmt.Println("方法中：", nums)
+}
+func numberByPoint(num *int) {
+	*num = *num + 10
+	fmt.Println("方法中：", *num)
+}
