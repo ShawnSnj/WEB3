@@ -1,119 +1,120 @@
-func singleNumber(nums []int) int {
-    counts := make(map[int]int)
-    for _,num := range nums{
-        counts[num]++
-    }
-    for k,val := range counts{
-        if(val ==1){
-            return k
-        }
-    }
-    return -1
-}
 
+package main
+
+import (
+	"math/big"
+	"strconv"
+)
+
+func singleNumber(nums []int) int {
+	counts := make(map[int]int)
+	for _, num := range nums {
+		counts[num]++
+	}
+	for k, val := range counts {
+		if val == 1 {
+			return k
+		}
+	}
+	return -1
+}
 
 func isPalindrome(x int) bool {
-    if x<0 || x%10 ==0 && x!=0 {
-        return false
-    }
-    revertedNumber := 0
-    for x > revertedNumber{
-        revertedNumber = revertedNumber*10 + x%10
-        x = x/10
-    }
-    return x == revertedNumber || x == revertedNumber/10
+	if x < 0 || x%10 == 0 && x != 0 {
+		return false
+	}
+	revertedNumber := 0
+	for x > revertedNumber {
+		revertedNumber = revertedNumber*10 + x%10
+		x = x / 10
+	}
+	return x == revertedNumber || x == revertedNumber/10
 }
-
 
 func isValid(s string) bool {
-    j := len(s)
-    if j%2 ==1{
-        return false
-    }
-    pairs := map[byte]byte{
-        ')':'(',
-        ']':'[',
-        '}':'{',
-    }
-    stack := []byte{}
-    for i:=0;i<j;i++{
-        if pairs[s[i]]>0{
-               if len(stack)==0 || stack[len(stack)-1] != pairs[s[i]]{
-                return false
-               }
-               stack = stack[:len(stack)-1]
-        }else{
-            stack = append(stack,s[i])
-        }
-    }
-    return len(stack) == 0
+	j := len(s)
+	if j%2 == 1 {
+		return false
+	}
+	pairs := map[byte]byte{
+		')': '(',
+		']': '[',
+		'}': '{',
+	}
+	stack := []byte{}
+	for i := 0; i < j; i++ {
+		if pairs[s[i]] > 0 {
+			if len(stack) == 0 || stack[len(stack)-1] != pairs[s[i]] {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		} else {
+			stack = append(stack, s[i])
+		}
+	}
+	return len(stack) == 0
 }
-
 
 func longestCommonPrefix(strs []string) string {
-    if len(strs) == 0{
-        return ""
-    } 
-    var minLen int = len(strs[0])
-    for i:=0;i<len(strs);i++{
-        if(minLen>len(strs[i])){
-            minLen = len(strs[i])
-        }
-    }
-    var strjk string
-    outer:
-    for j:=0;j<minLen;j++{
-        ch := strs[0][j]
-          for k:=0;k<len(strs);k++{
-            if(ch != strs[k][j]){
-                break outer
-            }
-          }
-          strjk += string(ch)
-    }
-    return strjk
+	if len(strs) == 0 {
+		return ""
+	}
+	var minLen int = len(strs[0])
+	for i := 0; i < len(strs); i++ {
+		if minLen > len(strs[i]) {
+			minLen = len(strs[i])
+		}
+	}
+	var strjk string
+outer:
+	for j := 0; j < minLen; j++ {
+		ch := strs[0][j]
+		for k := 0; k < len(strs); k++ {
+			if ch != strs[k][j] {
+				break outer
+			}
+		}
+		strjk += string(ch)
+	}
+	return strjk
 }
-
 
 func plusOne(digits []int) []int {
-    numStr := ""
-    for _,digit := range digits{
-        numStr += strconv.Itoa(digit)
-    }
-    bigNum := new(big.Int)
-    bigNum.SetString(numStr, 10)
-    bigNum.Add(bigNum,big.NewInt(1))
-    // 轉成字串再拆成陣列
-    result := []int{}
-    for _, ch := range bigNum.String() {
-        d, _ := strconv.Atoi(string(ch))
-        result = append(result, d)
-    }
+	numStr := ""
+	for _, digit := range digits {
+		numStr += strconv.Itoa(digit)
+	}
+	bigNum := new(big.Int)
+	bigNum.SetString(numStr, 10)
+	bigNum.Add(bigNum, big.NewInt(1))
+	// 轉成字串再拆成陣列
+	result := []int{}
+	for _, ch := range bigNum.String() {
+		d, _ := strconv.Atoi(string(ch))
+		result = append(result, d)
+	}
 
-    return result
+	return result
+
 }
-
-
 
 func removeDuplicates(nums []int) int {
-    n := len(nums)
-    if n==0 {
-        return 0
-    }
-    slow := 1
-    for fast := 1;fast<n; fast++{
-        if nums[fast] != nums[fast-1]{
-            nums[slow] = nums[fast]
-            slow++
-        }
-    }
-    return slow
+	n := len(nums)
+	if n == 0 {
+		return 0
+	}
+	slow := 1
+	for fast := 1; fast < n; fast++ {
+		if nums[fast] != nums[fast-1] {
+			nums[slow] = nums[fast]
+			slow++
+		}
+	}
+	return slow
 }
 
-
-
 func merge(intervals [][]int) [][]int {
-    n := len(intervals)
+	n := len(intervals)
 	if n == 0 {
 		return [][]int{}
 	}
@@ -140,22 +141,21 @@ func merge(intervals [][]int) [][]int {
 		}
 	}
 	return merged
+
 }
 
-
-
 func twoSum(nums []int, target int) []int {
-    result := make([]int,2)
-    n := len(nums)
-    outter:
-    for i := 0;i < n;i++{
-        for j:=i+1;j<n;j++{
-           if nums[i] + nums[j] == target{
-            result[0]=i
-            result[1]=j
-            break outter
-           }
-        }
-    }
-    return result
+	result := make([]int, 2)
+	n := len(nums)
+outter:
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n; j++ {
+			if nums[i]+nums[j] == target {
+				result[0] = i
+				result[1] = j
+				break outter
+			}
+		}
+	}
+	return result
 }
