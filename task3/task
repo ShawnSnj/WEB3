@@ -1,0 +1,310 @@
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+)
+
+// 學生模型
+type Student struct {
+	ID    uint `gorm:"primaryKey"`
+	Name  string
+	Age   uint
+	Grade string
+}
+
+type Account struct {
+	ID      uint `gorm:"primaryKey"`
+	Balance float64
+}
+type Transaction struct {
+	ID            uint `gorm:"primaryKey"`
+	FromAccountID uint
+	ToAccountID   uint
+	Amount        float64
+}
+
+func Transfer(db *gorm.DB, fromAccountID uint, toAccountID uint, amount float64) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var from Account
+		if err := tx.First(&from, fromAccountID).Error; err != nil {
+			return err
+		}
+		var to Account
+		if err := tx.First(&to, toAccountID).Error; err != nil {
+			return err
+		}
+		if from.Balance < amount {
+			return fmt.Errorf("餘額不足")
+		}
+		from.Balance -= amount
+		to.Balance += amount
+		if err := tx.Save(&from).Error; err != nil {
+			return err
+		}
+		if err := tx.Save(&to).Error; err != nil {
+			return err
+		}
+		return tx.Create(&Transaction{
+			FromAccountID: fromAccountID,
+			ToAccountID:   toAccountID,
+			Amount:        amount,
+		}).Error
+	})
+}
+
+type Employee struct {
+	ID         uint `gorm:"primaryKey"`
+	Name       string
+	Department uint
+	Salary     uint
+}
+
+type Book struct {
+	ID     uint `gorm:"primaryKey"`
+	Title  string
+	Author string
+	Price  float64
+}
+
+type User struct {
+	ID        uint `gorm:"primaryKey"`
+	Username  string
+	Email     string
+	PostCount int    //文章數量統計
+	Posts     []Post `gorm:"foreignKey:UserID"`
+}
+type Post struct {
+	ID            uint `gorm:"primaryKey"`
+	Title         string
+	Content       string
+	UserID        uint      //外鍵，指向User表的ID
+	CommentStatus string    //評論狀態 有評論 無評論
+	Comments      []Comment `gorm:"foreignKey:PostID"`
+}
+type Comment struct {
+	ID      uint `gorm:"primaryKey"`
+	Content string
+	PostID  uint //外鍵，指向Post表的ID
+}
+type PostWithCount struct {
+	ID           uint
+	Title        string
+	Content      string
+	CommentCount int64
+}
+
+func main() {
+	dsn := "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		fmt.Println("連接資料庫失敗:", err)
+		return
+	}
+	fmt.Println("連接資料庫成功")
+
+	//SQL语句练习
+	//题目1：基本CRUD操作
+	// // 自動遷移
+	// db.AutoMigrate(&Student{})
+	// //插入記錄
+	// db.Create(&Student{Name: "張三", Age: 20, Grade: "三年級"})
+
+	// var students []Student
+	// db.Where("age > ?", 18).Find(&students)
+	// fmt.Println("18歲以上的學生:", students)
+
+	// //更新姓名為張三的學生年級為四年級
+	// db.Model(&Student{}).Where("name = ?", "張三").Update("grade", "四年級")
+
+	// //刪除年齡小於15的學生
+	// db.Where("age > ?", 15).Delete(&Student{})
+
+	// //题目2：事务语句
+	// var count int64
+	// db.Model(&Account{}).Count(&count)
+	// if count == 0 {
+	// 	db.Create(&Account{ID: 1, Balance: 1000})
+	// 	db.Create(&Account{ID: 2, Balance: 500})
+	// }
+
+	// db.AutoMigrate(&Account{}, &Transaction{})
+	// err = Transfer(db, 1, 2, 100)
+	// if err != nil {
+	// 	fmt.Println("轉帳失敗:", err)
+	// } else {
+	// 	fmt.Println("轉帳成功")
+	// }
+
+	// 	Sqlx入门
+	// 题目1：使用SQL扩展库进行查询
+	// db.AutoMigrate(&Employee{})
+	// var techEmployees []Employee
+	// err = db.Raw("SELECT * FROM employees WHERE department = ?", "技術部").Scan(&techEmployees).Error
+	// if err != nil {
+	// 	log.Fatalln("查詢技術部員工失敗:", err)
+	// }
+	// fmt.Println("技術部員工:", techEmployees)
+	// for _, emp := range techEmployees {
+	// 	fmt.Printf("ID: %d, Name: %s, Department: %d, Salary: %d\n", emp.ID, emp.Name, emp.Department, emp.Salary)
+	// }
+	// db.Create(&Employee{ID: 1, Name: "John Doe", Department: 1, Salary: 50000})
+	// var highestPaid Employee
+	// err = db.Raw("SELECT * FROM employees ORDER BY salary DESC LIMIT 1").Scan(&highestPaid).Error
+	// if err != nil {
+	// 	log.Fatalln("查詢最高薪資員工失敗:", err)
+	// }
+	// fmt.Println("最高薪資員工:", highestPaid)
+
+	// 題目2：實現類型安全映射
+	// db.AutoMigrate(&Book{})
+
+	// // 插入資料（如果需要避免重複可以加條件判斷）
+	// db.Create(&Book{Title: "Go 語言入門", Author: "John Doe", Price: 59.99})
+
+	// var books []Book
+	// query := "SELECT id, title, author, price FROM books WHERE price > ?"
+
+	// // 正確使用 ? 佔位符並傳參
+	// err = db.Raw(query, 50).Scan(&books).Error
+	// if err != nil {
+	// 	log.Fatalln("查詢書籍失敗:", err)
+	// }
+
+	// fmt.Println("價格大於50的書籍:")
+	// for _, book := range books {
+	// 	fmt.Printf("ID: %d, Title: %s, Author: %s, Price: %.2f\n", book.ID, book.Title, book.Author, book.Price)
+	// }
+
+	// 	进阶gorm
+	// 题目1：模型定义
+	err = db.AutoMigrate(&User{}, &Post{}, &Comment{})
+	if err != nil {
+		log.Fatalln("Faild to migrate database:", err)
+	}
+	log.Println("Database migrated successfully")
+	seedData(db)
+	// 题目2：关联查询
+	var user User
+	err = db.Preload("Posts").First(&user, 1).Error
+	if err != nil {
+		log.Fatalln("查詢用戶失敗:", err)
+	}
+	fmt.Println("用戶:", user)
+	for _, post := range user.Posts {
+		fmt.Printf("  文章: %s\n", post.Title)
+		for _, comment := range post.Comments {
+			fmt.Printf("    評論: %s\n", comment.Content)
+		}
+	}
+
+	var result PostWithCount
+	err = db.Table("posts").
+		Select("posts.id, posts.title, posts.content, COUNT(comments.id) as comment_count").
+		Joins("LEFT JOIN comments ON comments.post_id = posts.id").
+		Group("posts.id").
+		Order("comment_count DESC").
+		Limit(1).
+		Scan(&result).Error
+	if err != nil {
+		log.Fatalln("查詢文章失敗:", err)
+	}
+	fmt.Println("評論數量最多的文章:", result)
+	testHooks(db)
+}
+
+func (p *Post) BeforeSave(tx *gorm.DB) (err error) {
+	return tx.Model(&User{}).Where("id = ?", p.UserID).
+		UpdateColumn("post_count", gorm.Expr("post_count + ?", 1)).Error
+}
+func (c *Comment) AfterDelete(tx *gorm.DB) (err error) {
+	var count int64
+	if err = tx.Model(&Comment{}).Where("post_id = ?", c.PostID).Count(&count).Error; err != nil {
+		return nil
+	}
+	if count == 0 {
+		// 更新文章评论状态为 "无评论"
+		return tx.Model(&Post{}).Where("id = ?", c.PostID).Update("comment_status", "无评论").Error
+	}
+	return nil
+}
+
+// 测试钩子函数
+func testHooks(db *gorm.DB) {
+	// 清空旧数据
+	db.Exec("DELETE FROM comments")
+	db.Exec("DELETE FROM posts")
+	db.Exec("DELETE FROM users")
+
+	// 新建用户
+	user := User{Username: "alice", Email: "alice@example.com"}
+	db.Create(&user)
+
+	// 创建文章（会触发 AfterCreate 钩子）
+	post := Post{
+		Title:         "GORM 钩子机制",
+		Content:       "這是一篇關於 GORM Hooks 的文章。",
+		UserID:        user.ID,
+		CommentStatus: "有评论", // 初始值
+	}
+	db.Create(&post)
+
+	// 查看是否更新了用户文章数量
+	var updatedUser User
+	db.First(&updatedUser, user.ID)
+	fmt.Printf("用户 %s 的文章数量: %d\n", updatedUser.Username, updatedUser.PostCount)
+
+	// 添加 2 条评论
+	comment1 := Comment{Content: "很有幫助！", PostID: post.ID}
+	comment2 := Comment{Content: "謝謝分享", PostID: post.ID}
+	db.Create(&comment1)
+	db.Create(&comment2)
+
+	// 删除 1 条评论（不触发状态更新）
+	db.Delete(&comment1)
+
+	// 删除最后一条评论（触发 AfterDelete 钩子 → 更新评论状态）
+	db.Delete(&comment2)
+
+	// 查看文章评论状态
+	var updatedPost Post
+	db.First(&updatedPost, post.ID)
+	fmt.Printf("文章「%s」的評論狀態：%s\n", updatedPost.Title, updatedPost.CommentStatus)
+}
+
+func seedData(db *gorm.DB) {
+	var count int64
+	db.Model(&User{}).Count(&count)
+	if count > 0 {
+		log.Println("資料已存在，略過初始化")
+		return
+	}
+
+	for i := 1; i <= 10; i++ {
+		user := User{
+			Username: fmt.Sprintf("user%d", i),
+			Email:    fmt.Sprintf("user%d@example.com", i),
+		}
+		for j := 1; j <= 2; j++ {
+			post := Post{
+				Title:   fmt.Sprintf("使用者 %d 的文章 %d", i, j),
+				Content: fmt.Sprintf("這是 user%d 的第 %d 篇文章內容", i, j),
+			}
+			for k := 1; k <= 3; k++ {
+				comment := Comment{
+					Content: fmt.Sprintf("文章 %d-%d 的第 %d 則評論", i, j, k),
+				}
+				post.Comments = append(post.Comments, comment)
+			}
+			user.Posts = append(user.Posts, post)
+		}
+		if err := db.Create(&user).Error; err != nil {
+			log.Fatalf("初始化 user%d 失敗: %v", i, err)
+		}
+	}
+
+	log.Println("初始化資料完成")
+}
