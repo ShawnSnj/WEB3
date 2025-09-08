@@ -1,0 +1,17 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.8.2
+2 info using node@v22.6.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:D:\workspaces\WEB3\solidity\projectDir\.npmrc
+5 silly config load:file:C:\Users\emisrd\.npmrc
+6 silly config load:file:D:\workspaces\WEB3\solidity\projectDir\npm-global\etc\npmrc
+7 verbose title npm config get prefix
+8 verbose argv "config" "get" "prefix"
+9 verbose logfile logs-max:10 dir:D:\workspaces\WEB3\solidity\projectDir\npm-cache\_logs\2025-09-08T12_26_16_936Z-
+10 verbose logfile D:\workspaces\WEB3\solidity\projectDir\npm-cache\_logs\2025-09-08T12_26_16_936Z-debug-0.log
+11 verbose cwd D:\workspaces\WEB3\solidity\projectDir
+12 verbose os Windows_NT 10.0.26100
+13 verbose node v22.6.0
+14 verbose npm  v10.8.2
+15 verbose exit 0
+16 info ok

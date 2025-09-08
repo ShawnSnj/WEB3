@@ -1,0 +1,13 @@
+0 verbose cli C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.7.0
+2 info using node@v20.14.0
+3 silly config:load:file:C:\Users\emisrd\AppData\Local\nvm\v20.14.0\node_modules\npm\npmrc
+4 silly config:load:file:D:\workspaces\WEB3\solidity\projectDir\.npmrc
+5 silly config:load:file:C:\Users\emisrd\.npmrc
+6 silly config:load:file:D:\workspaces\WEB3\solidity\projectDir\npm-global\etc\npmrc
+7 verbose title npm config get legacy-peer-deps
+8 verbose argv "config" "get" "legacy-peer-deps"
+9 verbose logfile logs-max:10 dir:D:\workspaces\WEB3\solidity\projectDir\npm-cache\_logs\2025-09-08T13_39_12_689Z-
+10 verbose logfile D:\workspaces\WEB3\solidity\projectDir\npm-cache\_logs\2025-09-08T13_39_12_689Z-debug-0.log
+11 verbose exit 0
+12 info ok

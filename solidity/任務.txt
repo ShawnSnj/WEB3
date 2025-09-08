@@ -1,0 +1,14 @@
+基础二：Solidity智能合约基础
+学习路线：https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/基础2-智能合约基础.md；
+0）视频重在讲解关键内容，很多细节还需要看文字版的课件材料：
+基本语法：https://github.com/MetaNodeAcademy/Base2-Solidity-solidity_base；
+进阶材料：https://github.com/MetaNodeAcademy/Base2-Solidity/tree/main；
+1）先快速地过一下所有的语法&数据类型等视频，然后动手实战写代码，完成任务1，重在检验和巩固对Solidity语言的理解；
+2）任务1和任务2都在Remix IDE里面进行，把重点放在Solidity语言和智能合约相关概念的学习；
+Remix IDE：https://github.com/MetaNodeAcademy/Base2-Solidity-solidity_base/blob/main/04.第四章%20智能合约的开发、测试与部署/智能合约的开发、测试与部署%20.md#42-remix；
+任务3的“跨链拍卖”可以不做，能够使用CCIP完成NFT的跨链就可以了；
+3）Hardhat和Foundry都是实际工作中经常要用到的专业开发工具链，最近一两年出现的新项目大都选择Foundry；
+课程默认使用Hardhat 2版本：https://v2.hardhat.org/docs；
+Foundry官方文档，先简单地了解一下：https://getfoundry.sh/introduction/getting-started；
+4）OpenZeppelin是Solidity编程的标准库，质量和安全都很高，几乎所有的生产环境项目都要用到的，建议完整浏览一下官方开发文档；
+Docs：https://docs.openzeppelin.com/contracts/5.x/；
