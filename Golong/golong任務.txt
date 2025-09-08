@@ -1,0 +1,15 @@
+基础一：Golang开发基础
+
+0）视频重在讲解关键内容，很多细节还需要看文字版的课件材料：https://github.com/MetaNodeAcademy/Base1_golang；（先不看“03.第二章 以太坊ethclient包使用”，在后端实战环节再看）；
+
+1）先快速地过一下所有的语法&数据类型等视频，然后动手实战写代码，完成任务1和任务2，不追求算法最优，使用Go语言本身能力去解决这些问题，重在检验和巩固对Go语言的理解；
+推荐资料，非常全面的语法参考：Go语言圣经（中文版）：https://gopl-zh.github.io/index.html；
+
+2）数据库框架Gorm和Web开发框架Gin，做任务之前，先看一下官方的开发文档，里面也有一些范例，做一个比较全面的理解，复用在Web2里面已有的学习经验；
+
+3）做任务过程中出现的各种语法、编译等错误，要多去用一用人工智能ChatGPT/DeepSeek，可以大福提高学习和解决问题的效率；
+
+4）对实际工作有帮助的几个推荐资料，完成任务4的时候可以花点时间看一看；
+Go项目标准模版：https://github.com/golang-standards/project-layout；
+官方的实效Go编程：https://github.com/bingohuang/effective-go-zh-en；
+Google的Go语言编程风格指南：https://google.github.io/styleguide/go/；

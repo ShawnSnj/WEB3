@@ -1,0 +1,1280 @@
+0 verbose cli C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.7.0
+2 info using node@v20.14.0
+3 silly config:load:file:C:\Users\emisrd\AppData\Local\nvm\v20.14.0\node_modules\npm\npmrc
+4 silly config:load:file:D:\workspaces\WEB3\solidity\projectDir\.npmrc
+5 silly config:load:file:C:\Users\emisrd\.npmrc
+6 silly config:load:file:D:\workspaces\WEB3\solidity\projectDir\npm-global\etc\npmrc
+7 verbose title npm install hardhat@^3.0.0 @nomicfoundation/hardhat-toolbox-viem@^5.0.0 @nomicfoundation/hardhat-ignition@^3.0.0 @types/node@^22.8.5 forge-std@foundry-rs/forge-std#v1.9.4 typescript@~5.8.0 viem@^2.30.0
+8 verbose argv "install" "--save-dev" "hardhat@^3.0.0" "@nomicfoundation/hardhat-toolbox-viem@^5.0.0" "@nomicfoundation/hardhat-ignition@^3.0.0" "@types/node@^22.8.5" "forge-std@foundry-rs/forge-std#v1.9.4" "typescript@~5.8.0" "viem@^2.30.0"
+9 verbose logfile logs-max:10 dir:D:\workspaces\WEB3\solidity\projectDir\npm-cache\_logs\2025-09-08T13_39_36_193Z-
+10 verbose logfile D:\workspaces\WEB3\solidity\projectDir\npm-cache\_logs\2025-09-08T13_39_36_193Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly idealTree buildDeps
+13 silly fetch manifest hardhat@^3.0.0
+14 http fetch GET 200 https://registry.npmjs.org/hardhat 813ms (cache revalidated)
+15 silly fetch manifest @nomicfoundation/hardhat-toolbox-viem@^5.0.0
+16 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-toolbox-viem 1664ms (cache miss)
+17 silly fetch manifest @nomicfoundation/hardhat-ignition@^3.0.0
+18 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-ignition 1571ms (cache miss)
+19 silly fetch manifest @nomicfoundation/hardhat-verify@^3.0.0
+20 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-verify 1496ms (cache miss)
+21 silly fetch manifest @nomicfoundation/hardhat-ignition-viem@^3.0.0
+22 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-ignition-viem 1534ms (cache miss)
+23 silly fetch manifest @nomicfoundation/hardhat-viem@^3.0.0
+24 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-viem 2292ms (cache miss)
+25 silly fetch manifest viem@^2.30.0
+26 http fetch GET 200 https://registry.npmjs.org/viem 711ms (cache miss)
+27 silly fetch manifest typescript@~5.8.0
+28 http fetch GET 200 https://registry.npmjs.org/typescript 396ms (cache miss)
+29 silly fetch manifest @nomicfoundation/ignition-core@^3.0.2
+30 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fignition-core 1615ms (cache miss)
+31 silly fetch manifest @nomicfoundation/hardhat-keystore@^3.0.0
+32 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-keystore 1595ms (cache miss)
+33 silly fetch manifest @nomicfoundation/hardhat-network-helpers@^3.0.0
+34 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-network-helpers 1686ms (cache miss)
+35 silly fetch manifest @nomicfoundation/hardhat-node-test-runner@^3.0.0
+36 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-node-test-runner 1534ms (cache miss)
+37 silly fetch manifest @nomicfoundation/hardhat-viem-assertions@^3.0.0
+38 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-viem-assertions 1770ms (cache miss)
+39 silly fetch manifest @types/node@^22.8.5
+40 http fetch GET 200 https://registry.npmjs.org/@types%2fnode 307ms (cache miss)
+41 silly fetch manifest forge-std@foundry-rs/forge-std#v1.9.4
+42 silly placeDep ROOT @nomicfoundation/hardhat-ignition@3.0.2 OK for: projectDir@1.0.0 want: ^3.0.0
+43 silly placeDep ROOT hardhat@3.0.4 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^3.0.0
+44 silly placeDep ROOT @nomicfoundation/hardhat-verify@3.0.1 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^3.0.0
+45 silly placeDep ROOT @nomicfoundation/hardhat-toolbox-viem@5.0.0 OK for: projectDir@1.0.0 want: ^5.0.0
+46 silly placeDep ROOT viem@2.37.4 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^2.30.0
+47 silly placeDep ROOT @nomicfoundation/hardhat-viem@3.0.0 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+48 silly placeDep ROOT @nomicfoundation/ignition-core@3.0.2 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+49 silly placeDep ROOT @nomicfoundation/hardhat-keystore@3.0.1 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+50 silly placeDep ROOT @nomicfoundation/hardhat-ignition-viem@3.0.2 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+51 silly placeDep ROOT @nomicfoundation/hardhat-network-helpers@3.0.0 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+52 silly placeDep ROOT @nomicfoundation/hardhat-viem-assertions@3.0.1 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+53 silly placeDep ROOT @nomicfoundation/hardhat-node-test-runner@3.0.2 OK for: @nomicfoundation/hardhat-toolbox-viem@5.0.0 want: ^3.0.0
+54 silly placeDep ROOT @types/node@22.18.1 OK for: projectDir@1.0.0 want: ^22.8.5
+55 silly placeDep ROOT forge-std@1.9.4 OK for: projectDir@1.0.0 want: foundry-rs/forge-std#v1.9.4
+56 silly placeDep ROOT hardhat@3.0.4 REPLACE for: projectDir@1.0.0 want: ^3.0.0
+57 silly placeDep ROOT typescript@5.8.3 OK for: projectDir@1.0.0 want: ~5.8.0
+58 silly placeDep ROOT viem@2.37.4 REPLACE for: projectDir@1.0.0 want: ^2.30.0
+59 silly fetch manifest @nomicfoundation/hardhat-errors@^3.0.1
+60 silly fetch manifest @nomicfoundation/ignition-ui@^3.0.2
+61 silly fetch manifest @nomicfoundation/hardhat-utils@^3.0.0
+62 silly fetch manifest chalk@^5.3.0
+63 silly fetch manifest debug@^4.3.2
+64 silly fetch manifest prompts@^2.4.2
+65 silly fetch manifest json5@^2.2.3
+66 silly fetch manifest @ethersproject/abi@^5.8.0
+67 silly fetch manifest @nomicfoundation/hardhat-errors@^3.0.0
+68 silly fetch manifest @nomicfoundation/hardhat-zod-utils@^3.0.0
+69 http fetch GET 200 https://registry.npmjs.org/prompts 134ms (cache miss)
+70 silly fetch manifest cbor2@^1.9.0
+71 http fetch GET 200 https://registry.npmjs.org/json5 158ms (cache miss)
+72 http fetch GET 200 https://registry.npmjs.org/chalk 176ms (cache updated)
+73 silly fetch manifest semver@^7.6.3
+74 http fetch GET 200 https://registry.npmjs.org/debug 187ms (cache updated)
+75 silly fetch manifest zod@^3.23.8
+76 silly fetch manifest @nomicfoundation/edr@0.12.0-next.5
+77 http fetch GET 200 https://registry.npmjs.org/semver 73ms (cache revalidated)
+78 http fetch GET 200 https://registry.npmjs.org/zod 83ms (cache revalidated)
+79 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fabi 541ms (cache miss)
+80 http fetch GET 200 https://registry.npmjs.org/cbor2 570ms (cache miss)
+81 silly fetch manifest @nomicfoundation/solidity-analyzer@^0.1.1
+82 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fignition-ui 1503ms (cache miss)
+83 silly fetch manifest @sentry/core@^9.4.0
+84 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-utils 1607ms (cache revalidated)
+85 silly fetch manifest adm-zip@^0.4.16
+86 silly fetch manifest enquirer@^2.3.0
+87 silly fetch manifest ethereum-cryptography@^2.2.1
+88 http fetch GET 200 https://registry.npmjs.org/@sentry%2fcore 118ms (cache revalidated)
+89 silly fetch manifest micro-eth-signer@^0.14.0
+90 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-errors 1656ms (cache revalidated)
+91 silly fetch manifest p-map@^7.0.2
+92 http fetch GET 200 https://registry.npmjs.org/enquirer 91ms (cache revalidated)
+93 silly fetch manifest resolve.exports@^2.0.3
+94 http fetch GET 200 https://registry.npmjs.org/adm-zip 125ms (cache revalidated)
+95 silly fetch manifest tsx@^4.19.3
+96 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-errors 2192ms (cache revalidated)
+97 silly fetch manifest ws@^8.18.0
+98 silly fetch manifest @nomicfoundation/hardhat-node-test-reporter@^3.0.0
+99 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-zod-utils 2207ms (cache revalidated)
+100 silly fetch manifest @noble/ciphers@1.2.1
+101 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr 2027ms (cache revalidated)
+102 silly fetch manifest @noble/hashes@1.7.1
+103 http fetch GET 200 https://registry.npmjs.org/ethereum-cryptography 616ms (cache revalidated)
+104 silly fetch manifest @ethersproject/address@5.6.1
+105 http fetch GET 200 https://registry.npmjs.org/p-map 582ms (cache revalidated)
+106 http fetch GET 200 https://registry.npmjs.org/resolve.exports 553ms (cache revalidated)
+107 silly fetch manifest ethers@^6.14.0
+108 http fetch GET 200 https://registry.npmjs.org/tsx 583ms (cache revalidated)
+109 silly fetch manifest immer@10.0.2
+110 silly fetch manifest lodash-es@4.17.21
+111 http fetch GET 200 https://registry.npmjs.org/ws 167ms (cache revalidated)
+112 silly fetch manifest ndjson@2.0.0
+113 http fetch GET 200 https://registry.npmjs.org/micro-eth-signer 735ms (cache revalidated)
+114 silly fetch manifest ox@0.9.3
+115 http fetch GET 200 https://registry.npmjs.org/immer 66ms (cache miss)
+116 silly fetch manifest ws@8.18.3
+117 silly fetch manifest isows@1.0.7
+118 http fetch GET 200 https://registry.npmjs.org/lodash-es 82ms (cache miss)
+119 silly fetch manifest abitype@1.1.0
+120 http fetch GET 200 https://registry.npmjs.org/ethers 166ms (cache miss)
+121 silly fetch manifest @scure/bip32@1.7.0
+122 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer 1757ms (cache revalidated)
+123 silly fetch manifest @scure/bip39@1.6.0
+124 silly fetch manifest @noble/curves@1.9.1
+125 http fetch GET 200 https://registry.npmjs.org/ox 156ms (cache miss)
+126 silly fetch manifest @noble/hashes@1.8.0
+127 http fetch GET 200 https://registry.npmjs.org/isows 189ms (cache miss)
+128 silly fetch manifest undici-types@~6.21.0
+129 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2faddress 354ms (cache miss)
+130 http fetch GET 200 https://registry.npmjs.org/@noble%2fhashes 101ms (cache revalidated)
+131 http fetch GET 200 https://registry.npmjs.org/@noble%2fhashes 442ms (cache revalidated)
+132 http fetch GET 200 https://registry.npmjs.org/undici-types 111ms (cache miss)
+133 http fetch GET 200 https://registry.npmjs.org/@noble%2fcurves 488ms (cache revalidated)
+134 http fetch GET 200 https://registry.npmjs.org/@scure%2fbip39 554ms (cache revalidated)
+135 http fetch GET 200 https://registry.npmjs.org/ndjson 785ms (cache miss)
+136 http fetch GET 200 https://registry.npmjs.org/abitype 772ms (cache miss)
+137 http fetch GET 200 https://registry.npmjs.org/@scure%2fbip32 1021ms (cache revalidated)
+138 http fetch GET 200 https://registry.npmjs.org/@noble%2fciphers 1539ms (cache miss)
+139 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fhardhat-node-test-reporter 1660ms (cache miss)
+140 silly placeDep ROOT @nomicfoundation/hardhat-errors@3.0.1 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^3.0.1
+141 silly placeDep ROOT @nomicfoundation/hardhat-utils@3.0.0 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^3.0.0
+142 silly placeDep ROOT @nomicfoundation/ignition-ui@3.0.2 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^3.0.2
+143 silly placeDep ROOT chalk@5.6.1 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^5.3.0
+144 silly placeDep ROOT debug@4.4.2 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^4.3.2
+145 silly placeDep ROOT json5@2.2.3 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^2.2.3
+146 silly placeDep ROOT prompts@2.4.2 OK for: @nomicfoundation/hardhat-ignition@3.0.2 want: ^2.4.2
+147 silly fetch manifest rfdc@^1.3.1
+148 silly fetch manifest undici@^6.16.1
+149 silly fetch manifest env-paths@^2.2.0
+150 silly fetch manifest fast-equals@^5.0.1
+151 silly fetch manifest json-stream-stringify@^3.1.6
+152 silly fetch manifest @streamparser/json-node@^0.0.22
+153 silly fetch manifest ms@^2.1.3
+154 silly fetch manifest kleur@^3.0.3
+155 silly fetch manifest sisteransi@^1.0.5
+156 http fetch GET 200 https://registry.npmjs.org/kleur 87ms (cache miss)
+157 http fetch GET 200 https://registry.npmjs.org/sisteransi 92ms (cache miss)
+158 http fetch GET 200 https://registry.npmjs.org/ms 96ms (cache revalidated)
+159 http fetch GET 200 https://registry.npmjs.org/fast-equals 101ms (cache revalidated)
+160 http fetch GET 200 https://registry.npmjs.org/rfdc 110ms (cache revalidated)
+161 http fetch GET 200 https://registry.npmjs.org/env-paths 117ms (cache revalidated)
+162 http fetch GET 200 https://registry.npmjs.org/undici 191ms (cache revalidated)
+163 http fetch GET 200 https://registry.npmjs.org/json-stream-stringify 753ms (cache revalidated)
+164 http fetch GET 200 https://registry.npmjs.org/@streamparser%2fjson-node 1821ms (cache revalidated)
+165 silly placeDep ROOT @noble/ciphers@1.2.1 OK for: @nomicfoundation/hardhat-keystore@3.0.1 want: 1.2.1
+166 silly placeDep ROOT @noble/hashes@1.7.1 OK for: @nomicfoundation/hardhat-keystore@3.0.1 want: 1.7.1
+167 silly placeDep ROOT @nomicfoundation/hardhat-zod-utils@3.0.0 OK for: @nomicfoundation/hardhat-keystore@3.0.1 want: ^3.0.0
+168 silly placeDep ROOT zod@3.25.76 OK for: @nomicfoundation/hardhat-zod-utils@3.0.0 want: ^3.23.8
+169 silly placeDep ROOT @nomicfoundation/hardhat-node-test-reporter@3.0.1 OK for: @nomicfoundation/hardhat-node-test-runner@3.0.2 want: ^3.0.0
+170 silly placeDep ROOT tsx@4.20.5 OK for: @nomicfoundation/hardhat-node-test-runner@3.0.2 want: ^4.19.3
+171 silly fetch manifest @actions/core@^1.10.1
+172 silly fetch manifest jest-diff@^29.7.0
+173 silly fetch manifest esbuild@~0.25.0
+174 silly fetch manifest get-tsconfig@^4.7.5
+175 silly fetch manifest fsevents@~2.3.3
+176 http fetch GET 200 https://registry.npmjs.org/jest-diff 255ms (cache miss)
+177 http fetch GET 200 https://registry.npmjs.org/fsevents 298ms (cache revalidated)
+178 http fetch GET 200 https://registry.npmjs.org/get-tsconfig 321ms (cache revalidated)
+179 http fetch GET 200 https://registry.npmjs.org/@actions%2fcore 575ms (cache miss)
+180 http fetch GET 200 https://registry.npmjs.org/esbuild 861ms (cache revalidated)
+181 silly placeDep ROOT @actions/core@1.11.1 OK for: @nomicfoundation/hardhat-node-test-reporter@3.0.1 want: ^1.10.1
+182 silly placeDep ROOT jest-diff@29.7.0 OK for: @nomicfoundation/hardhat-node-test-reporter@3.0.1 want: ^29.7.0
+183 silly fetch manifest @actions/exec@^1.1.1
+184 silly fetch manifest @actions/http-client@^2.0.1
+185 silly fetch manifest chalk@^4.0.0
+186 silly fetch manifest jest-get-type@^29.6.3
+187 silly fetch manifest pretty-format@^29.7.0
+188 silly fetch manifest diff-sequences@^29.6.3
+189 http fetch GET 200 https://registry.npmjs.org/diff-sequences 99ms (cache miss)
+190 http fetch GET 200 https://registry.npmjs.org/pretty-format 116ms (cache miss)
+191 http fetch GET 200 https://registry.npmjs.org/jest-get-type 123ms (cache miss)
+192 http fetch GET 200 https://registry.npmjs.org/@actions%2fexec 556ms (cache miss)
+193 http fetch GET 200 https://registry.npmjs.org/@actions%2fhttp-client 634ms (cache miss)
+194 silly placeDep ROOT @actions/exec@1.1.1 OK for: @actions/core@1.11.1 want: ^1.1.1
+195 silly placeDep ROOT @actions/http-client@2.2.3 OK for: @actions/core@1.11.1 want: ^2.0.1
+196 silly fetch manifest @actions/io@^1.0.1
+197 silly fetch manifest tunnel@^0.0.6
+198 silly fetch manifest undici@^5.25.4
+199 http fetch GET 200 https://registry.npmjs.org/tunnel 182ms (cache miss)
+200 http fetch GET 200 https://registry.npmjs.org/@actions%2fio 577ms (cache miss)
+201 silly placeDep ROOT @actions/io@1.1.3 OK for: @actions/exec@1.1.1 want: ^1.0.1
+202 silly placeDep ROOT tunnel@0.0.6 OK for: @actions/http-client@2.2.3 want: ^0.0.6
+203 silly placeDep ROOT undici@5.29.0 OK for: @actions/http-client@2.2.3 want: ^5.25.4
+204 silly fetch manifest @fastify/busboy@^2.0.0
+205 http fetch GET 200 https://registry.npmjs.org/@fastify%2fbusboy 313ms (cache miss)
+206 silly placeDep ROOT @streamparser/json-node@0.0.22 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^0.0.22
+207 silly placeDep ROOT env-paths@2.2.1 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^2.2.0
+208 silly placeDep ROOT ethereum-cryptography@2.2.1 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^2.2.1
+209 silly placeDep ROOT fast-equals@5.2.2 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^5.0.1
+210 silly placeDep ROOT json-stream-stringify@3.1.6 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^3.1.6
+211 silly placeDep ROOT rfdc@1.4.1 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^1.3.1
+212 silly placeDep node_modules/@nomicfoundation/hardhat-utils undici@6.21.3 OK for: @nomicfoundation/hardhat-utils@3.0.0 want: ^6.16.1
+213 silly fetch manifest @streamparser/json@^0.0.22
+214 silly fetch manifest @scure/bip32@1.4.0
+215 silly fetch manifest @scure/bip39@1.3.0
+216 silly fetch manifest @noble/curves@1.4.2
+217 silly fetch manifest @noble/hashes@1.4.0
+218 http fetch GET 200 https://registry.npmjs.org/@streamparser%2fjson 475ms (cache revalidated)
+219 silly placeDep ROOT @ethersproject/abi@5.8.0 OK for: @nomicfoundation/hardhat-verify@3.0.1 want: ^5.8.0
+220 silly placeDep ROOT cbor2@1.12.0 OK for: @nomicfoundation/hardhat-verify@3.0.1 want: ^1.9.0
+221 silly placeDep ROOT semver@7.7.2 OK for: @nomicfoundation/hardhat-verify@3.0.1 want: ^7.6.3
+222 silly fetch manifest @ethersproject/address@^5.8.0
+223 silly fetch manifest @ethersproject/bignumber@^5.8.0
+224 silly fetch manifest @ethersproject/bytes@^5.8.0
+225 silly fetch manifest @ethersproject/constants@^5.8.0
+226 silly fetch manifest @ethersproject/hash@^5.8.0
+227 silly fetch manifest @ethersproject/keccak256@^5.8.0
+228 silly fetch manifest @ethersproject/logger@^5.8.0
+229 silly fetch manifest @ethersproject/properties@^5.8.0
+230 silly fetch manifest @ethersproject/strings@^5.8.0
+231 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fstrings 325ms (cache miss)
+232 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fconstants 432ms (cache miss)
+233 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2flogger 440ms (cache miss)
+234 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fkeccak256 510ms (cache miss)
+235 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fbytes 534ms (cache miss)
+236 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fbignumber 540ms (cache miss)
+237 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fproperties 538ms (cache miss)
+238 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fhash 714ms (cache miss)
+239 silly placeDep ROOT @ethersproject/address@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+240 silly placeDep ROOT @ethersproject/bignumber@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+241 silly placeDep ROOT @ethersproject/bytes@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+242 silly placeDep ROOT @ethersproject/constants@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+243 silly placeDep ROOT @ethersproject/hash@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+244 silly placeDep ROOT @ethersproject/keccak256@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+245 silly placeDep ROOT @ethersproject/logger@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+246 silly placeDep ROOT @ethersproject/properties@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+247 silly placeDep ROOT @ethersproject/strings@5.8.0 OK for: @ethersproject/abi@5.8.0 want: ^5.8.0
+248 silly fetch manifest @ethersproject/rlp@^5.8.0
+249 silly fetch manifest bn.js@^5.2.1
+250 silly fetch manifest @ethersproject/abstract-signer@^5.8.0
+251 silly fetch manifest @ethersproject/base64@^5.8.0
+252 silly fetch manifest js-sha3@0.8.0
+253 http fetch GET 200 https://registry.npmjs.org/bn.js 53ms (cache miss)
+254 http fetch GET 200 https://registry.npmjs.org/js-sha3 70ms (cache miss)
+255 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fabstract-signer 481ms (cache miss)
+256 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fbase64 545ms (cache miss)
+257 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2frlp 592ms (cache miss)
+258 silly placeDep ROOT @ethersproject/rlp@5.8.0 OK for: @ethersproject/address@5.8.0 want: ^5.8.0
+259 silly placeDep ROOT bn.js@5.2.2 OK for: @ethersproject/bignumber@5.8.0 want: ^5.2.1
+260 silly placeDep ROOT @ethersproject/abstract-signer@5.8.0 OK for: @ethersproject/hash@5.8.0 want: ^5.8.0
+261 silly placeDep ROOT @ethersproject/base64@5.8.0 OK for: @ethersproject/hash@5.8.0 want: ^5.8.0
+262 silly fetch manifest @ethersproject/abstract-provider@^5.8.0
+263 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fabstract-provider 448ms (cache miss)
+264 silly placeDep ROOT @ethersproject/abstract-provider@5.8.0 OK for: @ethersproject/abstract-signer@5.8.0 want: ^5.8.0
+265 silly fetch manifest @ethersproject/networks@^5.8.0
+266 silly fetch manifest @ethersproject/transactions@^5.8.0
+267 silly fetch manifest @ethersproject/web@^5.8.0
+268 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2ftransactions 556ms (cache miss)
+269 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fnetworks 610ms (cache miss)
+270 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fweb 1169ms (cache miss)
+271 silly placeDep ROOT @ethersproject/networks@5.8.0 OK for: @ethersproject/abstract-provider@5.8.0 want: ^5.8.0
+272 silly placeDep ROOT @ethersproject/transactions@5.8.0 OK for: @ethersproject/abstract-provider@5.8.0 want: ^5.8.0
+273 silly placeDep ROOT @ethersproject/web@5.8.0 OK for: @ethersproject/abstract-provider@5.8.0 want: ^5.8.0
+274 silly fetch manifest @ethersproject/signing-key@^5.8.0
+275 http fetch GET 200 https://registry.npmjs.org/@ethersproject%2fsigning-key 570ms (cache miss)
+276 silly placeDep ROOT js-sha3@0.8.0 OK for: @ethersproject/keccak256@5.8.0 want: 0.8.0
+277 silly placeDep ROOT @ethersproject/signing-key@5.8.0 OK for: @ethersproject/transactions@5.8.0 want: ^5.8.0
+278 silly fetch manifest elliptic@6.6.1
+279 silly fetch manifest hash.js@1.1.7
+280 http fetch GET 200 https://registry.npmjs.org/elliptic 39ms (cache miss)
+281 http fetch GET 200 https://registry.npmjs.org/hash.js 58ms (cache miss)
+282 silly placeDep ROOT elliptic@6.6.1 OK for: @ethersproject/signing-key@5.8.0 want: 6.6.1
+283 silly placeDep ROOT hash.js@1.1.7 OK for: @ethersproject/signing-key@5.8.0 want: 1.1.7
+284 silly fetch manifest bn.js@^4.11.9
+285 silly fetch manifest brorand@^1.1.0
+286 silly fetch manifest hash.js@^1.0.0
+287 silly fetch manifest hmac-drbg@^1.0.1
+288 silly fetch manifest inherits@^2.0.4
+289 silly fetch manifest minimalistic-assert@^1.0.1
+290 silly fetch manifest minimalistic-crypto-utils@^1.0.1
+291 silly fetch manifest inherits@^2.0.3
+292 http fetch GET 200 https://registry.npmjs.org/brorand 58ms (cache miss)
+293 http fetch GET 200 https://registry.npmjs.org/inherits 72ms (cache miss)
+294 http fetch GET 200 https://registry.npmjs.org/minimalistic-assert 76ms (cache miss)
+295 http fetch GET 200 https://registry.npmjs.org/minimalistic-crypto-utils 76ms (cache miss)
+296 http fetch GET 200 https://registry.npmjs.org/hmac-drbg 85ms (cache miss)
+297 http fetch GET 200 https://registry.npmjs.org/inherits 93ms (cache miss)
+298 silly placeDep node_modules/@nomicfoundation/ignition-core @ethersproject/address@5.6.1 OK for: @nomicfoundation/ignition-core@3.0.2 want: 5.6.1
+299 silly placeDep ROOT @nomicfoundation/solidity-analyzer@0.1.2 OK for: @nomicfoundation/ignition-core@3.0.2 want: ^0.1.1
+300 silly placeDep ROOT ethers@6.15.0 OK for: @nomicfoundation/ignition-core@3.0.2 want: ^6.14.0
+301 silly placeDep ROOT immer@10.0.2 OK for: @nomicfoundation/ignition-core@3.0.2 want: 10.0.2
+302 silly placeDep ROOT lodash-es@4.17.21 OK for: @nomicfoundation/ignition-core@3.0.2 want: 4.17.21
+303 silly placeDep ROOT ndjson@2.0.0 OK for: @nomicfoundation/ignition-core@3.0.2 want: 2.0.0
+304 silly fetch manifest @nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2
+305 silly fetch manifest @nomicfoundation/solidity-analyzer-darwin-x64@0.1.2
+306 silly fetch manifest @nomicfoundation/solidity-analyzer-linux-arm64-gnu@0.1.2
+307 silly fetch manifest @nomicfoundation/solidity-analyzer-linux-arm64-musl@0.1.2
+308 silly fetch manifest @nomicfoundation/solidity-analyzer-linux-x64-gnu@0.1.2
+309 silly fetch manifest @nomicfoundation/solidity-analyzer-linux-x64-musl@0.1.2
+310 silly fetch manifest @nomicfoundation/solidity-analyzer-win32-x64-msvc@0.1.2
+311 silly fetch manifest @adraffy/ens-normalize@1.10.1
+312 silly fetch manifest @noble/curves@1.2.0
+313 silly fetch manifest @noble/hashes@1.3.2
+314 silly fetch manifest @types/node@22.7.5
+315 silly fetch manifest aes-js@4.0.0-beta.5
+316 silly fetch manifest tslib@2.7.0
+317 silly fetch manifest ws@8.17.1
+318 silly fetch manifest json-stringify-safe@^5.0.1
+319 http fetch GET 200 https://registry.npmjs.org/json-stringify-safe 75ms (cache miss)
+320 silly fetch manifest minimist@^1.2.5
+321 http fetch GET 200 https://registry.npmjs.org/tslib 84ms (cache miss)
+322 silly fetch manifest readable-stream@^3.6.0
+323 http fetch GET 200 https://registry.npmjs.org/aes-js 93ms (cache miss)
+324 silly fetch manifest split2@^3.0.0
+325 http fetch GET 200 https://registry.npmjs.org/minimist 51ms (cache miss)
+326 silly fetch manifest through2@^4.0.0
+327 http fetch GET 200 https://registry.npmjs.org/split2 47ms (cache miss)
+328 http fetch GET 200 https://registry.npmjs.org/readable-stream 72ms (cache miss)
+329 http fetch GET 200 https://registry.npmjs.org/through2 44ms (cache miss)
+330 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-win32-x64-msvc 1501ms (cache revalidated)
+331 http fetch GET 200 https://registry.npmjs.org/@adraffy%2fens-normalize 1575ms (cache miss)
+332 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-linux-arm64-musl 1628ms (cache revalidated)
+333 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-darwin-arm64 1720ms (cache revalidated)
+334 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-linux-arm64-gnu 1719ms (cache revalidated)
+335 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-darwin-x64 1729ms (cache revalidated)
+336 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-linux-x64-musl 1740ms (cache revalidated)
+337 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fsolidity-analyzer-linux-x64-gnu 1796ms (cache revalidated)
+338 silly placeDep ROOT @nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+339 silly placeDep ROOT @nomicfoundation/solidity-analyzer-darwin-x64@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+340 silly placeDep ROOT @nomicfoundation/solidity-analyzer-linux-arm64-gnu@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+341 silly placeDep ROOT @nomicfoundation/solidity-analyzer-linux-arm64-musl@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+342 silly placeDep ROOT @nomicfoundation/solidity-analyzer-linux-x64-gnu@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+343 silly placeDep ROOT @nomicfoundation/solidity-analyzer-linux-x64-musl@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+344 silly placeDep ROOT @nomicfoundation/solidity-analyzer-win32-x64-msvc@0.1.2 OK for: @nomicfoundation/solidity-analyzer@0.1.2 want: 0.1.2
+345 silly placeDep ROOT @streamparser/json@0.0.22 OK for: @streamparser/json-node@0.0.22 want: ^0.0.22
+346 silly placeDep ROOT undici-types@6.21.0 OK for: @types/node@22.18.1 want: ~6.21.0
+347 silly placeDep ROOT ms@2.1.3 OK for: debug@4.4.2 want: ^2.1.3
+348 silly placeDep node_modules/elliptic bn.js@4.12.2 OK for: elliptic@6.6.1 want: ^4.11.9
+349 silly placeDep ROOT brorand@1.1.0 OK for: elliptic@6.6.1 want: ^1.1.0
+350 silly placeDep ROOT hmac-drbg@1.0.1 OK for: elliptic@6.6.1 want: ^1.0.1
+351 silly placeDep ROOT inherits@2.0.4 OK for: elliptic@6.6.1 want: ^2.0.4
+352 silly placeDep ROOT minimalistic-assert@1.0.1 OK for: elliptic@6.6.1 want: ^1.0.1
+353 silly placeDep ROOT minimalistic-crypto-utils@1.0.1 OK for: elliptic@6.6.1 want: ^1.0.1
+354 silly fetch manifest minimalistic-assert@^1.0.0
+355 silly placeDep ROOT @noble/curves@1.4.2 OK for: ethereum-cryptography@2.2.1 want: 1.4.2
+356 silly placeDep node_modules/ethereum-cryptography @noble/hashes@1.4.0 OK for: ethereum-cryptography@2.2.1 want: 1.4.0
+357 silly placeDep ROOT @scure/bip32@1.4.0 OK for: ethereum-cryptography@2.2.1 want: 1.4.0
+358 silly placeDep ROOT @scure/bip39@1.3.0 OK for: ethereum-cryptography@2.2.1 want: 1.3.0
+359 silly fetch manifest @scure/base@~1.1.6
+360 silly fetch manifest @noble/hashes@~1.4.0
+361 http fetch GET 200 https://registry.npmjs.org/@scure%2fbase 427ms (cache revalidated)
+362 silly placeDep node_modules/@noble/curves @noble/hashes@1.4.0 OK for: @noble/curves@1.4.2 want: 1.4.0
+363 silly placeDep node_modules/@scure/bip32 @noble/hashes@1.4.0 OK for: @scure/bip32@1.4.0 want: ~1.4.0
+364 silly placeDep ROOT @scure/base@1.1.9 OK for: @scure/bip32@1.4.0 want: ~1.1.6
+365 silly placeDep node_modules/@scure/bip39 @noble/hashes@1.4.0 OK for: @scure/bip39@1.3.0 want: ~1.4.0
+366 silly fetch manifest bufferutil@^4.0.1
+367 http fetch GET 200 https://registry.npmjs.org/bufferutil 71ms (cache revalidated)
+368 silly fetch manifest utf-8-validate@>=5.0.2
+369 http fetch GET 200 https://registry.npmjs.org/utf-8-validate 79ms (cache revalidated)
+370 silly placeDep ROOT @adraffy/ens-normalize@1.10.1 OK for: ethers@6.15.0 want: 1.10.1
+371 silly placeDep node_modules/ethers @noble/curves@1.2.0 OK for: ethers@6.15.0 want: 1.2.0
+372 silly placeDep node_modules/ethers @noble/hashes@1.3.2 OK for: ethers@6.15.0 want: 1.3.2
+373 silly placeDep node_modules/ethers @types/node@22.7.5 OK for: ethers@6.15.0 want: 22.7.5
+374 silly placeDep ROOT aes-js@4.0.0-beta.5 OK for: ethers@6.15.0 want: 4.0.0-beta.5
+375 silly placeDep ROOT tslib@2.7.0 OK for: ethers@6.15.0 want: 2.7.0
+376 silly placeDep ROOT ws@8.17.1 OK for: ethers@6.15.0 want: 8.17.1
+377 silly fetch manifest undici-types@~6.19.2
+378 silly placeDep ROOT @nomicfoundation/edr@0.12.0-next.5 OK for: hardhat@3.0.4 want: 0.12.0-next.5
+379 silly placeDep ROOT @sentry/core@9.46.0 OK for: hardhat@3.0.4 want: ^9.4.0
+380 silly placeDep ROOT adm-zip@0.4.16 OK for: hardhat@3.0.4 want: ^0.4.16
+381 silly placeDep ROOT enquirer@2.4.1 OK for: hardhat@3.0.4 want: ^2.3.0
+382 silly placeDep ROOT micro-eth-signer@0.14.0 OK for: hardhat@3.0.4 want: ^0.14.0
+383 silly placeDep ROOT p-map@7.0.3 OK for: hardhat@3.0.4 want: ^7.0.2
+384 silly placeDep ROOT resolve.exports@2.0.3 OK for: hardhat@3.0.4 want: ^2.0.3
+385 silly placeDep node_modules/hardhat ws@8.18.3 OK for: hardhat@3.0.4 want: ^8.18.0
+386 silly fetch manifest @nomicfoundation/edr-darwin-arm64@0.12.0-next.5
+387 silly fetch manifest @nomicfoundation/edr-darwin-x64@0.12.0-next.5
+388 silly fetch manifest @nomicfoundation/edr-linux-arm64-gnu@0.12.0-next.5
+389 silly fetch manifest @nomicfoundation/edr-linux-arm64-musl@0.12.0-next.5
+390 silly fetch manifest @nomicfoundation/edr-linux-x64-gnu@0.12.0-next.5
+391 silly fetch manifest @nomicfoundation/edr-linux-x64-musl@0.12.0-next.5
+392 silly fetch manifest @nomicfoundation/edr-win32-x64-msvc@0.12.0-next.5
+393 silly fetch manifest ansi-colors@^4.1.1
+394 silly fetch manifest strip-ansi@^6.0.1
+395 silly fetch manifest micro-packed@~0.7.2
+396 silly fetch manifest @noble/curves@~1.8.1
+397 http fetch GET 200 https://registry.npmjs.org/strip-ansi 93ms (cache updated)
+398 http fetch GET 200 https://registry.npmjs.org/ansi-colors 131ms (cache revalidated)
+399 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-win32-x64-msvc 508ms (cache revalidated)
+400 http fetch GET 200 https://registry.npmjs.org/micro-packed 808ms (cache revalidated)
+401 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-linux-arm64-musl 1650ms (cache revalidated)
+402 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-darwin-x64 1652ms (cache revalidated)
+403 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-darwin-arm64 1766ms (cache revalidated)
+404 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-linux-x64-musl 1793ms (cache revalidated)
+405 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-linux-x64-gnu 1794ms (cache revalidated)
+406 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation%2fedr-linux-arm64-gnu 1810ms (cache revalidated)
+407 silly placeDep ROOT @nomicfoundation/edr-darwin-arm64@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+408 silly placeDep ROOT @nomicfoundation/edr-darwin-x64@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+409 silly placeDep ROOT @nomicfoundation/edr-linux-arm64-gnu@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+410 silly placeDep ROOT @nomicfoundation/edr-linux-arm64-musl@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+411 silly placeDep ROOT @nomicfoundation/edr-linux-x64-gnu@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+412 silly placeDep ROOT @nomicfoundation/edr-linux-x64-musl@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+413 silly placeDep ROOT @nomicfoundation/edr-win32-x64-msvc@0.12.0-next.5 OK for: @nomicfoundation/edr@0.12.0-next.5 want: 0.12.0-next.5
+414 silly placeDep ROOT ansi-colors@4.1.3 OK for: enquirer@2.4.1 want: ^4.1.1
+415 silly placeDep ROOT strip-ansi@6.0.1 OK for: enquirer@2.4.1 want: ^6.0.1
+416 silly fetch manifest ansi-regex@^5.0.1
+417 http fetch GET 200 https://registry.npmjs.org/ansi-regex 70ms (cache updated)
+418 silly placeDep node_modules/jest-diff chalk@4.1.2 OK for: jest-diff@29.7.0 want: ^4.0.0
+419 silly placeDep ROOT diff-sequences@29.6.3 OK for: jest-diff@29.7.0 want: ^29.6.3
+420 silly placeDep ROOT jest-get-type@29.6.3 OK for: jest-diff@29.7.0 want: ^29.6.3
+421 silly placeDep ROOT pretty-format@29.7.0 OK for: jest-diff@29.7.0 want: ^29.7.0
+422 silly fetch manifest ansi-styles@^4.1.0
+423 silly fetch manifest supports-color@^7.1.0
+424 silly fetch manifest react-is@^18.0.0
+425 silly fetch manifest ansi-styles@^5.0.0
+426 silly fetch manifest @jest/schemas@^29.6.3
+427 http fetch GET 200 https://registry.npmjs.org/ansi-styles 45ms (cache miss)
+428 http fetch GET 200 https://registry.npmjs.org/supports-color 78ms (cache miss)
+429 http fetch GET 200 https://registry.npmjs.org/ansi-styles 373ms (cache miss)
+430 http fetch GET 200 https://registry.npmjs.org/@jest%2fschemas 377ms (cache miss)
+431 http fetch GET 200 https://registry.npmjs.org/react-is 624ms (cache miss)
+432 silly placeDep node_modules/micro-eth-signer @noble/curves@1.8.2 OK for: micro-eth-signer@0.14.0 want: ~1.8.1
+433 silly placeDep ROOT micro-packed@0.7.3 OK for: micro-eth-signer@0.14.0 want: ~0.7.2
+434 silly fetch manifest @noble/hashes@1.7.2
+435 silly fetch manifest @scure/base@~1.2.5
+436 silly placeDep node_modules/micro-packed @scure/base@1.2.6 OK for: micro-packed@0.7.3 want: ~1.2.5
+437 silly placeDep ROOT json-stringify-safe@5.0.1 OK for: ndjson@2.0.0 want: ^5.0.1
+438 silly placeDep ROOT minimist@1.2.8 OK for: ndjson@2.0.0 want: ^1.2.5
+439 silly placeDep ROOT readable-stream@3.6.2 OK for: ndjson@2.0.0 want: ^3.6.0
+440 silly placeDep ROOT split2@3.2.2 OK for: ndjson@2.0.0 want: ^3.0.0
+441 silly placeDep ROOT through2@4.0.2 OK for: ndjson@2.0.0 want: ^4.0.0
+442 silly fetch manifest string_decoder@^1.1.1
+443 silly fetch manifest util-deprecate@^1.0.1
+444 http fetch GET 200 https://registry.npmjs.org/util-deprecate 84ms (cache miss)
+445 http fetch GET 200 https://registry.npmjs.org/string_decoder 157ms (cache miss)
+446 silly placeDep ROOT @jest/schemas@29.6.3 OK for: pretty-format@29.7.0 want: ^29.6.3
+447 silly placeDep ROOT ansi-styles@5.2.0 OK for: pretty-format@29.7.0 want: ^5.0.0
+448 silly placeDep ROOT react-is@18.3.1 OK for: pretty-format@29.7.0 want: ^18.0.0
+449 silly fetch manifest @sinclair/typebox@^0.27.8
+450 http fetch GET 200 https://registry.npmjs.org/@sinclair%2ftypebox 112ms (cache miss)
+451 silly placeDep ROOT @sinclair/typebox@0.27.8 OK for: @jest/schemas@29.6.3 want: ^0.27.8
+452 silly placeDep ROOT kleur@3.0.3 OK for: prompts@2.4.2 want: ^3.0.3
+453 silly placeDep ROOT sisteransi@1.0.5 OK for: prompts@2.4.2 want: ^1.0.5
+454 silly placeDep ROOT string_decoder@1.3.0 OK for: readable-stream@3.6.2 want: ^1.1.1
+455 silly placeDep ROOT util-deprecate@1.0.2 OK for: readable-stream@3.6.2 want: ^1.0.1
+456 silly fetch manifest safe-buffer@~5.2.0
+457 http fetch GET 200 https://registry.npmjs.org/safe-buffer 259ms (cache miss)
+458 silly placeDep ROOT safe-buffer@5.2.1 OK for: string_decoder@1.3.0 want: ~5.2.0
+459 silly placeDep ROOT ansi-regex@5.0.1 OK for: strip-ansi@6.0.1 want: ^5.0.1
+460 silly placeDep ROOT esbuild@0.25.9 OK for: tsx@4.20.5 want: ~0.25.0
+461 silly placeDep ROOT fsevents@2.3.3 OK for: tsx@4.20.5 want: ~2.3.3
+462 silly placeDep ROOT get-tsconfig@4.10.1 OK for: tsx@4.20.5 want: ^4.7.5
+463 silly fetch manifest @esbuild/aix-ppc64@0.25.9
+464 silly fetch manifest @esbuild/android-arm@0.25.9
+465 silly fetch manifest @esbuild/android-arm64@0.25.9
+466 silly fetch manifest @esbuild/android-x64@0.25.9
+467 silly fetch manifest @esbuild/darwin-arm64@0.25.9
+468 silly fetch manifest @esbuild/darwin-x64@0.25.9
+469 silly fetch manifest @esbuild/freebsd-arm64@0.25.9
+470 silly fetch manifest @esbuild/freebsd-x64@0.25.9
+471 silly fetch manifest @esbuild/linux-arm@0.25.9
+472 silly fetch manifest @esbuild/linux-arm64@0.25.9
+473 silly fetch manifest @esbuild/linux-ia32@0.25.9
+474 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fandroid-arm64 1045ms (cache revalidated)
+475 silly fetch manifest @esbuild/linux-loong64@0.25.9
+476 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fandroid-x64 1073ms (cache revalidated)
+477 silly fetch manifest @esbuild/linux-mips64el@0.25.9
+478 http fetch GET 200 https://registry.npmjs.org/@esbuild%2ffreebsd-arm64 1075ms (cache revalidated)
+479 silly fetch manifest @esbuild/linux-ppc64@0.25.9
+480 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fandroid-arm 1082ms (cache revalidated)
+481 silly fetch manifest @esbuild/linux-riscv64@0.25.9
+482 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fdarwin-x64 1086ms (cache revalidated)
+483 silly fetch manifest @esbuild/linux-s390x@0.25.9
+484 http fetch GET 200 https://registry.npmjs.org/@esbuild%2ffreebsd-x64 1090ms (cache revalidated)
+485 silly fetch manifest @esbuild/linux-x64@0.25.9
+486 http fetch GET 200 https://registry.npmjs.org/@esbuild%2faix-ppc64 1099ms (cache revalidated)
+487 silly fetch manifest @esbuild/netbsd-arm64@0.25.9
+488 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fdarwin-arm64 1101ms (cache revalidated)
+489 silly fetch manifest @esbuild/netbsd-x64@0.25.9
+490 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-ia32 1158ms (cache revalidated)
+491 silly fetch manifest @esbuild/openbsd-arm64@0.25.9
+492 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-arm 1161ms (cache revalidated)
+493 silly fetch manifest @esbuild/openbsd-x64@0.25.9
+494 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-ppc64 112ms (cache revalidated)
+495 silly fetch manifest @esbuild/openharmony-arm64@0.25.9
+496 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-loong64 156ms (cache revalidated)
+497 silly fetch manifest @esbuild/sunos-x64@0.25.9
+498 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-mips64el 132ms (cache revalidated)
+499 silly fetch manifest @esbuild/win32-arm64@0.25.9
+500 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-riscv64 145ms (cache revalidated)
+501 silly fetch manifest @esbuild/win32-ia32@0.25.9
+502 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-s390x 140ms (cache revalidated)
+503 silly fetch manifest @esbuild/win32-x64@0.25.9
+504 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-x64 138ms (cache revalidated)
+505 silly fetch manifest resolve-pkg-maps@^1.0.0
+506 http fetch GET 200 https://registry.npmjs.org/@esbuild%2flinux-arm64 1241ms (cache revalidated)
+507 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fnetbsd-arm64 165ms (cache revalidated)
+508 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fnetbsd-x64 162ms (cache revalidated)
+509 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fopenbsd-arm64 121ms (cache revalidated)
+510 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fopenbsd-x64 122ms (cache revalidated)
+511 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fopenharmony-arm64 120ms (cache revalidated)
+512 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fsunos-x64 124ms (cache revalidated)
+513 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fwin32-arm64 122ms (cache revalidated)
+514 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fwin32-x64 109ms (cache revalidated)
+515 http fetch GET 200 https://registry.npmjs.org/resolve-pkg-maps 105ms (cache revalidated)
+516 http fetch GET 200 https://registry.npmjs.org/@esbuild%2fwin32-ia32 114ms (cache revalidated)
+517 silly placeDep ROOT @esbuild/aix-ppc64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+518 silly placeDep ROOT @esbuild/android-arm@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+519 silly placeDep ROOT @esbuild/android-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+520 silly placeDep ROOT @esbuild/android-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+521 silly placeDep ROOT @esbuild/darwin-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+522 silly placeDep ROOT @esbuild/darwin-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+523 silly placeDep ROOT @esbuild/freebsd-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+524 silly placeDep ROOT @esbuild/freebsd-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+525 silly placeDep ROOT @esbuild/linux-arm@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+526 silly placeDep ROOT @esbuild/linux-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+527 silly placeDep ROOT @esbuild/linux-ia32@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+528 silly placeDep ROOT @esbuild/linux-loong64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+529 silly placeDep ROOT @esbuild/linux-mips64el@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+530 silly placeDep ROOT @esbuild/linux-ppc64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+531 silly placeDep ROOT @esbuild/linux-riscv64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+532 silly placeDep ROOT @esbuild/linux-s390x@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+533 silly placeDep ROOT @esbuild/linux-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+534 silly placeDep ROOT @esbuild/netbsd-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+535 silly placeDep ROOT @esbuild/netbsd-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+536 silly placeDep ROOT @esbuild/openbsd-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+537 silly placeDep ROOT @esbuild/openbsd-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+538 silly placeDep ROOT @esbuild/openharmony-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+539 silly placeDep ROOT @esbuild/sunos-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+540 silly placeDep ROOT @esbuild/win32-arm64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+541 silly placeDep ROOT @esbuild/win32-ia32@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+542 silly placeDep ROOT @esbuild/win32-x64@0.25.9 OK for: esbuild@0.25.9 want: 0.25.9
+543 silly placeDep ROOT resolve-pkg-maps@1.0.0 OK for: get-tsconfig@4.10.1 want: ^1.0.0
+544 silly placeDep ROOT @fastify/busboy@2.1.1 OK for: undici@5.29.0 want: ^2.0.0
+545 silly fetch manifest typescript@>=5.0.4
+546 silly fetch manifest zod@^3.22.0 || ^4.0.0
+547 silly placeDep node_modules/viem @noble/curves@1.9.1 OK for: viem@2.37.4 want: 1.9.1
+548 silly placeDep node_modules/viem @noble/hashes@1.8.0 OK for: viem@2.37.4 want: 1.8.0
+549 silly placeDep node_modules/viem @scure/bip32@1.7.0 OK for: viem@2.37.4 want: 1.7.0
+550 silly placeDep node_modules/viem @scure/bip39@1.6.0 OK for: viem@2.37.4 want: 1.6.0
+551 silly placeDep ROOT abitype@1.1.0 OK for: viem@2.37.4 want: 1.1.0
+552 silly placeDep ROOT isows@1.0.7 OK for: viem@2.37.4 want: 1.0.7
+553 silly placeDep ROOT ox@0.9.3 OK for: viem@2.37.4 want: 0.9.3
+554 silly placeDep node_modules/viem ws@8.18.3 OK for: viem@2.37.4 want: 8.18.3
+555 silly fetch manifest @scure/bip32@^1.7.0
+556 silly fetch manifest @scure/bip39@^1.6.0
+557 silly fetch manifest @noble/hashes@^1.8.0
+558 silly fetch manifest eventemitter3@5.0.1
+559 silly fetch manifest @noble/ciphers@^1.3.0
+560 silly fetch manifest @adraffy/ens-normalize@^1.11.0
+561 http fetch GET 200 https://registry.npmjs.org/eventemitter3 69ms (cache miss)
+562 silly placeDep node_modules/ox @adraffy/ens-normalize@1.11.0 OK for: ox@0.9.3 want: ^1.11.0
+563 silly placeDep node_modules/ox @noble/ciphers@1.3.0 OK for: ox@0.9.3 want: ^1.3.0
+564 silly placeDep node_modules/ox @noble/curves@1.9.1 OK for: ox@0.9.3 want: 1.9.1
+565 silly placeDep node_modules/ox @noble/hashes@1.8.0 OK for: ox@0.9.3 want: ^1.8.0
+566 silly placeDep node_modules/ox @scure/bip32@1.7.0 OK for: ox@0.9.3 want: ^1.7.0
+567 silly placeDep node_modules/ox @scure/bip39@1.6.0 OK for: ox@0.9.3 want: ^1.6.0
+568 silly placeDep ROOT eventemitter3@5.0.1 OK for: ox@0.9.3 want: 5.0.1
+569 silly placeDep node_modules/ethers undici-types@6.19.8 OK for: @types/node@22.7.5 want: ~6.19.2
+570 silly placeDep node_modules/jest-diff ansi-styles@4.3.0 OK for: chalk@4.1.2 want: ^4.1.0
+571 silly placeDep ROOT supports-color@7.2.0 OK for: chalk@4.1.2 want: ^7.1.0
+572 silly fetch manifest color-convert@^2.0.1
+573 silly fetch manifest has-flag@^4.0.0
+574 http fetch GET 200 https://registry.npmjs.org/color-convert 91ms (cache miss)
+575 http fetch GET 200 https://registry.npmjs.org/has-flag 1103ms (cache miss)
+576 silly placeDep ROOT has-flag@4.0.0 OK for: supports-color@7.2.0 want: ^4.0.0
+577 silly placeDep ROOT color-convert@2.0.1 OK for: ansi-styles@4.3.0 want: ^2.0.1
+578 silly fetch manifest color-name@~1.1.4
+579 http fetch GET 200 https://registry.npmjs.org/color-name 45ms (cache miss)
+580 silly placeDep ROOT color-name@1.1.4 OK for: color-convert@2.0.1 want: ~1.1.4
+581 silly placeDep node_modules/micro-eth-signer @noble/hashes@1.7.2 OK for: @noble/curves@1.8.2 want: 1.7.2
+582 silly placeDep node_modules/ox @scure/base@1.2.6 OK for: @scure/bip32@1.7.0 want: ~1.2.5
+583 silly placeDep node_modules/viem @scure/base@1.2.6 OK for: @scure/bip32@1.7.0 want: ~1.2.5
+584 silly reify moves {}
+585 silly audit bulk request {
+585 silly audit   '@nomicfoundation/hardhat-ignition': [ '3.0.2' ],
+585 silly audit   '@nomicfoundation/hardhat-verify': [ '3.0.1' ],
+585 silly audit   '@nomicfoundation/hardhat-toolbox-viem': [ '5.0.0' ],
+585 silly audit   '@nomicfoundation/hardhat-viem': [ '3.0.0' ],
+585 silly audit   '@nomicfoundation/ignition-core': [ '3.0.2' ],
+585 silly audit   '@nomicfoundation/hardhat-keystore': [ '3.0.1' ],
+585 silly audit   '@nomicfoundation/hardhat-ignition-viem': [ '3.0.2' ],
+585 silly audit   '@nomicfoundation/hardhat-network-helpers': [ '3.0.0' ],
+585 silly audit   '@nomicfoundation/hardhat-viem-assertions': [ '3.0.1' ],
+585 silly audit   '@nomicfoundation/hardhat-node-test-runner': [ '3.0.2' ],
+585 silly audit   '@types/node': [ '22.18.1', '22.7.5' ],
+585 silly audit   'forge-std': [ '1.9.4' ],
+585 silly audit   hardhat: [ '3.0.4' ],
+585 silly audit   typescript: [ '5.8.3' ],
+585 silly audit   viem: [ '2.37.4' ],
+585 silly audit   '@nomicfoundation/hardhat-errors': [ '3.0.1' ],
+585 silly audit   '@nomicfoundation/hardhat-utils': [ '3.0.0' ],
+585 silly audit   '@nomicfoundation/ignition-ui': [ '3.0.2' ],
+585 silly audit   chalk: [ '5.6.1', '4.1.2' ],
+585 silly audit   debug: [ '4.4.2' ],
+585 silly audit   json5: [ '2.2.3' ],
+585 silly audit   prompts: [ '2.4.2' ],
+585 silly audit   '@noble/ciphers': [ '1.2.1', '1.3.0' ],
+585 silly audit   '@noble/hashes': [ '1.7.1', '1.4.0', '1.3.2', '1.8.0', '1.7.2' ],
+585 silly audit   '@nomicfoundation/hardhat-zod-utils': [ '3.0.0' ],
+585 silly audit   zod: [ '3.25.76' ],
+585 silly audit   '@nomicfoundation/hardhat-node-test-reporter': [ '3.0.1' ],
+585 silly audit   tsx: [ '4.20.5' ],
+585 silly audit   '@actions/core': [ '1.11.1' ],
+585 silly audit   'jest-diff': [ '29.7.0' ],
+585 silly audit   '@actions/exec': [ '1.1.1' ],
+585 silly audit   '@actions/http-client': [ '2.2.3' ],
+585 silly audit   '@actions/io': [ '1.1.3' ],
+585 silly audit   tunnel: [ '0.0.6' ],
+585 silly audit   undici: [ '5.29.0', '6.21.3' ],
+585 silly audit   '@streamparser/json-node': [ '0.0.22' ],
+585 silly audit   'env-paths': [ '2.2.1' ],
+585 silly audit   'ethereum-cryptography': [ '2.2.1' ],
+585 silly audit   'fast-equals': [ '5.2.2' ],
+585 silly audit   'json-stream-stringify': [ '3.1.6' ],
+585 silly audit   rfdc: [ '1.4.1' ],
+585 silly audit   '@ethersproject/abi': [ '5.8.0' ],
+585 silly audit   cbor2: [ '1.12.0' ],
+585 silly audit   semver: [ '7.7.2' ],
+585 silly audit   '@ethersproject/address': [ '5.8.0', '5.6.1' ],
+585 silly audit   '@ethersproject/bignumber': [ '5.8.0' ],
+585 silly audit   '@ethersproject/bytes': [ '5.8.0' ],
+585 silly audit   '@ethersproject/constants': [ '5.8.0' ],
+585 silly audit   '@ethersproject/hash': [ '5.8.0' ],
+585 silly audit   '@ethersproject/keccak256': [ '5.8.0' ],
+585 silly audit   '@ethersproject/logger': [ '5.8.0' ],
+585 silly audit   '@ethersproject/properties': [ '5.8.0' ],
+585 silly audit   '@ethersproject/strings': [ '5.8.0' ],
+585 silly audit   '@ethersproject/rlp': [ '5.8.0' ],
+585 silly audit   'bn.js': [ '5.2.2', '4.12.2' ],
+585 silly audit   '@ethersproject/abstract-signer': [ '5.8.0' ],
+585 silly audit   '@ethersproject/base64': [ '5.8.0' ],
+585 silly audit   '@ethersproject/abstract-provider': [ '5.8.0' ],
+585 silly audit   '@ethersproject/networks': [ '5.8.0' ],
+585 silly audit   '@ethersproject/transactions': [ '5.8.0' ],
+585 silly audit   '@ethersproject/web': [ '5.8.0' ],
+585 silly audit   'js-sha3': [ '0.8.0' ],
+585 silly audit   '@ethersproject/signing-key': [ '5.8.0' ],
+585 silly audit   elliptic: [ '6.6.1' ],
+585 silly audit   'hash.js': [ '1.1.7' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer': [ '0.1.2' ],
+585 silly audit   ethers: [ '6.15.0' ],
+585 silly audit   immer: [ '10.0.2' ],
+585 silly audit   'lodash-es': [ '4.17.21' ],
+585 silly audit   ndjson: [ '2.0.0' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-darwin-arm64': [ '0.1.2' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-darwin-x64': [ '0.1.2' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-linux-arm64-gnu': [ '0.1.2' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-linux-arm64-musl': [ '0.1.2' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-linux-x64-gnu': [ '0.1.2' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-linux-x64-musl': [ '0.1.2' ],
+585 silly audit   '@nomicfoundation/solidity-analyzer-win32-x64-msvc': [ '0.1.2' ],
+585 silly audit   '@streamparser/json': [ '0.0.22' ],
+585 silly audit   'undici-types': [ '6.21.0', '6.19.8' ],
+585 silly audit   ms: [ '2.1.3' ],
+585 silly audit   brorand: [ '1.1.0' ],
+585 silly audit   'hmac-drbg': [ '1.0.1' ],
+585 silly audit   inherits: [ '2.0.4' ],
+585 silly audit   'minimalistic-assert': [ '1.0.1' ],
+585 silly audit   'minimalistic-crypto-utils': [ '1.0.1' ],
+585 silly audit   '@noble/curves': [ '1.4.2', '1.2.0', '1.8.2', '1.9.1' ],
+585 silly audit   '@scure/bip32': [ '1.4.0', '1.7.0' ],
+585 silly audit   '@scure/bip39': [ '1.3.0', '1.6.0' ],
+585 silly audit   '@scure/base': [ '1.1.9', '1.2.6' ],
+585 silly audit   '@adraffy/ens-normalize': [ '1.10.1', '1.11.0' ],
+585 silly audit   'aes-js': [ '4.0.0-beta.5' ],
+585 silly audit   tslib: [ '2.7.0' ],
+585 silly audit   ws: [ '8.17.1', '8.18.3' ],
+585 silly audit   '@nomicfoundation/edr': [ '0.12.0-next.5' ],
+585 silly audit   '@sentry/core': [ '9.46.0' ],
+585 silly audit   'adm-zip': [ '0.4.16' ],
+585 silly audit   enquirer: [ '2.4.1' ],
+585 silly audit   'micro-eth-signer': [ '0.14.0' ],
+585 silly audit   'p-map': [ '7.0.3' ],
+585 silly audit   'resolve.exports': [ '2.0.3' ],
+585 silly audit   '@nomicfoundation/edr-darwin-arm64': [ '0.12.0-next.5' ],
+585 silly audit   '@nomicfoundation/edr-darwin-x64': [ '0.12.0-next.5' ],
+585 silly audit   '@nomicfoundation/edr-linux-arm64-gnu': [ '0.12.0-next.5' ],
+585 silly audit   '@nomicfoundation/edr-linux-arm64-musl': [ '0.12.0-next.5' ],
+585 silly audit   '@nomicfoundation/edr-linux-x64-gnu': [ '0.12.0-next.5' ],
+585 silly audit   '@nomicfoundation/edr-linux-x64-musl': [ '0.12.0-next.5' ],
+585 silly audit   '@nomicfoundation/edr-win32-x64-msvc': [ '0.12.0-next.5' ],
+585 silly audit   'ansi-colors': [ '4.1.3' ],
+585 silly audit   'strip-ansi': [ '6.0.1' ],
+585 silly audit   'diff-sequences': [ '29.6.3' ],
+585 silly audit   'jest-get-type': [ '29.6.3' ],
+585 silly audit   'pretty-format': [ '29.7.0' ],
+585 silly audit   'micro-packed': [ '0.7.3' ],
+585 silly audit   'json-stringify-safe': [ '5.0.1' ],
+585 silly audit   minimist: [ '1.2.8' ],
+585 silly audit   'readable-stream': [ '3.6.2' ],
+585 silly audit   split2: [ '3.2.2' ],
+585 silly audit   through2: [ '4.0.2' ],
+585 silly audit   '@jest/schemas': [ '29.6.3' ],
+585 silly audit   'ansi-styles': [ '5.2.0', '4.3.0' ],
+585 silly audit   'react-is': [ '18.3.1' ],
+585 silly audit   '@sinclair/typebox': [ '0.27.8' ],
+585 silly audit   kleur: [ '3.0.3' ],
+585 silly audit   sisteransi: [ '1.0.5' ],
+585 silly audit   string_decoder: [ '1.3.0' ],
+585 silly audit   'util-deprecate': [ '1.0.2' ],
+585 silly audit   'safe-buffer': [ '5.2.1' ],
+585 silly audit   'ansi-regex': [ '5.0.1' ],
+585 silly audit   esbuild: [ '0.25.9' ],
+585 silly audit   fsevents: [ '2.3.3' ],
+585 silly audit   'get-tsconfig': [ '4.10.1' ],
+585 silly audit   '@esbuild/aix-ppc64': [ '0.25.9' ],
+585 silly audit   '@esbuild/android-arm': [ '0.25.9' ],
+585 silly audit   '@esbuild/android-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/android-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/darwin-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/darwin-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/freebsd-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/freebsd-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-arm': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-ia32': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-loong64': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-mips64el': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-ppc64': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-riscv64': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-s390x': [ '0.25.9' ],
+585 silly audit   '@esbuild/linux-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/netbsd-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/netbsd-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/openbsd-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/openbsd-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/openharmony-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/sunos-x64': [ '0.25.9' ],
+585 silly audit   '@esbuild/win32-arm64': [ '0.25.9' ],
+585 silly audit   '@esbuild/win32-ia32': [ '0.25.9' ],
+585 silly audit   '@esbuild/win32-x64': [ '0.25.9' ],
+585 silly audit   'resolve-pkg-maps': [ '1.0.0' ],
+585 silly audit   '@fastify/busboy': [ '2.1.1' ],
+585 silly audit   abitype: [ '1.1.0' ],
+585 silly audit   isows: [ '1.0.7' ],
+585 silly audit   ox: [ '0.9.3' ],
+585 silly audit   eventemitter3: [ '5.0.1' ],
+585 silly audit   'supports-color': [ '7.2.0' ],
+585 silly audit   'has-flag': [ '4.0.0' ],
+585 silly audit   'color-convert': [ '2.0.1' ],
+585 silly audit   'color-name': [ '1.1.4' ]
+585 silly audit }
+586 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\win32-ia32
+587 silly reify mark deleted [
+587 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\win32-ia32'
+587 silly reify ]
+588 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\win32-arm64
+589 silly reify mark deleted [
+589 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\win32-arm64'
+589 silly reify ]
+590 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\sunos-x64
+591 silly reify mark deleted [
+591 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\sunos-x64'
+591 silly reify ]
+592 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\openharmony-arm64
+593 silly reify mark deleted [
+593 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\openharmony-arm64'
+593 silly reify ]
+594 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\openbsd-x64
+595 silly reify mark deleted [
+595 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\openbsd-x64'
+595 silly reify ]
+596 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\openbsd-arm64
+597 silly reify mark deleted [
+597 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\openbsd-arm64'
+597 silly reify ]
+598 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\netbsd-x64
+599 silly reify mark deleted [
+599 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\netbsd-x64'
+599 silly reify ]
+600 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\netbsd-arm64
+601 silly reify mark deleted [
+601 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\netbsd-arm64'
+601 silly reify ]
+602 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-x64
+603 silly reify mark deleted [
+603 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-x64'
+603 silly reify ]
+604 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-s390x
+605 silly reify mark deleted [
+605 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-s390x'
+605 silly reify ]
+606 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-riscv64
+607 silly reify mark deleted [
+607 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-riscv64'
+607 silly reify ]
+608 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-ppc64
+609 silly reify mark deleted [
+609 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-ppc64'
+609 silly reify ]
+610 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-mips64el
+611 silly reify mark deleted [
+611 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-mips64el'
+611 silly reify ]
+612 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-loong64
+613 silly reify mark deleted [
+613 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-loong64'
+613 silly reify ]
+614 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-ia32
+615 silly reify mark deleted [
+615 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-ia32'
+615 silly reify ]
+616 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-arm64
+617 silly reify mark deleted [
+617 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-arm64'
+617 silly reify ]
+618 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\linux-arm
+619 silly reify mark deleted [
+619 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\linux-arm'
+619 silly reify ]
+620 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\freebsd-x64
+621 silly reify mark deleted [
+621 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\freebsd-x64'
+621 silly reify ]
+622 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\freebsd-arm64
+623 silly reify mark deleted [
+623 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\freebsd-arm64'
+623 silly reify ]
+624 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\darwin-x64
+625 silly reify mark deleted [
+625 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\darwin-x64'
+625 silly reify ]
+626 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\darwin-arm64
+627 silly reify mark deleted [
+627 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\darwin-arm64'
+627 silly reify ]
+628 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\android-x64
+629 silly reify mark deleted [
+629 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\android-x64'
+629 silly reify ]
+630 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\android-arm64
+631 silly reify mark deleted [
+631 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\android-arm64'
+631 silly reify ]
+632 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\android-arm
+633 silly reify mark deleted [
+633 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\android-arm'
+633 silly reify ]
+634 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\@esbuild\aix-ppc64
+635 silly reify mark deleted [
+635 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\@esbuild\\aix-ppc64'
+635 silly reify ]
+636 verbose reify failed optional dependency D:\workspaces\WEB3\solidity\projectDir\node_modules\fsevents
+637 silly reify mark deleted [
+637 silly reify   'D:\\workspaces\\WEB3\\solidity\\projectDir\\node_modules\\fsevents'
+637 silly reify ]
+638 silly tarball no local data for color-name@https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz. Extracting by manifest.
+639 silly tarball no local data for color-convert@https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz. Extracting by manifest.
+640 silly tarball no local data for has-flag@https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz. Extracting by manifest.
+641 silly tarball no local data for eventemitter3@https://registry.npmjs.org/eventemitter3/-/eventemitter3-5.0.1.tgz. Extracting by manifest.
+642 silly tarball no local data for supports-color@https://registry.npmjs.org/supports-color/-/supports-color-7.2.0.tgz. Extracting by manifest.
+643 silly tarball no local data for isows@https://registry.npmjs.org/isows/-/isows-1.0.7.tgz. Extracting by manifest.
+644 silly tarball no local data for ox@https://registry.npmjs.org/ox/-/ox-0.9.3.tgz. Extracting by manifest.
+645 silly tarball no local data for @fastify/busboy@https://registry.npmjs.org/@fastify/busboy/-/busboy-2.1.1.tgz. Extracting by manifest.
+646 silly tarball no local data for abitype@https://registry.npmjs.org/abitype/-/abitype-1.1.0.tgz. Extracting by manifest.
+647 silly tarball no local data for safe-buffer@https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz. Extracting by manifest.
+648 silly tarball no local data for string_decoder@https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz. Extracting by manifest.
+649 silly tarball no local data for util-deprecate@https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz. Extracting by manifest.
+650 silly tarball no local data for sisteransi@https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz. Extracting by manifest.
+651 silly tarball no local data for @sinclair/typebox@https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz. Extracting by manifest.
+652 silly tarball no local data for kleur@https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz. Extracting by manifest.
+653 silly tarball no local data for react-is@https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz. Extracting by manifest.
+654 silly tarball no local data for @jest/schemas@https://registry.npmjs.org/@jest/schemas/-/schemas-29.6.3.tgz. Extracting by manifest.
+655 silly tarball no local data for ansi-styles@https://registry.npmjs.org/ansi-styles/-/ansi-styles-5.2.0.tgz. Extracting by manifest.
+656 silly tarball no local data for split2@https://registry.npmjs.org/split2/-/split2-3.2.2.tgz. Extracting by manifest.
+657 silly tarball no local data for through2@https://registry.npmjs.org/through2/-/through2-4.0.2.tgz. Extracting by manifest.
+658 silly tarball no local data for readable-stream@https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz. Extracting by manifest.
+659 silly tarball no local data for minimist@https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz. Extracting by manifest.
+660 silly tarball no local data for jest-get-type@https://registry.npmjs.org/jest-get-type/-/jest-get-type-29.6.3.tgz. Extracting by manifest.
+661 silly tarball no local data for json-stringify-safe@https://registry.npmjs.org/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz. Extracting by manifest.
+662 silly tarball no local data for pretty-format@https://registry.npmjs.org/pretty-format/-/pretty-format-29.7.0.tgz. Extracting by manifest.
+663 silly tarball no local data for diff-sequences@https://registry.npmjs.org/diff-sequences/-/diff-sequences-29.6.3.tgz. Extracting by manifest.
+664 silly tarball no local data for @adraffy/ens-normalize@https://registry.npmjs.org/@adraffy/ens-normalize/-/ens-normalize-1.10.1.tgz. Extracting by manifest.
+665 silly tarball no local data for ws@https://registry.npmjs.org/ws/-/ws-8.17.1.tgz. Extracting by manifest.
+666 silly tarball no local data for aes-js@https://registry.npmjs.org/aes-js/-/aes-js-4.0.0-beta.5.tgz. Extracting by manifest.
+667 silly tarball no local data for tslib@https://registry.npmjs.org/tslib/-/tslib-2.7.0.tgz. Extracting by manifest.
+668 silly tarball no local data for minimalistic-crypto-utils@https://registry.npmjs.org/minimalistic-crypto-utils/-/minimalistic-crypto-utils-1.0.1.tgz. Extracting by manifest.
+669 silly tarball no local data for hmac-drbg@https://registry.npmjs.org/hmac-drbg/-/hmac-drbg-1.0.1.tgz. Extracting by manifest.
+670 silly tarball no local data for inherits@https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz. Extracting by manifest.
+671 silly tarball no local data for minimalistic-assert@https://registry.npmjs.org/minimalistic-assert/-/minimalistic-assert-1.0.1.tgz. Extracting by manifest.
+672 silly tarball no local data for brorand@https://registry.npmjs.org/brorand/-/brorand-1.1.0.tgz. Extracting by manifest.
+673 silly tarball no local data for ndjson@https://registry.npmjs.org/ndjson/-/ndjson-2.0.0.tgz. Extracting by manifest.
+674 silly tarball no local data for undici-types@https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz. Extracting by manifest.
+675 silly tarball no local data for immer@https://registry.npmjs.org/immer/-/immer-10.0.2.tgz. Extracting by manifest.
+676 silly tarball no local data for lodash-es@https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.21.tgz. Extracting by manifest.
+677 silly tarball no local data for @ethersproject/signing-key@https://registry.npmjs.org/@ethersproject/signing-key/-/signing-key-5.8.0.tgz. Extracting by manifest.
+678 silly tarball no local data for ethers@https://registry.npmjs.org/ethers/-/ethers-6.15.0.tgz. Extracting by manifest.
+679 silly tarball no local data for hash.js@https://registry.npmjs.org/hash.js/-/hash.js-1.1.7.tgz. Extracting by manifest.
+680 silly tarball no local data for elliptic@https://registry.npmjs.org/elliptic/-/elliptic-6.6.1.tgz. Extracting by manifest.
+681 silly tarball no local data for js-sha3@https://registry.npmjs.org/js-sha3/-/js-sha3-0.8.0.tgz. Extracting by manifest.
+682 silly tarball no local data for @ethersproject/transactions@https://registry.npmjs.org/@ethersproject/transactions/-/transactions-5.8.0.tgz. Extracting by manifest.
+683 silly tarball no local data for @ethersproject/web@https://registry.npmjs.org/@ethersproject/web/-/web-5.8.0.tgz. Extracting by manifest.
+684 silly tarball no local data for @ethersproject/networks@https://registry.npmjs.org/@ethersproject/networks/-/networks-5.8.0.tgz. Extracting by manifest.
+685 silly tarball no local data for @ethersproject/base64@https://registry.npmjs.org/@ethersproject/base64/-/base64-5.8.0.tgz. Extracting by manifest.
+686 silly tarball no local data for @ethersproject/abstract-provider@https://registry.npmjs.org/@ethersproject/abstract-provider/-/abstract-provider-5.8.0.tgz. Extracting by manifest.
+687 silly tarball no local data for @ethersproject/abstract-signer@https://registry.npmjs.org/@ethersproject/abstract-signer/-/abstract-signer-5.8.0.tgz. Extracting by manifest.
+688 silly tarball no local data for bn.js@https://registry.npmjs.org/bn.js/-/bn.js-5.2.2.tgz. Extracting by manifest.
+689 silly tarball no local data for @ethersproject/rlp@https://registry.npmjs.org/@ethersproject/rlp/-/rlp-5.8.0.tgz. Extracting by manifest.
+690 silly tarball no local data for @ethersproject/strings@https://registry.npmjs.org/@ethersproject/strings/-/strings-5.8.0.tgz. Extracting by manifest.
+691 silly tarball no local data for @ethersproject/properties@https://registry.npmjs.org/@ethersproject/properties/-/properties-5.8.0.tgz. Extracting by manifest.
+692 silly tarball no local data for @ethersproject/keccak256@https://registry.npmjs.org/@ethersproject/keccak256/-/keccak256-5.8.0.tgz. Extracting by manifest.
+693 silly tarball no local data for @ethersproject/logger@https://registry.npmjs.org/@ethersproject/logger/-/logger-5.8.0.tgz. Extracting by manifest.
+694 silly tarball no local data for @ethersproject/hash@https://registry.npmjs.org/@ethersproject/hash/-/hash-5.8.0.tgz. Extracting by manifest.
+695 silly tarball no local data for @ethersproject/bytes@https://registry.npmjs.org/@ethersproject/bytes/-/bytes-5.8.0.tgz. Extracting by manifest.
+696 silly tarball no local data for @ethersproject/bignumber@https://registry.npmjs.org/@ethersproject/bignumber/-/bignumber-5.8.0.tgz. Extracting by manifest.
+697 silly tarball no local data for @ethersproject/constants@https://registry.npmjs.org/@ethersproject/constants/-/constants-5.8.0.tgz. Extracting by manifest.
+698 silly tarball no local data for @ethersproject/address@https://registry.npmjs.org/@ethersproject/address/-/address-5.8.0.tgz. Extracting by manifest.
+699 silly tarball no local data for cbor2@https://registry.npmjs.org/cbor2/-/cbor2-1.12.0.tgz. Extracting by manifest.
+700 silly tarball no local data for @ethersproject/abi@https://registry.npmjs.org/@ethersproject/abi/-/abi-5.8.0.tgz. Extracting by manifest.
+701 silly tarball no local data for @actions/http-client@https://registry.npmjs.org/@actions/http-client/-/http-client-2.2.3.tgz. Extracting by manifest.
+702 silly tarball no local data for @actions/io@https://registry.npmjs.org/@actions/io/-/io-1.1.3.tgz. Extracting by manifest.
+703 silly tarball no local data for tunnel@https://registry.npmjs.org/tunnel/-/tunnel-0.0.6.tgz. Extracting by manifest.
+704 silly tarball no local data for undici@https://registry.npmjs.org/undici/-/undici-5.29.0.tgz. Extracting by manifest.
+705 silly tarball no local data for @actions/exec@https://registry.npmjs.org/@actions/exec/-/exec-1.1.1.tgz. Extracting by manifest.
+706 silly tarball no local data for @actions/core@https://registry.npmjs.org/@actions/core/-/core-1.11.1.tgz. Extracting by manifest.
+707 silly tarball no local data for @nomicfoundation/hardhat-node-test-reporter@https://registry.npmjs.org/@nomicfoundation/hardhat-node-test-reporter/-/hardhat-node-test-reporter-3.0.1.tgz. Extracting by manifest.
+708 silly tarball no local data for jest-diff@https://registry.npmjs.org/jest-diff/-/jest-diff-29.7.0.tgz. Extracting by manifest.
+709 silly tarball no local data for @noble/ciphers@https://registry.npmjs.org/@noble/ciphers/-/ciphers-1.2.1.tgz. Extracting by manifest.
+710 silly tarball no local data for @noble/hashes@https://registry.npmjs.org/@noble/hashes/-/hashes-1.7.1.tgz. Extracting by manifest.
+711 silly tarball no local data for prompts@https://registry.npmjs.org/prompts/-/prompts-2.4.2.tgz. Extracting by manifest.
+712 silly tarball no local data for @nomicfoundation/ignition-ui@https://registry.npmjs.org/@nomicfoundation/ignition-ui/-/ignition-ui-3.0.2.tgz. Extracting by manifest.
+713 silly tarball no local data for debug@https://registry.npmjs.org/debug/-/debug-4.4.2.tgz. Extracting by manifest.
+714 silly tarball no local data for json5@https://registry.npmjs.org/json5/-/json5-2.2.3.tgz. Extracting by manifest.
+715 silly tarball no local data for chalk@https://registry.npmjs.org/chalk/-/chalk-5.6.1.tgz. Extracting by manifest.
+716 silly tarball no local data for viem@https://registry.npmjs.org/viem/-/viem-2.37.4.tgz. Extracting by manifest.
+717 silly tarball no local data for typescript@https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz. Extracting by manifest.
+718 silly tarball no local data for @types/node@https://registry.npmjs.org/@types/node/-/node-22.18.1.tgz. Extracting by manifest.
+719 silly tarball no local data for @nomicfoundation/hardhat-node-test-runner@https://registry.npmjs.org/@nomicfoundation/hardhat-node-test-runner/-/hardhat-node-test-runner-3.0.2.tgz. Extracting by manifest.
+720 silly tarball no local data for @nomicfoundation/hardhat-viem-assertions@https://registry.npmjs.org/@nomicfoundation/hardhat-viem-assertions/-/hardhat-viem-assertions-3.0.1.tgz. Extracting by manifest.
+721 silly tarball no local data for @nomicfoundation/hardhat-network-helpers@https://registry.npmjs.org/@nomicfoundation/hardhat-network-helpers/-/hardhat-network-helpers-3.0.0.tgz. Extracting by manifest.
+722 silly tarball no local data for @nomicfoundation/hardhat-ignition-viem@https://registry.npmjs.org/@nomicfoundation/hardhat-ignition-viem/-/hardhat-ignition-viem-3.0.2.tgz. Extracting by manifest.
+723 silly tarball no local data for @nomicfoundation/ignition-core@https://registry.npmjs.org/@nomicfoundation/ignition-core/-/ignition-core-3.0.2.tgz. Extracting by manifest.
+724 silly tarball no local data for @nomicfoundation/hardhat-keystore@https://registry.npmjs.org/@nomicfoundation/hardhat-keystore/-/hardhat-keystore-3.0.1.tgz. Extracting by manifest.
+725 silly tarball no local data for @nomicfoundation/hardhat-viem@https://registry.npmjs.org/@nomicfoundation/hardhat-viem/-/hardhat-viem-3.0.0.tgz. Extracting by manifest.
+726 silly tarball no local data for @nomicfoundation/hardhat-verify@https://registry.npmjs.org/@nomicfoundation/hardhat-verify/-/hardhat-verify-3.0.1.tgz. Extracting by manifest.
+727 silly tarball no local data for @nomicfoundation/hardhat-toolbox-viem@https://registry.npmjs.org/@nomicfoundation/hardhat-toolbox-viem/-/hardhat-toolbox-viem-5.0.0.tgz. Extracting by manifest.
+728 silly tarball no local data for @nomicfoundation/hardhat-ignition@https://registry.npmjs.org/@nomicfoundation/hardhat-ignition/-/hardhat-ignition-3.0.2.tgz. Extracting by manifest.
+729 silly tarball no local data for @noble/curves@https://registry.npmjs.org/@noble/curves/-/curves-1.9.1.tgz. Extracting by manifest.
+730 silly tarball no local data for @noble/hashes@https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz. Extracting by manifest.
+731 silly tarball no local data for @noble/ciphers@https://registry.npmjs.org/@noble/ciphers/-/ciphers-1.3.0.tgz. Extracting by manifest.
+732 silly tarball no local data for @scure/bip39@https://registry.npmjs.org/@scure/bip39/-/bip39-1.6.0.tgz. Extracting by manifest.
+733 silly tarball no local data for @adraffy/ens-normalize@https://registry.npmjs.org/@adraffy/ens-normalize/-/ens-normalize-1.11.0.tgz. Extracting by manifest.
+734 silly tarball no local data for @scure/bip32@https://registry.npmjs.org/@scure/bip32/-/bip32-1.7.0.tgz. Extracting by manifest.
+735 silly tarball no local data for undici-types@https://registry.npmjs.org/undici-types/-/undici-types-6.19.8.tgz. Extracting by manifest.
+736 silly tarball no local data for bn.js@https://registry.npmjs.org/bn.js/-/bn.js-4.12.2.tgz. Extracting by manifest.
+737 silly tarball no local data for @types/node@https://registry.npmjs.org/@types/node/-/node-22.7.5.tgz. Extracting by manifest.
+738 silly tarball no local data for @noble/curves@https://registry.npmjs.org/@noble/curves/-/curves-1.2.0.tgz. Extracting by manifest.
+739 silly tarball no local data for @noble/hashes@https://registry.npmjs.org/@noble/hashes/-/hashes-1.3.2.tgz. Extracting by manifest.
+740 silly tarball no local data for ansi-styles@https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz. Extracting by manifest.
+741 silly tarball no local data for chalk@https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz. Extracting by manifest.
+742 silly tarball no local data for @scure/bip39@https://registry.npmjs.org/@scure/bip39/-/bip39-1.6.0.tgz. Extracting by manifest.
+743 silly tarball no local data for @scure/bip32@https://registry.npmjs.org/@scure/bip32/-/bip32-1.7.0.tgz. Extracting by manifest.
+744 silly tarball no local data for @noble/hashes@https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz. Extracting by manifest.
+745 silly tarball no local data for @noble/curves@https://registry.npmjs.org/@noble/curves/-/curves-1.9.1.tgz. Extracting by manifest.
+746 silly tarball no local data for @ethersproject/address@https://registry.npmjs.org/@ethersproject/address/-/address-5.6.1.tgz. Extracting by manifest.
+747 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 1490ms
+748 silly audit report {}
+749 http fetch GET 200 https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz 3131ms (cache miss)
+750 http fetch GET 200 https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz 3159ms (cache miss)
+751 http fetch GET 200 https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz 3192ms (cache miss)
+752 http fetch GET 200 https://registry.npmjs.org/through2/-/through2-4.0.2.tgz 3180ms (cache miss)
+753 http fetch GET 200 https://registry.npmjs.org/supports-color/-/supports-color-7.2.0.tgz 3200ms (cache miss)
+754 http fetch GET 200 https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz 3181ms (cache miss)
+755 http fetch GET 200 https://registry.npmjs.org/isows/-/isows-1.0.7.tgz 3202ms (cache miss)
+756 http fetch GET 200 https://registry.npmjs.org/minimalistic-assert/-/minimalistic-assert-1.0.1.tgz 3214ms (cache miss)
+757 http fetch GET 200 https://registry.npmjs.org/hmac-drbg/-/hmac-drbg-1.0.1.tgz 3217ms (cache miss)
+758 http fetch GET 200 https://registry.npmjs.org/@ethersproject/transactions/-/transactions-5.8.0.tgz 3224ms (cache miss)
+759 http fetch GET 200 https://registry.npmjs.org/@ethersproject/networks/-/networks-5.8.0.tgz 3221ms (cache miss)
+760 http fetch GET 200 https://registry.npmjs.org/@ethersproject/constants/-/constants-5.8.0.tgz 3204ms (cache miss)
+761 http fetch GET 200 https://registry.npmjs.org/tunnel/-/tunnel-0.0.6.tgz 3190ms (cache miss)
+762 http fetch GET 200 https://registry.npmjs.org/@actions/io/-/io-1.1.3.tgz 3195ms (cache miss)
+763 http fetch GET 200 https://registry.npmjs.org/@ethersproject/rlp/-/rlp-5.8.0.tgz 3224ms (cache miss)
+764 http fetch GET 200 https://registry.npmjs.org/@actions/exec/-/exec-1.1.1.tgz 3194ms (cache miss)
+765 http fetch GET 200 https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz 3292ms (cache miss)
+766 http fetch GET 200 https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz 3284ms (cache miss)
+767 http fetch GET 200 https://registry.npmjs.org/split2/-/split2-3.2.2.tgz 3281ms (cache miss)
+768 http fetch GET 200 https://registry.npmjs.org/jest-get-type/-/jest-get-type-29.6.3.tgz 3280ms (cache miss)
+769 http fetch GET 200 https://registry.npmjs.org/ansi-styles/-/ansi-styles-5.2.0.tgz 3284ms (cache miss)
+770 http fetch GET 200 https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz 3307ms (cache miss)
+771 http fetch GET 200 https://registry.npmjs.org/diff-sequences/-/diff-sequences-29.6.3.tgz 3305ms (cache miss)
+772 http fetch GET 200 https://registry.npmjs.org/minimalistic-crypto-utils/-/minimalistic-crypto-utils-1.0.1.tgz 3299ms (cache miss)
+773 http fetch GET 200 https://registry.npmjs.org/hash.js/-/hash.js-1.1.7.tgz 3291ms (cache miss)
+774 http fetch GET 200 https://registry.npmjs.org/@jest/schemas/-/schemas-29.6.3.tgz 3318ms (cache miss)
+775 http fetch GET 200 https://registry.npmjs.org/@ethersproject/abstract-signer/-/abstract-signer-5.8.0.tgz 3276ms (cache miss)
+776 http fetch GET 200 https://registry.npmjs.org/@ethersproject/abstract-provider/-/abstract-provider-5.8.0.tgz 3277ms (cache miss)
+777 http fetch GET 200 https://registry.npmjs.org/@ethersproject/keccak256/-/keccak256-5.8.0.tgz 3273ms (cache miss)
+778 http fetch GET 200 https://registry.npmjs.org/@ethersproject/logger/-/logger-5.8.0.tgz 3271ms (cache miss)
+779 http fetch GET 200 https://registry.npmjs.org/pretty-format/-/pretty-format-29.7.0.tgz 3344ms (cache miss)
+780 http fetch GET 200 https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz 3336ms (cache miss)
+781 http fetch GET 200 https://registry.npmjs.org/brorand/-/brorand-1.1.0.tgz 3334ms (cache miss)
+782 http fetch GET 200 https://registry.npmjs.org/ndjson/-/ndjson-2.0.0.tgz 3335ms (cache miss)
+783 http fetch GET 200 https://registry.npmjs.org/@ethersproject/address/-/address-5.8.0.tgz 3291ms (cache miss)
+784 http fetch GET 200 https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz 3370ms (cache miss)
+785 http fetch GET 200 https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz 3394ms (cache miss)
+786 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-ignition-viem/-/hardhat-ignition-viem-3.0.2.tgz 3272ms (cache miss)
+787 http fetch GET 200 https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz 3435ms (cache miss)
+788 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-node-test-runner/-/hardhat-node-test-runner-3.0.2.tgz 3314ms (cache miss)
+789 http fetch GET 200 https://registry.npmjs.org/@scure/bip32/-/bip32-1.7.0.tgz 3767ms (cache miss)
+790 http fetch GET 200 https://registry.npmjs.org/bn.js/-/bn.js-5.2.2.tgz 3890ms (cache miss)
+791 http fetch GET 200 https://registry.npmjs.org/@scure/bip32/-/bip32-1.7.0.tgz 3797ms (cache miss)
+792 http fetch GET 200 https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz 3812ms (cache miss)
+793 http fetch GET 200 https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz 3812ms (cache miss)
+794 http fetch GET 200 https://registry.npmjs.org/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz 4128ms (cache miss)
+795 http fetch GET 200 https://registry.npmjs.org/bn.js/-/bn.js-4.12.2.tgz 4026ms (cache miss)
+796 http fetch GET 200 https://registry.npmjs.org/eventemitter3/-/eventemitter3-5.0.1.tgz 4881ms (cache miss)
+797 http fetch GET 200 https://registry.npmjs.org/js-sha3/-/js-sha3-0.8.0.tgz 4842ms (cache miss)
+798 http fetch GET 200 https://registry.npmjs.org/debug/-/debug-4.4.2.tgz 4835ms (cache miss)
+799 http fetch GET 200 https://registry.npmjs.org/jest-diff/-/jest-diff-29.7.0.tgz 5039ms (cache miss)
+800 http fetch GET 200 https://registry.npmjs.org/tslib/-/tslib-2.7.0.tgz 5145ms (cache miss)
+801 http fetch GET 200 https://registry.npmjs.org/chalk/-/chalk-5.6.1.tgz 5078ms (cache miss)
+802 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-toolbox-viem/-/hardhat-toolbox-viem-5.0.0.tgz 5268ms (cache miss)
+803 http fetch GET 200 https://registry.npmjs.org/@actions/http-client/-/http-client-2.2.3.tgz 5321ms (cache miss)
+804 http fetch GET 200 https://registry.npmjs.org/ws/-/ws-8.17.1.tgz 5543ms (cache miss)
+805 http fetch GET 200 https://registry.npmjs.org/@fastify/busboy/-/busboy-2.1.1.tgz 5955ms (cache miss)
+806 http fetch GET 200 https://registry.npmjs.org/elliptic/-/elliptic-6.6.1.tgz 5929ms (cache miss)
+807 http fetch GET 200 https://registry.npmjs.org/@ethersproject/bytes/-/bytes-5.8.0.tgz 5942ms (cache miss)
+808 http fetch GET 200 https://registry.npmjs.org/@ethersproject/properties/-/properties-5.8.0.tgz 5956ms (cache miss)
+809 http fetch GET 200 https://registry.npmjs.org/json5/-/json5-2.2.3.tgz 5944ms (cache miss)
+810 http fetch GET 200 https://registry.npmjs.org/@adraffy/ens-normalize/-/ens-normalize-1.10.1.tgz 6049ms (cache miss)
+811 http fetch GET 200 https://registry.npmjs.org/@ethersproject/address/-/address-5.6.1.tgz 5940ms (cache miss)
+812 http fetch GET 200 https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz 6147ms (cache miss)
+813 http fetch GET 200 https://registry.npmjs.org/@adraffy/ens-normalize/-/ens-normalize-1.11.0.tgz 6046ms (cache miss)
+814 http fetch GET 200 https://registry.npmjs.org/@actions/core/-/core-1.11.1.tgz 6276ms (cache miss)
+815 http fetch GET 200 https://registry.npmjs.org/@ethersproject/base64/-/base64-5.8.0.tgz 6510ms (cache miss)
+816 http fetch GET 200 https://registry.npmjs.org/cbor2/-/cbor2-1.12.0.tgz 6728ms (cache miss)
+817 http fetch GET 200 https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz 6826ms (cache miss)
+818 http fetch GET 200 https://registry.npmjs.org/@ethersproject/bignumber/-/bignumber-5.8.0.tgz 6807ms (cache miss)
+819 http fetch GET 200 https://registry.npmjs.org/undici-types/-/undici-types-6.19.8.tgz 6761ms (cache miss)
+820 http fetch GET 200 https://registry.npmjs.org/@ethersproject/signing-key/-/signing-key-5.8.0.tgz 7291ms (cache miss)
+821 http fetch GET 200 https://registry.npmjs.org/immer/-/immer-10.0.2.tgz 7414ms (cache miss)
+822 http fetch GET 200 https://registry.npmjs.org/@ethersproject/web/-/web-5.8.0.tgz 7402ms (cache miss)
+823 http fetch GET 200 https://registry.npmjs.org/@ethersproject/strings/-/strings-5.8.0.tgz 7504ms (cache miss)
+824 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-node-test-reporter/-/hardhat-node-test-reporter-3.0.1.tgz 7498ms (cache miss)
+825 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-viem/-/hardhat-viem-3.0.0.tgz 7695ms (cache miss)
+826 http fetch GET 200 https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz 7831ms (cache miss)
+827 http fetch GET 200 https://registry.npmjs.org/@scure/bip39/-/bip39-1.6.0.tgz 7758ms (cache miss)
+828 http fetch GET 200 https://registry.npmjs.org/@scure/bip39/-/bip39-1.6.0.tgz 7751ms (cache miss)
+829 http fetch GET 200 https://registry.npmjs.org/prompts/-/prompts-2.4.2.tgz 8379ms (cache miss)
+830 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/ignition-ui/-/ignition-ui-3.0.2.tgz 8709ms (cache miss)
+831 http fetch GET 200 https://registry.npmjs.org/@ethersproject/hash/-/hash-5.8.0.tgz 8828ms (cache miss)
+832 http fetch GET 200 https://codeload.github.com/foundry-rs/forge-std/tar.gz/1eea5bae12ae557d589f9f0f0edae2faa47cb262 7465ms (cache miss)
+833 http fetch GET 200 https://registry.npmjs.org/@types/node/-/node-22.7.5.tgz 9471ms (cache miss)
+834 http fetch GET 200 https://registry.npmjs.org/@types/node/-/node-22.18.1.tgz 9870ms (cache miss)
+835 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-viem-assertions/-/hardhat-viem-assertions-3.0.1.tgz 10080ms (cache miss)
+836 http fetch GET 200 https://registry.npmjs.org/aes-js/-/aes-js-4.0.0-beta.5.tgz 10187ms (cache miss)
+837 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-keystore/-/hardhat-keystore-3.0.1.tgz 10348ms (cache miss)
+838 http fetch GET 200 https://registry.npmjs.org/@noble/ciphers/-/ciphers-1.2.1.tgz 10675ms (cache miss)
+839 http fetch GET 200 https://registry.npmjs.org/@noble/ciphers/-/ciphers-1.3.0.tgz 10693ms (cache miss)
+840 http fetch GET 200 https://registry.npmjs.org/@ethersproject/abi/-/abi-5.8.0.tgz 10991ms (cache miss)
+841 http fetch GET 200 https://registry.npmjs.org/@noble/hashes/-/hashes-1.3.2.tgz 10941ms (cache miss)
+842 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-ignition/-/hardhat-ignition-3.0.2.tgz 11069ms (cache miss)
+843 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-verify/-/hardhat-verify-3.0.1.tgz 11221ms (cache miss)
+844 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/hardhat-network-helpers/-/hardhat-network-helpers-3.0.0.tgz 11264ms (cache miss)
+845 http fetch GET 200 https://registry.npmjs.org/@noble/curves/-/curves-1.2.0.tgz 11388ms (cache miss)
+846 http fetch GET 200 https://registry.npmjs.org/undici/-/undici-5.29.0.tgz 11519ms (cache miss)
+847 http fetch GET 200 https://registry.npmjs.org/@noble/hashes/-/hashes-1.7.1.tgz 13418ms (cache miss)
+848 http fetch GET 200 https://registry.npmjs.org/@noble/curves/-/curves-1.9.1.tgz 13667ms (cache miss)
+849 http fetch GET 200 https://registry.npmjs.org/@noble/curves/-/curves-1.9.1.tgz 13711ms (cache miss)
+850 http fetch GET 200 https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz 13685ms (cache miss)
+851 http fetch GET 200 https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz 13722ms (cache miss)
+852 http fetch GET 200 https://registry.npmjs.org/abitype/-/abitype-1.1.0.tgz 13953ms (cache miss)
+853 http fetch GET 200 https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz 16960ms (cache miss)
+854 http fetch GET 200 https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.21.tgz 18109ms (cache miss)
+855 http fetch GET 200 https://registry.npmjs.org/@nomicfoundation/ignition-core/-/ignition-core-3.0.2.tgz 18607ms (cache miss)
+856 http fetch GET 200 https://registry.npmjs.org/ox/-/ox-0.9.3.tgz 21451ms (cache miss)
+857 http fetch GET 200 https://registry.npmjs.org/ethers/-/ethers-6.15.0.tgz 22924ms (cache miss)
+858 http fetch GET 200 https://registry.npmjs.org/viem/-/viem-2.37.4.tgz 36868ms (cache miss)
+859 info run esbuild@0.25.9 postinstall node_modules/esbuild node install.js
+860 info run esbuild@0.25.9 postinstall { code: 0, signal: null }
+861 silly ADD node_modules/color-name
+862 silly ADD node_modules/color-convert
+863 silly ADD node_modules/has-flag
+864 silly ADD node_modules/supports-color
+865 silly ADD node_modules/eventemitter3
+866 silly ADD node_modules/ox
+867 silly ADD node_modules/ox/node_modules/@scure/base
+868 silly ADD node_modules/ox/node_modules/@scure/bip39
+869 silly ADD node_modules/ox/node_modules/@scure/bip32
+870 silly ADD node_modules/ox/node_modules/@noble/hashes
+871 silly ADD node_modules/ox/node_modules/@noble/curves
+872 silly ADD node_modules/ox/node_modules/@noble/ciphers
+873 silly ADD node_modules/ox/node_modules/@adraffy/ens-normalize
+874 silly ADD node_modules/isows
+875 silly ADD node_modules/abitype
+876 silly ADD node_modules/@fastify/busboy
+877 silly ADD node_modules/resolve-pkg-maps
+878 silly ADD node_modules/@esbuild/win32-x64
+879 silly ADD
+880 silly ADD
+881 silly ADD
+882 silly ADD
+883 silly ADD
+884 silly ADD
+885 silly ADD
+886 silly ADD
+887 silly ADD
+888 silly ADD
+889 silly ADD
+890 silly ADD
+891 silly ADD
+892 silly ADD
+893 silly ADD
+894 silly ADD
+895 silly ADD
+896 silly ADD
+897 silly ADD
+898 silly ADD
+899 silly ADD
+900 silly ADD
+901 silly ADD
+902 silly ADD
+903 silly ADD
+904 silly ADD node_modules/get-tsconfig
+905 silly ADD
+906 silly ADD node_modules/esbuild
+907 silly ADD node_modules/ansi-regex
+908 silly ADD node_modules/safe-buffer
+909 silly ADD node_modules/util-deprecate
+910 silly ADD node_modules/string_decoder
+911 silly ADD node_modules/sisteransi
+912 silly ADD node_modules/kleur
+913 silly ADD node_modules/@sinclair/typebox
+914 silly ADD node_modules/react-is
+915 silly ADD node_modules/ansi-styles
+916 silly ADD node_modules/@jest/schemas
+917 silly ADD node_modules/through2
+918 silly ADD node_modules/split2
+919 silly ADD node_modules/readable-stream
+920 silly ADD node_modules/minimist
+921 silly ADD node_modules/json-stringify-safe
+922 silly ADD node_modules/micro-packed
+923 silly ADD node_modules/micro-packed/node_modules/@scure/base
+924 silly ADD node_modules/pretty-format
+925 silly ADD node_modules/jest-get-type
+926 silly ADD node_modules/diff-sequences
+927 silly ADD node_modules/strip-ansi
+928 silly ADD node_modules/ansi-colors
+929 silly ADD node_modules/@nomicfoundation/edr-win32-x64-msvc
+930 silly ADD node_modules/@nomicfoundation/edr-linux-x64-musl
+931 silly ADD node_modules/@nomicfoundation/edr-linux-x64-gnu
+932 silly ADD node_modules/@nomicfoundation/edr-linux-arm64-musl
+933 silly ADD node_modules/@nomicfoundation/edr-linux-arm64-gnu
+934 silly ADD node_modules/@nomicfoundation/edr-darwin-x64
+935 silly ADD node_modules/@nomicfoundation/edr-darwin-arm64
+936 silly ADD node_modules/resolve.exports
+937 silly ADD node_modules/p-map
+938 silly ADD node_modules/micro-eth-signer
+939 silly ADD node_modules/micro-eth-signer/node_modules/@noble/hashes
+940 silly ADD node_modules/micro-eth-signer/node_modules/@noble/curves
+941 silly ADD node_modules/enquirer
+942 silly ADD node_modules/adm-zip
+943 silly ADD node_modules/@sentry/core
+944 silly ADD node_modules/@nomicfoundation/edr
+945 silly ADD node_modules/ws
+946 silly ADD node_modules/tslib
+947 silly ADD node_modules/aes-js
+948 silly ADD node_modules/@adraffy/ens-normalize
+949 silly ADD node_modules/@scure/base
+950 silly ADD node_modules/@scure/bip39
+951 silly ADD node_modules/@scure/bip39/node_modules/@noble/hashes
+952 silly ADD node_modules/@scure/bip32
+953 silly ADD node_modules/@scure/bip32/node_modules/@noble/hashes
+954 silly ADD node_modules/@noble/curves
+955 silly ADD node_modules/@noble/curves/node_modules/@noble/hashes
+956 silly ADD node_modules/minimalistic-crypto-utils
+957 silly ADD node_modules/minimalistic-assert
+958 silly ADD node_modules/inherits
+959 silly ADD node_modules/hmac-drbg
+960 silly ADD node_modules/brorand
+961 silly ADD node_modules/ms
+962 silly ADD node_modules/undici-types
+963 silly ADD node_modules/@streamparser/json
+964 silly ADD node_modules/@nomicfoundation/solidity-analyzer-win32-x64-msvc
+965 silly ADD node_modules/@nomicfoundation/solidity-analyzer-linux-x64-musl
+966 silly ADD node_modules/@nomicfoundation/solidity-analyzer-linux-x64-gnu
+967 silly ADD node_modules/@nomicfoundation/solidity-analyzer-linux-arm64-musl
+968 silly ADD node_modules/@nomicfoundation/solidity-analyzer-linux-arm64-gnu
+969 silly ADD node_modules/@nomicfoundation/solidity-analyzer-darwin-x64
+970 silly ADD node_modules/@nomicfoundation/solidity-analyzer-darwin-arm64
+971 silly ADD node_modules/ndjson
+972 silly ADD node_modules/lodash-es
+973 silly ADD node_modules/immer
+974 silly ADD node_modules/ethers
+975 silly ADD node_modules/ethers/node_modules/undici-types
+976 silly ADD node_modules/ethers/node_modules/@types/node
+977 silly ADD node_modules/ethers/node_modules/@noble/hashes
+978 silly ADD node_modules/ethers/node_modules/@noble/curves
+979 silly ADD node_modules/@nomicfoundation/solidity-analyzer
+980 silly ADD node_modules/hash.js
+981 silly ADD node_modules/elliptic
+982 silly ADD node_modules/elliptic/node_modules/bn.js
+983 silly ADD node_modules/@ethersproject/signing-key
+984 silly ADD node_modules/js-sha3
+985 silly ADD node_modules/@ethersproject/web
+986 silly ADD node_modules/@ethersproject/transactions
+987 silly ADD node_modules/@ethersproject/networks
+988 silly ADD node_modules/@ethersproject/abstract-provider
+989 silly ADD node_modules/@ethersproject/base64
+990 silly ADD node_modules/@ethersproject/abstract-signer
+991 silly ADD node_modules/bn.js
+992 silly ADD node_modules/@ethersproject/rlp
+993 silly ADD node_modules/@ethersproject/strings
+994 silly ADD node_modules/@ethersproject/properties
+995 silly ADD node_modules/@ethersproject/logger
+996 silly ADD node_modules/@ethersproject/keccak256
+997 silly ADD node_modules/@ethersproject/hash
+998 silly ADD node_modules/@ethersproject/constants
+999 silly ADD node_modules/@ethersproject/bytes
+1000 silly ADD node_modules/@ethersproject/bignumber
+1001 silly ADD node_modules/@ethersproject/address
+1002 silly ADD node_modules/semver
+1003 silly ADD node_modules/cbor2
+1004 silly ADD node_modules/@ethersproject/abi
+1005 silly ADD node_modules/rfdc
+1006 silly ADD node_modules/json-stream-stringify
+1007 silly ADD node_modules/fast-equals
+1008 silly ADD node_modules/ethereum-cryptography
+1009 silly ADD node_modules/ethereum-cryptography/node_modules/@noble/hashes
+1010 silly ADD node_modules/env-paths
+1011 silly ADD node_modules/@streamparser/json-node
+1012 silly ADD node_modules/undici
+1013 silly ADD node_modules/tunnel
+1014 silly ADD node_modules/@actions/io
+1015 silly ADD node_modules/@actions/http-client
+1016 silly ADD node_modules/@actions/exec
+1017 silly ADD node_modules/jest-diff
+1018 silly ADD node_modules/jest-diff/node_modules/ansi-styles
+1019 silly ADD node_modules/jest-diff/node_modules/chalk
+1020 silly ADD node_modules/@actions/core
+1021 silly ADD node_modules/tsx
+1022 silly ADD node_modules/@nomicfoundation/hardhat-node-test-reporter
+1023 silly ADD node_modules/zod
+1024 silly ADD node_modules/@nomicfoundation/hardhat-zod-utils
+1025 silly ADD node_modules/@noble/hashes
+1026 silly ADD node_modules/@noble/ciphers
+1027 silly ADD node_modules/prompts
+1028 silly ADD node_modules/json5
+1029 silly ADD node_modules/debug
+1030 silly ADD node_modules/chalk
+1031 silly ADD node_modules/@nomicfoundation/ignition-ui
+1032 silly ADD node_modules/@nomicfoundation/hardhat-utils
+1033 silly ADD node_modules/@nomicfoundation/hardhat-utils/node_modules/undici
+1034 silly ADD node_modules/@nomicfoundation/hardhat-errors
+1035 silly ADD node_modules/viem
+1036 silly ADD node_modules/viem/node_modules/@scure/base
+1037 silly ADD node_modules/viem/node_modules/ws
+1038 silly ADD node_modules/viem/node_modules/@scure/bip39
+1039 silly ADD node_modules/viem/node_modules/@scure/bip32
+1040 silly ADD node_modules/viem/node_modules/@noble/hashes
+1041 silly ADD node_modules/viem/node_modules/@noble/curves
+1042 silly ADD node_modules/typescript
+1043 silly ADD node_modules/hardhat
+1044 silly ADD node_modules/hardhat/node_modules/ws
+1045 silly ADD node_modules/forge-std
+1046 silly ADD node_modules/@types/node
+1047 silly ADD node_modules/@nomicfoundation/hardhat-node-test-runner
+1048 silly ADD node_modules/@nomicfoundation/hardhat-viem-assertions
+1049 silly ADD node_modules/@nomicfoundation/hardhat-network-helpers
+1050 silly ADD node_modules/@nomicfoundation/hardhat-ignition-viem
+1051 silly ADD node_modules/@nomicfoundation/hardhat-keystore
+1052 silly ADD node_modules/@nomicfoundation/ignition-core
+1053 silly ADD node_modules/@nomicfoundation/ignition-core/node_modules/@ethersproject/address
+1054 silly ADD node_modules/@nomicfoundation/hardhat-viem
+1055 silly ADD node_modules/@nomicfoundation/hardhat-toolbox-viem
+1056 silly ADD node_modules/@nomicfoundation/hardhat-verify
+1057 silly ADD node_modules/@nomicfoundation/hardhat-ignition
+1058 verbose exit 0
+1059 info ok
