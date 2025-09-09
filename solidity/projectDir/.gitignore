@@ -1,5 +1,8 @@
 # Node modules
 /node_modules
+/npm-cache
+/npm-global
+.env
 
 # Compilation output
 /dist
