@@ -1,0 +1,38 @@
+CCIP官方范例：https://github.com/smartcontractkit/ccip-starter-kit-hardhat；
+
+RPC:
+https://geth.ethereum.org/docs/interacting-with-geth/rpc;
+https://github.com/ethereum/execution-apis;
+
+进阶1 - DAPP后端实战
+
+学习路线：https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/进阶1-DApp后端实战.md；
+
+0）视频重在讲解关键内容，很多细节还需要看文字版的课件材料：
+a）https://github.com/MetaNodeAcademy/Base1_golang/tree/main/03.第二章%20以太坊ethclient包使用；
+b）https://github.com/MetaNodeAcademy/Advanced1-backend-upgrade/tree/main/ethclient实战；
+
+1）学习重点是熟悉区块链节点的API细节，知道每个API的用途，能够组合使用节点API实现自己的业务逻辑；
+
+2）Go-Ethereum源码的学习，聚焦对核心组件的技术原理做到掌握程度，能够排查后台和节点之间的问题。没有必要去逐行精读代码。
+作业2的实战可以不做，DAPP项目基本上都是用第三方的节点服务。
+确实有兴趣想看Geth源码，以后有时间再看，而且是升级之前的PoW共识版本，比如v1.10.18，https://github.com/ethereum/go-ethereum/releases/tag/v1.10.18。
+看完视频和课件之后，用ChatGPT帮你做一些有关Go-Ethereum的核心架构组件的总结。
+
+3）（可选，推荐）建议有时间的话，可以继续学习Bitcoin节点、Solana节点的RPC调用，也是使用Go语言进行链上交互；
+Bitcoin SDK：https://pkg.go.dev/github.com/btcsuite/btcd/rpcclient；
+Solana SDK：https://solana.com/zh/docs/clients/go；或者 github.com/blocto/solana-go-sdk；
+
+4）（可选，推荐）非常全面的参考书籍，一遍做实战，一遍查阅这些书籍，可以进一步加深对区块链技术的理解：
+精通以太坊：https://github.com/ouyun/MasterEthereumChineseOpenEdition；
+精通比特币（第二版）：https://github.com/inoutcode/bitcoin_book_2nd；
+
+学习重点：深入了解一笔交易的处理过程：钱包签名、交易广播、矿工打包、区块广播、交易执行；
+
+5）（可选，推荐）有助于深入理解Go语言的开源书籍：
+100 个 Go 常见错误及如何避免：https://100go.co/zh/；
+Go语言高级编程：https://chai2010.cn/advanced-go-programming-book/；
+Go语言高性能编程：https://geektutu.com/post/high-performance-go.html；
+
+
+面试题： https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/Interview.md
