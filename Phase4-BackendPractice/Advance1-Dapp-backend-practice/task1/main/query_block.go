@@ -10,7 +10,7 @@ import (
 )
 
 func QueryBlock() {
-	client, err := ethclient.Dial("https://sepolia.infura.io/v3/59b2ab9d2eda4fa086cdd7db0e4c1a3e")
+	client, err := ethclient.Dial("https://sepolia.infura.io/v3/<API_KEY>")
 	if err != nil {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
