@@ -14,14 +14,14 @@ import (
 )
 
 func SendTx() {
-	client, err := ethclient.Dial("https://sepolia.infura.io/v3/59b2ab9d2eda4fa086cdd7db0e4c1a3e")
+	client, err := ethclient.Dial("https://sepolia.infura.io/v3/<API_KEY>")
 
 	if err != nil {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
 	defer client.Close()
 
-	privateKey, err := crypto.HexToECDSA("4943c8f28bd54bc4d7397aedeb250501eedb2c29ec4ef780d8637ed273339eb2")
+	privateKey, err := crypto.HexToECDSA("priavate key")
 	if err != nil {
 		log.Fatalf("Failed to load private key: %v", err)
 	}
