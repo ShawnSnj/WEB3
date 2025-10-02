@@ -1,0 +1,22 @@
+进阶2 - 合约开发实战
+
+学习路线：https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/进阶2-合约开发实战.md；
+
+0）开始写代码之前，务必先通过视频和课件，阅读一遍课件配套的代码，理解清楚业务需求，做到心中有数。
+做一个简单的架构设计，然后再把合约的项目框架搭建起来，定义好主要的合约方法，最后再完善代码细节。
+！！！在代码编译通过没有错误之后，一定要写几个测试用例把主要流程都给测试一遍，并且要学会查看合约代码的测试覆盖率！！！
+
+1）（可选）在Hardhat中混合使用Foundry工具，直接使用Solidity来编写测试用例、调试、Gas优化等。
+Foundry统一使用Solidity写测试用例和部署脚本：https://getfoundry.sh/introduction/getting-started；
+Hardhat推出V3新版本，可以支持Solidity写测试用例：https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3;；
+
+2）智能合约编程在实际工作当中是否足够专业，主要体现在安全和性能两个方面，在完成任务之后还学有余力，就可以花点时间去了解这两方面的知识。
+
+性能优化：
+Solidity 高级程序设计-GAS优化：https://professional-solidity.readthedocs.io/zh-cn/latest/forever/21.gas.html；
+The RareSkills Book of Solidity Gas Optimization: 80+ Tips：https://rareskills.io/post/gas-optimization；
+
+合约安全：
+Solidity 高级程序设计-合约安全：https://professional-solidity.readthedocs.io/zh-cn/latest/forever/20.safe.html；
+漏洞根本原因分析：https://web3sec.notion.site/8e9274d6dbbc4ff18d9034179a173fca?v=7ea2c3edd2514c7db80fa61db7571291；
+真实合约攻击案例复现：https://github.com/SunWeb3Sec/DeFiHackLabs；
