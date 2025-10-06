@@ -24,8 +24,8 @@ Solana SDK：https://solana.com/zh/docs/clients/go；或者 github.com/blocto/so
 学习重点：深入了解一笔交易的处理过程：钱包签名、交易广播、矿工打包、区块广播、交易执行；
 
 5）（可选，推荐）有助于深入理解Go语言的开源书籍：
-100 个 Go 常见错误及如何避免：https://100go.co/zh/；
-Go语言高级编程：https://chai2010.cn/advanced-go-programming-book/；
-Go语言高性能编程：https://geektutu.com/post/high-performance-go.html；
+100 个 Go 常见错误及如何避免：https://100go.co/zh/
+Go语言高级编程：https://chai2010.cn/advanced-go-programming-book/
+Go语言高性能编程：https://geektutu.com/post/high-performance-go.html
 
 面试题： https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/Interview.md
