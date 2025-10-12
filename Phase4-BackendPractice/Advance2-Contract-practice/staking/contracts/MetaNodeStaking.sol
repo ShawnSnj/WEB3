@@ -83,7 +83,7 @@ contract MetaNodeStaking {
     }
 
     // 质押功能
-    function stake(uint256 _pid, uint256 _amount) external updateReward(_pid, msg.sender) {
+    function stake(uint256 _pid, uint256 _amount) external stakingNotPaused updateReward(_pid, msg.sender) {
         require(_amount >= pools[_pid].minDepositAmount, "Amount is below the minimum deposit requirement");
 
         Pool storage pool = pools[_pid];
@@ -101,7 +101,7 @@ contract MetaNodeStaking {
     }
 
     // 解除质押功能
-    function unstake(uint256 _pid, uint256 _amount) external updateReward(_pid, msg.sender) {
+    function unstake(uint256 _pid, uint256 _amount) external stakingNotPaused updateReward(_pid, msg.sender) {
         User storage user = users[msg.sender][_pid];
         require(user.stAmount >= _amount, "Not enough staked tokens");
 
@@ -115,10 +115,14 @@ contract MetaNodeStaking {
         // 更新质押数量
         user.stAmount -= _amount;
         pools[_pid].stTokenAmount -= _amount;
+
+                // 更新奖励
+        Pool storage pool = pools[_pid];        
+        user.pendingMetaNode = user.stAmount * pool.accMetaNodePerST - user.finishedMetaNode;
     }
 
     // 领取奖励
-    function claimReward(uint256 _pid) external updateReward(_pid, msg.sender) {
+    function claimReward(uint256 _pid) external stakingNotPaused updateReward(_pid, msg.sender) {
         User storage user = users[msg.sender][_pid];
         uint256 reward = user.pendingMetaNode;
         require(reward > 0, "No reward to claim");
@@ -161,12 +165,21 @@ contract MetaNodeStaking {
         metaNodeToken = IERC20(newContract);
     }
 
+
+bool public isStakingPaused = false;
+
+modifier stakingNotPaused(){
+    require(!isStakingPaused,"Staking is currently paused");
+    _;
+}
     // 暂停/恢复操作
     function pauseStaking() external onlyAdmin {
         // 实现暂停逻辑
+        isStakingPaused = true;
     }
 
     function resumeStaking() external onlyAdmin {
         // 实现恢复逻辑
+        isStakingPaused = false;
     }
 }
