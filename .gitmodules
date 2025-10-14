@@ -1,0 +1,3 @@
+[submodule "Phase4-BackendPractice/Advance2-Contract-practice/foundry/foundry-arithmetic/lib/forge-std"]
+	path = Phase4-BackendPractice/Advance2-Contract-practice/foundry/foundry-arithmetic/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
