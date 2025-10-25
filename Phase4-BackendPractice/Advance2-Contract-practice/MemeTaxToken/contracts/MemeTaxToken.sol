@@ -18,6 +18,17 @@ interface IUniswapV2Router02 {
         uint deadline
     ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
 
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    )external payable returns (uint amountA, uint amountB, uint liquity);
+
     function swapExactTokensForETHSupportingFeeOnTransferTokens(
         uint amountIn,
         uint amountOutMin,
@@ -242,8 +253,8 @@ contract MemeTaxToken is ERC20, Ownable {
                 .createPair(address(this), uniswapV2Router.WETH());
             
             // 立即豁免 LP 池地址的税费和限制
-            isFeeExempt[uniswapV2Pair] = true;
-            isTxLimitExempt[uniswapV2Pair] = true;
+            isFeeExempt[uniswapV2Pair] = _enabled;
+            isTxLimitExempt[uniswapV2Pair] = _enabled;
         }
         // 额外的逻辑可以放在这里，例如启动自动加流动性
     }
