@@ -21,15 +21,19 @@ const config = {
             },
         },
     },
-    etherscan: {
-        //apiKey: ETHERSCAN_API_KEY, // Hardhat will read the key from the env variable
-        // Alternatively, you can use the nested structure shown in the error:
-        
-        apiKey: {
-            sepolia: ETHERSCAN_API_KEY 
-        }
-        
-    },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+    customChains: [
+      {
+        network: "sepolia",
+        chainId: 11155111,
+        urls: {
+          apiURL: "https://api-sepolia.etherscan.io/api",
+          browserURL: "https://sepolia.etherscan.io",
+        },
+      },
+    ],
+  },
     networks: {
         localhost: { 
             url: "http://127.0.0.1:8545",
