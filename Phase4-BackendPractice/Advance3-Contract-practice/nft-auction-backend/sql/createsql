@@ -1,0 +1,42 @@
+--
+-- Table structure for table 'auctions'
+--
+-- This table tracks the main auction details.
+-- The auction_id is assumed to be the primary key, as it's used in the UPDATE statement.
+
+CREATE TABLE IF NOT EXISTS auctions (
+    -- The unique ID of the auction from the smart contract (used in WHERE clause of update)
+    auction_id     BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+
+    -- Data from AuctionCreated event
+    token_id       BIGINT UNSIGNED NOT NULL,
+    seller         VARCHAR(42) NOT NULL,
+    start_price    BIGINT UNSIGNED NOT NULL, -- Stored in Wei (smallest unit)
+    end_time       BIGINT UNSIGNED NOT NULL, -- Unix timestamp
+
+    -- Data updated by AuctionEnded event
+    winner         VARCHAR(42) DEFAULT NULL,
+    final_price    BIGINT UNSIGNED DEFAULT 0, -- Stored in Wei
+    ended          TINYINT(1) NOT NULL DEFAULT 0, -- 0 for active, 1 for ended
+    
+    -- Optional: Index to speed up lookups by seller address
+    INDEX idx_seller (seller)
+);
+
+--
+-- Table structure for table 'bids'
+--
+-- This table tracks every bid placed in the contract.
+
+CREATE TABLE IF NOT EXISTS bids (
+    -- Unique ID for this specific row/bid event
+    id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+    -- Data from BidPlaced event
+    auction_id     BIGINT UNSIGNED NOT NULL,
+    bidder         VARCHAR(42) NOT NULL,
+    amount         BIGINT UNSIGNED NOT NULL, -- Stored in Wei (smallest unit)
+    
+    -- Optional: Index to speed up lookups by auction and bidder
+    INDEX idx_auction_bidder (auction_id, bidder)
+);
