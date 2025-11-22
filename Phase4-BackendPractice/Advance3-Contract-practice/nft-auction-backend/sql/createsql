@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS auctions (
     token_id       BIGINT UNSIGNED NOT NULL,
     seller         VARCHAR(42) NOT NULL,
     start_price    BIGINT UNSIGNED NOT NULL, -- Stored in Wei (smallest unit)
+    current_price  BIGINT UNSIGNED DEFAULT NULL, -- Stored in Wei (smallest unit)
     end_time       BIGINT UNSIGNED NOT NULL, -- Unix timestamp
 
     -- Data updated by AuctionEnded event

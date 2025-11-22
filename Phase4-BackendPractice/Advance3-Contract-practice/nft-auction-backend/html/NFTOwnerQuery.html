@@ -1,0 +1,331 @@
+<!-- NFT & Floor Price Query Tool: 綜合查詢錢包 NFT 和市場地板價 -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT 數據查詢中心</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 使用 Inter 字體 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-12">
+        <h1 class="text-4xl font-extrabold text-gray-900 text-center mb-10">NFT 數據查詢中心</h1>
+
+        <!-- 警告訊息區域 -->
+        <div id="alert-box" class="hidden max-w-4xl mx-auto p-4 text-sm rounded-lg" role="alert"></div>
+
+        <!-- 區塊 1: 查詢地址名下的所有 NFT (Alchemy) -->
+        <div class="bg-white shadow-2xl rounded-xl p-6 md:p-10 border-t-4 border-blue-600">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h18M7 15h1m4 0h1m-9 5h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                    </path>
+                </svg>
+                1. 錢包 NFT 查詢 (Alchemy)
+            </h2>
+            <p class="text-gray-500 mb-4">輸入錢包地址，查詢其在 Ethereum 主網擁有的所有 NFT。</p>
+
+            <input type="text" id="address-input" placeholder="請輸入錢包地址 (例如: 0x...)"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 mb-4"
+                value="0x5ac792f6b8c19958ed4dc2a7593c834a02470f1a">
+            <button id="query-nft-button" onclick="fetchNFTs()"
+                class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition duration-150 disabled:bg-gray-400">
+                查詢 NFT 列表
+            </button>
+
+            <!-- 結果顯示區 -->
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">查詢結果 (<span id="nft-count">0</span> 個 NFT)</h3>
+                <div id="results-nft-container" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <p id="placeholder-nft" class="text-gray-500 text-center py-4 col-span-full">點擊上方按鈕開始查詢。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 區塊 2: 查詢 NFT 集合的地板價 (OpenSea) -->
+        <div class="bg-white shadow-2xl rounded-xl p-6 md:p-10 border-t-4 border-purple-600">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2h-1c-1.657 0-3 .895-3 2s1.343 2 3 2h1a2 2 0 002-2v-4a2 2 0 00-2-2h-1z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18V6"></path>
+                </svg>
+                2. 集合地板價查詢 (OpenSea)
+            </h2>
+            <p class="text-gray-500 mb-4">輸入 OpenSea 集合的 Slug (例如: *boredapeyachtclub*)，查詢地板價及統計數據。</p>
+
+            <input type="text" id="slug-input" placeholder="請輸入集合 Slug (例如: boredapeyachtclub)"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 mb-4"
+                value="boredapeyachtclub">
+            <button id="query-floor-button" onclick="fetchFloorPrice()"
+                class="w-full bg-purple-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-purple-700 transition duration-150 disabled:bg-gray-400">
+                查詢地板價
+            </button>
+
+            <!-- 結果顯示區 -->
+            <div id="results-floor-container" class="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg hidden">
+                <!-- 地板價結果將會插入此處 -->
+            </div>
+            <p id="placeholder-floor" class="text-gray-500 text-center py-4">點擊上方按鈕開始查詢。</p>
+        </div>
+
+    </div>
+
+    <script>
+        // 🚨🚨🚨 重要提醒：請將 YOUR_..._API_KEY 替換為您自己的真實 API Key 🚨🚨🚨
+        // 1. Alchemy Key (用於查詢地址名下 NFT)
+        const ALCHEMY_API_KEY = "YOUR_ALCHEMY_API_KEY";
+        const ALCHEMY_BASE_URL = `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+        const ALCHEMY_ENDPOINT = `${ALCHEMY_BASE_URL}/getNftsForOwner/`;
+
+        // 2. OpenSea Key (用於查詢地板價)
+        const OPENSEA_API_KEY = "YOUR_OPENSEA_API_KEY";
+        const OPENSEA_BASE_URL = "https://api.opensea.io/api/v2";
+
+        // DOM 元素
+        const addressInput = document.getElementById('address-input');
+        const slugInput = document.getElementById('slug-input');
+        const queryNftButton = document.getElementById('query-nft-button');
+        const queryFloorButton = document.getElementById('query-floor-button');
+        const resultsNftContainer = document.getElementById('results-nft-container');
+        const resultsFloorContainer = document.getElementById('results-floor-container');
+        const nftCountSpan = document.getElementById('nft-count');
+        const alertBox = document.getElementById('alert-box');
+        const placeholderNft = document.getElementById('placeholder-nft');
+        const placeholderFloor = document.getElementById('placeholder-floor');
+
+        // ----------------------------------------------------
+        // 輔助函數：顯示和隱藏警告訊息
+        // ----------------------------------------------------
+
+        function showAlert(message, type = 'error') {
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-yellow-100', 'text-yellow-700');
+
+            if (type === 'error') {
+                alertBox.classList.add('bg-red-100', 'text-red-700');
+            } else if (type === 'success') {
+                alertBox.classList.add('bg-green-100', 'text-green-700');
+            } else {
+                alertBox.classList.add('bg-yellow-100', 'text-yellow-700');
+            }
+            alertBox.classList.remove('hidden', 'mx-auto');
+        }
+
+        function hideAlert() {
+            alertBox.classList.add('hidden');
+        }
+
+        // ----------------------------------------------------
+        // 功能 1: 查詢錢包地址的所有 NFT (Alchemy)
+        // ----------------------------------------------------
+
+        async function fetchNFTs() {
+            hideAlert();
+            resultsNftContainer.innerHTML = '';
+            nftCountSpan.textContent = '...';
+            placeholderNft.classList.add('hidden');
+            queryNftButton.disabled = true;
+            queryNftButton.textContent = '查詢中...';
+
+            const ownerAddress = addressInput.value.trim();
+
+            if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
+                showAlert('NFT 查詢失敗：請輸入有效的 Ethereum 地址 (0x 開頭且長度為 42 字元)。', 'error');
+                nftCountSpan.textContent = '0';
+                placeholderNft.classList.remove('hidden');
+                placeholderNft.textContent = '點擊上方按鈕開始查詢。';
+                queryNftButton.disabled = false;
+                queryNftButton.textContent = '查詢 NFT 列表';
+                return;
+            }
+
+            if (ALCHEMY_API_KEY === "YOUR_ALCHEMY_API_KEY") {
+                showAlert('NFT 查詢錯誤：請先將程式碼中的 ALCHEMY_API_KEY 替換為您的真實 Key！', 'error');
+                nftCountSpan.textContent = '0';
+                placeholderNft.classList.remove('hidden');
+                queryNftButton.disabled = false;
+                queryNftButton.textContent = '查詢 NFT 列表';
+                return;
+            }
+
+            try {
+                const url = `${ALCHEMY_ENDPOINT}?owner=${ownerAddress}&withMetadata=true&pageSize=9`; // 限制 9 個以避免結果過多
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message || 'API 查詢失敗。');
+                }
+
+                const nfts = data.ownedNfts || [];
+                nftCountSpan.textContent = nfts.length;
+
+                if (nfts.length === 0) {
+                    placeholderNft.textContent = `地址 ${ownerAddress} 名下沒有找到任何 NFT。`;
+                    placeholderNft.classList.remove('hidden');
+                } else {
+                    renderNFTCards(nfts);
+                    placeholderNft.classList.add('hidden');
+                }
+
+                showAlert(`成功查詢到 ${nfts.length} 個 NFT。`, 'success');
+
+            } catch (error) {
+                console.error("NFT 查詢發生錯誤:", error);
+                showAlert(`NFT 查詢失敗：${error.message}. 請檢查地址和 Alchemy API Key 是否正確。`);
+                nftCountSpan.textContent = '0';
+                placeholderNft.textContent = '點擊上方按鈕開始查詢。';
+                placeholderNft.classList.remove('hidden');
+            } finally {
+                queryNftButton.disabled = false;
+                queryNftButton.textContent = '查詢 NFT 列表';
+            }
+        }
+
+        function renderNFTCards(nfts) {
+            resultsNftContainer.innerHTML = ''; // 清空舊結果
+            nfts.forEach(nft => {
+                const imageUrl = nft.media?.[0]?.gateway || 'https://placehold.co/200x200/eeeeee/333333?text=No+Image';
+                const tokenId = parseInt(nft.id.tokenId, 16);
+
+                const cardHtml = `
+                    <div class="bg-gray-100 border border-gray-200 rounded-lg shadow-md overflow-hidden transition transform hover:scale-[1.02]">
+                        <div class="h-48 overflow-hidden">
+                            <img src="${imageUrl}" alt="${nft.title || 'NFT Image'}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/200x200/eeeeee/333333?text=No+Image'">
+                        </div>
+                        <div class="p-3">
+                            <h4 class="text-sm font-bold text-blue-700 truncate" title="${nft.title || '無標題'}">${nft.title || '無標題'}</h4>
+                            <p class="text-xs text-gray-600 mt-1">
+                                <strong>Token ID:</strong> ${isNaN(tokenId) ? 'N/A' : tokenId}
+                            </p>
+                            <p class="text-xs text-gray-400 truncate" title="${nft.contract.address}">
+                                合約: ${nft.contract.address.substring(0, 6)}...${nft.contract.address.substring(38)}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                resultsNftContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+
+        // ----------------------------------------------------
+        // 功能 2: 查詢 NFT 集合的地板價 (OpenSea)
+        // ----------------------------------------------------
+
+        async function fetchFloorPrice() {
+            hideAlert();
+            resultsFloorContainer.classList.add('hidden');
+            placeholderFloor.classList.add('hidden');
+            queryFloorButton.disabled = true;
+            queryFloorButton.textContent = '查詢中...';
+
+            const collectionSlug = slugInput.value.trim();
+
+            if (!collectionSlug) {
+                showAlert('地板價查詢失敗：請輸入有效的 OpenSea 集合 Slug (例如: boredapeyachtclub)。', 'error');
+                placeholderFloor.classList.remove('hidden');
+                queryFloorButton.disabled = false;
+                queryFloorButton.textContent = '查詢地板價';
+                return;
+            }
+
+            if (OPENSEA_API_KEY === "YOUR_OPENSEA_API_KEY") {
+                showAlert('地板價查詢錯誤：請先將程式碼中的 OPENSEA_API_KEY 替換為您的真實 Key！', 'error');
+                placeholderFloor.classList.remove('hidden');
+                queryFloorButton.disabled = false;
+                queryFloorButton.textContent = '查詢地板價';
+                return;
+            }
+
+            try {
+                // OpenSea V2 Stats API 需要 collection_slug
+                const url = `${OPENSEA_BASE_URL}/collections/${collectionSlug}/stats`;
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-API-KEY': OPENSEA_API_KEY,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    let errorData = await response.json();
+                    throw new Error(errorData.errors?.[0]?.message || `HTTP 錯誤：${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.stats) {
+                    throw new Error('未找到集合統計數據。可能是 Slug 錯誤或集合不存在。');
+                }
+
+                renderFloorPrice(collectionSlug, data.stats);
+                resultsFloorContainer.classList.remove('hidden');
+                showAlert(`成功查詢集合 ${collectionSlug} 的統計數據。`, 'success');
+
+            } catch (error) {
+                console.error("地板價查詢發生錯誤:", error);
+                resultsFloorContainer.classList.add('hidden');
+                placeholderFloor.textContent = '查詢結果將會顯示在這裡。';
+                placeholderFloor.classList.remove('hidden');
+                showAlert(`地板價查詢失敗：${error.message}. 請檢查 Slug 和 OpenSea API Key 是否正確。`);
+            } finally {
+                queryFloorButton.disabled = false;
+                queryFloorButton.textContent = '查詢地板價';
+            }
+        }
+
+        function formatEth(value) {
+            if (typeof value !== 'number') return 'N/A';
+            return (value / 1e18).toFixed(4); // 假設單位為 wei，轉換為 ETH
+        }
+
+        function renderFloorPrice(slug, stats) {
+            resultsFloorContainer.innerHTML = `
+                <h4 class="text-lg font-bold text-purple-700 mb-4">集合 Slug: ${slug}</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    <!-- 地板價 -->
+                    <div class="p-3 bg-white rounded-lg shadow-sm border border-purple-100">
+                        <p class="text-xs text-gray-500">地板價 (ETH)</p>
+                        <p class="text-xl font-extrabold text-purple-800 mt-1">${stats.floor_price ? stats.floor_price.toFixed(3) : 'N/A'}</p>
+                    </div>
+                    <!-- 總成交量 -->
+                    <div class="p-3 bg-white rounded-lg shadow-sm border border-purple-100">
+                        <p class="text-xs text-gray-500">總成交量 (ETH)</p>
+                        <p class="text-xl font-extrabold text-purple-800 mt-1">${stats.total_volume ? stats.total_volume.toFixed(2) : 'N/A'}</p>
+                    </div>
+                    <!-- 持有者數量 -->
+                    <div class="p-3 bg-white rounded-lg shadow-sm border border-purple-100">
+                        <p class="text-xs text-gray-500">持有者數量</p>
+                        <p class="text-xl font-extrabold text-purple-800 mt-1">${stats.num_owners ? stats.num_owners.toLocaleString() : 'N/A'}</p>
+                    </div>
+                    <!-- 總供應量 -->
+                    <div class="p-3 bg-white rounded-lg shadow-sm border border-purple-100">
+                        <p class="text-xs text-gray-500">總供應量</p>
+                        <p class="text-xl font-extrabold text-purple-800 mt-1">${stats.total_supply ? stats.total_supply.toLocaleString() : 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+    </script>
+</body>
+
+</html>
