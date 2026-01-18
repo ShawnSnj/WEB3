@@ -1,0 +1,15 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contractAddress": "0xcF78fAfC7D71A9899EB37aB308dC0537805c0b22",
+  "deployer": "0xe71a8F88E01d70e95A7c863d5e7017caEeB1Bf6a",
+  "blockNumber": 10063728,
+  "timestamp": "2026-01-17T13:28:13.720Z",
+  "config": {
+    "addressProvider": "0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A",
+    "swapRouter": "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008",
+    "useV3": false,
+    "defaultPoolFee": 3000,
+    "maxSlippageBps": 100
+  }
+}
