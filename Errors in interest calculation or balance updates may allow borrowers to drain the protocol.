@@ -1,0 +1,244 @@
+Introduction
+
+Decentralized lending protocols are one of the core primitives of DeFi.
+They allow users to:
+
+Deposit assets to earn interest
+
+Borrow assets using collateral
+
+Repay loans
+
+Liquidate unhealthy positions
+
+One of the most influential implementations is Compound V2, which pioneered algorithmic interest rates and over-collateralized lending.
+
+This article explains the core architecture of a decentralized lending protocol and how it can be implemented from scratch.
+
+1. Core Components of a Lending Protocol
+
+A typical lending protocol consists of four major modules:
+
+Asset Pool
+
+Interest Rate Model
+
+Risk Engine
+
+Liquidation Mechanism
+
+These components work together to maintain solvency and enable decentralized borrowing.
+
+2. Asset Pool (Liquidity Layer)
+
+The asset pool holds user deposits and provides liquidity for borrowers.
+
+Example structure:
+
+Total Pool Assets
+= totalCash + totalBorrows - totalReserves
+
+Where:
+
+totalCash → assets currently in the pool
+
+totalBorrows → assets borrowed by users
+
+totalReserves → protocol reserves
+
+Users deposit assets into the pool and receive interest-bearing tokens (such as cTokens in Compound).
+
+Example:
+
+100 USDC deposited
+↓
+Receive 5000 cUSDC
+
+These tokens represent a share of the pool.
+
+3. Exchange Rate Mechanism
+
+The value of interest-bearing tokens grows over time.
+
+Formula:
+
+exchangeRate =
+(totalCash + totalBorrows - totalReserves)
+/
+totalSupply
+
+Meaning:
+
+1 cToken = exchangeRate * underlying asset
+
+As borrowers pay interest:
+
+totalBorrows increases
+→ exchangeRate increases
+→ suppliers earn yield
+4. Interest Rate Model
+
+Interest rates are determined algorithmically based on utilization.
+
+Utilization rate:
+
+utilization =
+totalBorrows /
+(totalCash + totalBorrows)
+
+Borrow rate model:
+
+borrowRate =
+baseRate + utilization * multiplier
+
+Where:
+
+baseRate → minimum borrowing interest
+
+multiplier → slope of the interest rate curve
+
+Higher utilization leads to higher borrowing costs, encouraging more deposits and discouraging excessive borrowing.
+
+5. Collateral System
+
+Borrowing requires collateral.
+
+Each asset has a collateral factor:
+
+maxBorrow =
+collateralValue * collateralFactor
+
+Example:
+
+Deposit: 1000 USDC
+Collateral Factor: 75%
+
+Maximum borrowable value:
+
+750 USD
+6. Risk Engine (Liquidity Calculation)
+
+Before any borrow operation, the protocol calculates account liquidity.
+
+Formula:
+
+liquidity =
+Σ(collateral_value × collateral_factor)
+-
+Σ(borrow_value)
+
+Possible outcomes:
+
+Result	Meaning
+liquidity > 0	user can borrow more
+liquidity = 0	at borrow limit
+shortfall > 0	position is liquidatable
+
+This calculation is the core risk management logic.
+
+7. Borrowing Process
+
+Typical borrow flow:
+
+User deposits collateral
+↓
+User enters market
+↓
+Protocol calculates liquidity
+↓
+Borrow is allowed if collateral is sufficient
+↓
+Assets are transferred to borrower
+
+Borrowing is always over-collateralized to protect the protocol.
+
+8. Repayment
+
+Repaying loans reduces the borrow balance.
+
+borrowBalance -= repayAmount
+totalBorrows -= repayAmount
+
+Interest accrues over time, so the repayment amount includes both principal and interest.
+
+9. Liquidation Mechanism
+
+If collateral value drops and the position becomes undercollateralized:
+
+borrow_value > collateral_value × liquidation_threshold
+
+The position can be liquidated.
+
+Liquidators:
+
+Repay part of the borrower’s debt
+
+Receive collateral at a discount
+
+Example:
+
+Repay: 100 USDC
+Receive: 110 USDC worth of collateral
+
+This creates an incentive for liquidators to maintain system solvency.
+
+10. Key Security Risks
+
+Lending protocols must defend against several attack vectors:
+
+Price Oracle Manipulation
+
+If collateral prices rely on manipulable sources (such as AMM spot prices), attackers can inflate collateral value using flash loans.
+
+Flash Loan Attacks
+
+Flash loans allow attackers to temporarily control large amounts of capital and manipulate markets.
+
+Incorrect Collateral Factors
+
+Improper risk parameters can cause systemic insolvency.
+
+Accounting Bugs
+
+Errors in interest calculation or balance updates may allow borrowers to drain the protocol.
+
+11. Simplified Lending Protocol Architecture
+User
+ │
+ ▼
+Deposit Collateral
+ │
+ ▼
+Lending Pool
+ │
+ ▼
+Risk Engine
+ │
+ ▼
+Borrow / Repay
+ │
+ ▼
+Liquidation System
+Conclusion
+
+A decentralized lending protocol is built on a few core ideas:
+
+Liquidity pools
+
+Algorithmic interest rates
+
+Over-collateralized borrowing
+
+Automated liquidation
+
+These mechanisms allow the system to operate without centralized intermediaries.
+
+Understanding these fundamentals is essential for building or auditing DeFi lending systems.
+
+References
+
+Compound V2 documentation
+
+DeFi protocol architecture research
+
+Smart contract security studies
