@@ -1,0 +1,20 @@
+# Environment variables - NEVER commit these!
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
+npm-debug.log*
