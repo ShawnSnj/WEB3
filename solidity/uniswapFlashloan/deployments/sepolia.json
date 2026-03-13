@@ -1,0 +1,15 @@
+{
+  "network": "sepolia",
+  "contractAddress": "0x585931F74c8Be7Ba53A1f649E510Ad5C34D78D1f",
+  "deployer": "0xe71a8F88E01d70e95A7c863d5e7017caEeB1Bf6a",
+  "blockNumber": 10120556,
+  "timestamp": "2026-01-25T13:11:25.416Z",
+  "config": {
+    "aavePoolAddressesProvider": "0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A",
+    "uniswapV2Router": "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008",
+    "uniswapV3Router": "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E",
+    "useV3Router": false,
+    "defaultPoolFee": 3000,
+    "maxSlippageBps": 50
+  }
+}

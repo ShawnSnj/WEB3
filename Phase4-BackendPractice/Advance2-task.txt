@@ -1,6 +1,6 @@
 进阶2 - 合约开发实战
 
-学习路线：https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/进阶2-合约开发实战.md；
+学习路线：https://github.com/MetaNodeAcademy/LearningRoadmap/blob/main/进阶2-合约开发实战.md
 
 0）开始写代码之前，务必先通过视频和课件，阅读一遍课件配套的代码，理解清楚业务需求，做到心中有数。
 做一个简单的架构设计，然后再把合约的项目框架搭建起来，定义好主要的合约方法，最后再完善代码细节。

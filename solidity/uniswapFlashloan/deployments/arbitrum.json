@@ -1,0 +1,15 @@
+{
+  "network": "arbitrum",
+  "contractAddress": "0x2c98297d4D81cC8eAf96B600ab0A874590779081",
+  "deployer": "0xFA4eFFDfce5fCe12AD9E2296E1123d4Ce6CFC3b3",
+  "blockNumber": 425432745,
+  "timestamp": "2026-01-26T13:43:19.402Z",
+  "config": {
+    "aavePoolAddressesProvider": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "uniswapV2Router": "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
+    "uniswapV3Router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+    "useV3Router": false,
+    "defaultPoolFee": 3000,
+    "maxSlippageBps": 50
+  }
+}

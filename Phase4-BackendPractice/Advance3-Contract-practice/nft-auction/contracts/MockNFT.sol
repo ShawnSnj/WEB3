@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract MockNFT is ERC721, Ownable {
     uint256 private _nextTokenId;
 
-    constructor() ERC721("MockNFT", "MNFT") Ownable() {}
+    constructor() ERC721("MockNFT", "MNFT") Ownable(msg.sender) {}
 
     function mintTo(address to) public onlyOwner returns (uint256) {
         uint256 tokenId = _nextTokenId;

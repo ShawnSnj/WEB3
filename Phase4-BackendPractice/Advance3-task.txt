@@ -1,0 +1,35 @@
+RootData项目： https://cn.rootdata.com/Projects
+
+真实DAPP项目拆解
+
+1、吃透训练营准备的两个真正DAPP项目：
+a）先观看视频和课件，深入理解它们的架构、模块划分、业务需求；
+b）阅读后端和合约目录下的代码，理解关键业务的代码流程；
+c）（可选）在本地部署后端代码，在测试网上面部署合约代码，手工调用合约接口，观察后端处理流程，查询后端API接口数据；
+抵押借贷Pledge：https://github.com/MetaNodeAcademy/ProjectBreakdown-Pledge；
+交易市场NFTMarket：https://github.com/MetaNodeAcademy/ProjectBreakdown-NFTMarket；
+
+d）了解一下Web3行业龙头项目的核心架构；
+借贷：Aave，Compound，MakerDAO（改名为Sky）；
+NFT：OpenSea，MagicEden，Blur；
+
+2、（可选，推荐）对DAPP龙头项目的架构也要有一些了解，能够掌握它们的核心架构：
+代币交易DEX：Uniswap V2 & V3；
+Github：https://github.com/Uniswap/v3-core；
+Awesome Uniswap V3：https://github.com/GammaStrategies/awesome-uniswap-v3；
+Uniswap 专题：从V1到V4：https://space.bilibili.com/220951871/lists/5076602?type=season；
+
+借贷协议：Aave V2 & V3；
+Github：https://github.com/aave/aave-v3-core；
+官方开发文档：https://aave.com/docs/developers/aave-v3。
+Aave Protocol V3 Architecture Overview：https://blog.blockmagnates.com/aave-protocol-v3-architecture-overview-4fa3e69db20b。
+Modern DeFi Lending Protocols, how it's made: Aave V3：https://mixbytes.io/blog/modern-defi-lending-protocols-how-its-made-aave-v3。
+How AAVE works with visualization：https://medium.com/@0xape/how-aave-works-with-visualization-a612f41d0742。
+Aave V3 DeFi课程：https://updraft.cyfrin.io/courses/aave-v3。
+
+3、（可选，推荐）熟悉常用的ERC（EIP）标准：
+DEX（Uniswap）：ERC-20, ERC-2612, ERC-721, EIP-712；
+借贷（Aave）：ERC-20, ERC-2612, ERC-4626, EIP-712；
+NFT（OpenSea）：ERC-721, ERC-1155, ERC-165, ERC-2981, ERC-1271, EIP-712；
+
+NFT Auction： https://docs.google.com/presentation/d/13BJOOedC1YmvhdeIFJYomb9JcfMJBJ7AGfjLgHHYRBI/edit?usp=sharing

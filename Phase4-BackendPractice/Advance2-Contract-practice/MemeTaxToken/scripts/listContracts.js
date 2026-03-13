@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import axios from "axios";
 
-const address = "0xeE567Fe1712Faf6149d80dA1E6934E354124CfE3";
+const address = "0x1a41a486130B3f75ed350e9873177B1A75Ac9c33";
 const apiKey = process.env.ETHERSCAN_API_KEY;
 
 const url = `https://api.etherscan.io/v2/api?chainid=11155111&module=account&action=txlist&address=${address}&sort=asc&apikey=${apiKey}`;

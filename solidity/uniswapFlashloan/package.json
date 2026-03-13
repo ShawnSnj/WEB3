@@ -1,0 +1,35 @@
+{
+  "name": "uniswap-flashloan",
+  "version": "1.0.0",
+  "description": "Uniswap flash loan arbitrage contract",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
+    "deploy:arbitrum": "hardhat run scripts/deploy.js --network arbitrum",
+    "deploy:tokens": "hardhat run scripts/deployTestTokens.js --network sepolia",
+    "deploy:tokens:mainnet": "hardhat run scripts/deployTestTokens.js --network mainnet",
+    "setup:pool": "hardhat run scripts/setupTestPool.js --network sepolia",
+    "setup:pool:mainnet": "hardhat run scripts/setupTestPool.js --network mainnet"
+  },
+  "keywords": [
+    "uniswap",
+    "flashloan",
+    "arbitrage",
+    "defi"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@aave/core-v3": "^1.19.2",
+    "@openzeppelin/contracts": "^4.9.6",
+    "dotenv": "^16.3.1"
+  }
+}
