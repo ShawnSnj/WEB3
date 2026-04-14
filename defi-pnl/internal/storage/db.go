@@ -10,6 +10,6 @@ var DB *sql.DB
 
 func Init() error {
 	var err error
-	DB, err = sql.Open("postgres", "host=localhost port=5432 user=postgres password=mysecret dbname=defi_pnl sslmode=disable")
+	DB, err = sql.Open("postgres", os.Getenv("DB_URL"))
 	return err
 }
