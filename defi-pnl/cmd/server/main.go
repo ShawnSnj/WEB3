@@ -16,9 +16,9 @@ import (
 
 func main() {
 	// Load .env from current working directory (run the server from repo root).
-	if err := godotenv.Load(); err != nil {
+	/*if err := godotenv.Load(); err != nil {
 		log.Printf("env: %v (using process environment only)", err)
-	}
+	}*/
 	jobs.InitSubgraphLog()
 
 	err := storage.Init()
