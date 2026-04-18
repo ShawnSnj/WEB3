@@ -10,8 +10,6 @@ import (
 	"defi-pnl/internal/api"
 	"defi-pnl/internal/jobs"
 	"defi-pnl/internal/storage"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
