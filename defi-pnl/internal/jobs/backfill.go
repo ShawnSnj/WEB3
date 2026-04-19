@@ -91,11 +91,11 @@ func processOneDay(start, end time.Time) {
 		lastTimestamp++
 	}
 
-	topByOrigin := topNLeaderboard(originVol, 10, txTypeUser)
-	topBySender := topNLeaderboard(senderVol, 10, txTypeBot)
-	entries := make([]storage.LeaderboardEntry, 0, len(topByOrigin)+len(topBySender))
-	entries = append(entries, topByOrigin...)
-	entries = append(entries, topBySender...)
+	topSenders := topNLeaderboard(senderVol, 10, txTypeUser)
+	topOrigins := topNLeaderboard(originVol, 10, txTypeBot)
+	entries := make([]storage.LeaderboardEntry, 0, len(topSenders)+len(topOrigins))
+	entries = append(entries, topSenders...)
+	entries = append(entries, topOrigins...)
 
 	if len(entries) == 0 {
 		fmt.Println("No leaderboard entries:", start.Format("2006-01-02"))
