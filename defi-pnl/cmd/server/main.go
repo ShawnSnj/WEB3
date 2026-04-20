@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"defi-pnl/internal/api"
@@ -44,9 +45,13 @@ func main() {
 	}
 	log.Printf("listening on %s", ln.Addr())
 
-	// Backfill runs in the background so the API binds immediately and does not race with port 8080.
-	start := time.Now().AddDate(-1, 0, 0)
-	go jobs.RunBackfill(start, 365)
+	hour := 2
+	if v := os.Getenv("DAILY_JOB_HOUR"); v != "" {
+		if h, err := strconv.Atoi(v); err == nil && h >= 0 && h <= 23 {
+			hour = h
+		}
+	}
+	jobs.StartDailyLeaderboardScheduler(hour, time.Local)
 
 	log.Fatal(http.Serve(ln, nil))
 }

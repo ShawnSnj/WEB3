@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"sort"
@@ -40,24 +41,61 @@ type GraphQLResp struct {
 
 func RunBackfill(start time.Time, days int) {
 	for i := 0; i < days; i++ {
-
 		dayStart := start.AddDate(0, 0, i)
-		dayEnd := dayStart.Add(24 * time.Hour)
-
-		exists, err := storage.DailyLeaderboardExists(dayStart)
-		if err != nil {
-			fmt.Printf("Check daily_leaderboard error for %s: %v\n", dayStart.Format("2006-01-02"), err)
-			continue
-		}
-		if exists {
-			fmt.Println("Skipping existing day:", dayStart.Format("2006-01-02"))
-			continue
-		}
-
-		fmt.Println("Processing:", dayStart.Format("2006-01-02"))
-
-		processOneDay(dayStart, dayEnd)
+		RunBackfillDay(dayStart)
 	}
+}
+
+// RunBackfillDay fetches and stores leaderboard for one calendar day (local midnight → +24h).
+func RunBackfillDay(dayStart time.Time) {
+	dayEnd := dayStart.Add(24 * time.Hour)
+
+	exists, err := storage.DailyLeaderboardExists(dayStart)
+	if err != nil {
+		fmt.Printf("Check daily_leaderboard error for %s: %v\n", dayStart.Format("2006-01-02"), err)
+		return
+	}
+	if exists {
+		fmt.Println("Skipping existing day:", dayStart.Format("2006-01-02"))
+		return
+	}
+
+	fmt.Println("Processing:", dayStart.Format("2006-01-02"))
+	processOneDay(dayStart, dayEnd)
+}
+
+// StartDailyLeaderboardScheduler runs RunBackfillDay for yesterday every day at `hour` (0–23) in `loc`.
+// At 02:00, yesterday is the last completed local calendar day.
+func StartDailyLeaderboardScheduler(hour int, loc *time.Location) {
+	if loc == nil {
+		loc = time.Local
+	}
+	if hour < 0 || hour > 23 {
+		hour = 2
+	}
+	go func() {
+		for {
+			d := durationUntilNextClock(hour, 0, loc)
+			log.Printf("daily leaderboard: next run in %v (at %02d:00 %s)", d, hour, loc.String())
+			time.Sleep(d)
+			yesterday := calendarMidnight(time.Now().In(loc)).AddDate(0, 0, -1)
+			log.Printf("daily leaderboard: running for %s", yesterday.Format("2006-01-02"))
+			RunBackfillDay(yesterday)
+		}
+	}()
+}
+
+func calendarMidnight(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+func durationUntilNextClock(hour, minute int, loc *time.Location) time.Duration {
+	now := time.Now().In(loc)
+	next := time.Date(now.Year(), now.Month(), now.Day(), hour, minute, 0, 0, loc)
+	if !next.After(now) {
+		next = next.Add(24 * time.Hour)
+	}
+	return next.Sub(now)
 }
 
 func processOneDay(start, end time.Time) {
@@ -91,11 +129,11 @@ func processOneDay(start, end time.Time) {
 		lastTimestamp++
 	}
 
-	topSenders := topNLeaderboard(senderVol, 10, txTypeUser)
-	topOrigins := topNLeaderboard(originVol, 10, txTypeBot)
-	entries := make([]storage.LeaderboardEntry, 0, len(topSenders)+len(topOrigins))
-	entries = append(entries, topSenders...)
-	entries = append(entries, topOrigins...)
+	topByOrigin := topNLeaderboard(originVol, 10, txTypeUser)
+	topBySender := topNLeaderboard(senderVol, 10, txTypeBot)
+	entries := make([]storage.LeaderboardEntry, 0, len(topByOrigin)+len(topBySender))
+	entries = append(entries, topByOrigin...)
+	entries = append(entries, topBySender...)
 
 	if len(entries) == 0 {
 		fmt.Println("No leaderboard entries:", start.Format("2006-01-02"))
