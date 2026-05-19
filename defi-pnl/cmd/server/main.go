@@ -11,6 +11,7 @@ import (
 	"defi-pnl/internal/api"
 	"defi-pnl/internal/jobs"
 	"defi-pnl/internal/storage"
+	"defi-pnl/internal/telegram"
 
 	"github.com/joho/godotenv"
 )
@@ -25,6 +26,14 @@ func main() {
 	err := storage.Init()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Recompute today's pnl_leaderboard snapshot on every server start so the
+	// API always serves a fresh value derived from whatever is currently in
+	// trades_v2. The DELETE-then-INSERT in RunPnLLeaderboardTop10 makes this
+	// safe to call repeatedly within the same calendar day.
+	if err := jobs.RunPnLLeaderboardTop10(); err != nil {
+		log.Printf("pnl: startup recalc error: %v", err)
 	}
 
 	http.HandleFunc("/user/pnl", api.GetPnL)
@@ -51,7 +60,20 @@ func main() {
 			hour = h
 		}
 	}
-	jobs.StartDailyLeaderboardScheduler(hour, time.Local)
+
+	signalHour := 3
+	if v := os.Getenv("SIGNAL_HOUR"); v != "" {
+		if h, err := strconv.Atoi(v); err == nil && h >= 0 && h <= 23 {
+			signalHour = h
+		}
+	}
+
+	//jobs.StartDailyLeaderboardScheduler(hour, time.Local)
+	jobs.StartDailyTradesScheduler(hour, time.Local)
+	jobs.StartDailySignalScheduler(signalHour, time.Local)
+	jobs.StartAlertScheduler()
+
+	go telegram.StartTelegramBot()
 
 	log.Fatal(http.Serve(ln, nil))
 }
