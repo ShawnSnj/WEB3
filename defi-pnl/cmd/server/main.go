@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 	"net/http"
@@ -16,11 +17,17 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	envModeLocal  = "local"
+	envModeRender = "render"
+)
+
 func main() {
-	// Load .env from current working directory (run the server from repo root).
-	if err := godotenv.Load(); err != nil {
-		log.Printf("env: %v (using process environment only)", err)
-	}
+	envMode := flag.String("env", defaultEnvMode(), `config source: "local" loads .env from the working directory; "render" uses process environment variables only (for Render.com / production)`)
+	flag.Parse()
+
+	loadConfig(*envMode)
+
 	jobs.InitSubgraphLog()
 
 	err := storage.Init()
@@ -76,4 +83,37 @@ func main() {
 	go telegram.StartTelegramBot()
 
 	log.Fatal(http.Serve(ln, nil))
+}
+
+// loadConfig wires up environment variables according to the chosen mode.
+// In "local" mode the .env file in the working directory is loaded so that
+// developers can keep secrets out of their shell. In "render" mode the file
+// is skipped and the process environment (populated by Render.com from its
+// Environment Variables dashboard) is the single source of truth.
+func loadConfig(mode string) {
+	switch mode {
+	case envModeLocal:
+		if err := godotenv.Load(); err != nil {
+			log.Printf("env[local]: .env not loaded (%v); using process env only", err)
+			return
+		}
+		log.Printf("env[local]: loaded .env")
+	case envModeRender:
+		log.Printf("env[render]: using process environment variables only")
+	default:
+		log.Fatalf("env: unknown -env=%q (expected %q or %q)", mode, envModeLocal, envModeRender)
+	}
+}
+
+// defaultEnvMode picks a sensible default when -env is not passed.
+// APP_ENV wins if set; otherwise we auto-detect Render via the RENDER variable
+// it injects into every service container, and fall back to "local".
+func defaultEnvMode() string {
+	if v := os.Getenv("APP_ENV"); v != "" {
+		return v
+	}
+	if os.Getenv("RENDER") != "" {
+		return envModeRender
+	}
+	return envModeLocal
 }
