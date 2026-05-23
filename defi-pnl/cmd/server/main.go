@@ -80,6 +80,11 @@ func main() {
 	jobs.StartDailySignalScheduler(signalHour, time.Local)
 	jobs.StartAlertScheduler()
 
+	// Kick a one-shot Uniswap backfill in the background so any days missing
+	// from daily_leaderboard get filled in on startup. RunBackfillDay skips
+	// days that already exist, so this is safe to run on every boot.
+	go jobs.RunBackfill(time.Now().AddDate(-1, 0, 0), 365)
+
 	go telegram.StartTelegramBot()
 
 	log.Fatal(http.Serve(ln, nil))
