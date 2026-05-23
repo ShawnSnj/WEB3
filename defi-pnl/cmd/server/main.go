@@ -75,7 +75,7 @@ func main() {
 		}
 	}
 
-	//jobs.StartDailyLeaderboardScheduler(hour, time.Local)
+	jobs.StartDailyLeaderboardScheduler(hour, time.Local)
 	jobs.StartDailyTradesScheduler(hour, time.Local)
 	jobs.StartDailySignalScheduler(signalHour, time.Local)
 	jobs.StartAlertScheduler()
