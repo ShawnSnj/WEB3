@@ -1,0 +1,84 @@
+{{- /*
+  sidebar.html — primary navigation. Each link uses HTMX so the page
+  shell stays mounted; full-page fallback works if HTMX hasn't loaded.
+
+  Active state is rendered server-side via .Active and refreshed
+  client-side after each HTMX swap (app.js).
+*/ -}}
+{{define "sidebar"}}
+<aside class="sidebar" aria-label="Primary navigation" id="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-mark" aria-hidden="true">JH</span>
+        <span class="brand-name">Job Hunt</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        <ul>
+            <li>
+                <a href="/dashboard"
+                   data-nav="/dashboard"
+                   hx-get="/dashboard"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   {{if eq .Active "dashboard"}}aria-current="page" class="active"{{end}}>
+                    {{template "icon" (dict "name" "grid")}}
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="/tasks"
+                   data-nav="/tasks"
+                   hx-get="/tasks"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   {{if eq .Active "tasks"}}aria-current="page" class="active"{{end}}>
+                    {{template "icon" (dict "name" "check")}}
+                    <span>Tasks</span>
+                </a>
+            </li>
+            <li>
+                <a href="/reviews/daily"
+                   data-nav="/reviews/daily"
+                   hx-get="/reviews/daily"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   {{if eq .Active "daily_review"}}aria-current="page" class="active"{{end}}>
+                    {{template "icon" (dict "name" "sun")}}
+                    <span>Daily Review</span>
+                </a>
+            </li>
+            <li>
+                <a href="/reviews/weekly"
+                   data-nav="/reviews/weekly"
+                   hx-get="/reviews/weekly"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   {{if eq .Active "weekly_review"}}aria-current="page" class="active"{{end}}>
+                    {{template "icon" (dict "name" "calendar")}}
+                    <span>Weekly Review</span>
+                </a>
+            </li>
+            <li>
+                <a href="/analytics"
+                   data-nav="/analytics"
+                   hx-get="/analytics"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   {{if eq .Active "analytics"}}aria-current="page" class="active"{{end}}>
+                    {{template "icon" (dict "name" "chart")}}
+                    <span>Analytics</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+        <small class="muted">v0.1 · {{year}}</small>
+    </div>
+</aside>
+{{end}}

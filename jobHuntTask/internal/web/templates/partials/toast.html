@@ -1,0 +1,32 @@
+{{- /*
+  toast.html — live region + single-toast renderer.
+
+  The toast region is rendered once on the layout. JS or HTMX OOB swaps
+  append <div class="toast"> children into #toast-region; CSS animates
+  them in, JS removes them after a delay.
+
+  To show a toast from a Go handler that's responding to an HTMX
+  request, write:
+      c.Header("HX-Trigger", `{"toast":{"tone":"success","message":"Saved"}}`)
+  and the JS hook in app.js will inject it.
+*/ -}}
+{{define "toast_region"}}
+<div id="toast-region"
+     class="toast-region"
+     role="region"
+     aria-live="polite"
+     aria-label="Notifications"></div>
+{{end}}
+
+{{- /*
+  toast — single toast renderable directly from a template if needed.
+  Pass: tone ("info"|"success"|"warning"|"danger"), message, optional title.
+*/ -}}
+{{define "toast"}}
+<div class="toast toast--{{with .tone}}{{.}}{{else}}info{{end}}" role="alert">
+    {{- if hasKey . "title" -}}
+    <strong class="toast-title">{{.title}}</strong>
+    {{- end -}}
+    <span class="toast-message">{{.message}}</span>
+</div>
+{{end}}

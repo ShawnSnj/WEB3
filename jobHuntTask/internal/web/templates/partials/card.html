@@ -1,0 +1,35 @@
+{{- /*
+  card.html — two card variants.
+
+  1. {{template "card_simple" (dict
+        "title"   "Today's completion"
+        "value"   "62%"
+        "hint"    "5 of 8 tasks"
+        "tone"    "accent")}}
+     Renders a metric card: label, big number, helper text.
+
+  2. <article class="card"> ... </article>
+     For bespoke composition use the bare class — same look, full control.
+*/ -}}
+
+{{define "card_simple"}}
+<article class="card metric-card {{with .tone}}card--{{.}}{{end}}">
+    <header class="metric-card-head">
+        <span class="metric-card-label">{{.title}}</span>
+        {{- if hasKey . "badge" }}<span class="badge">{{.badge}}</span>{{end -}}
+    </header>
+    <div class="metric-card-value">{{.value}}</div>
+    {{- if hasKey . "hint" }}<p class="metric-card-hint muted">{{.hint}}</p>{{end -}}
+</article>
+{{end}}
+
+{{- /* A trivial wrapper if you want a card frame without metric layout. */ -}}
+{{define "card_open"}}<article class="card {{with .tone}}card--{{.}}{{end}}">{{end}}
+{{define "card_close"}}</article>{{end}}
+
+{{define "card_header"}}
+<header class="card-head">
+    <h2 class="card-title">{{.title}}</h2>
+    {{- if hasKey . "subtitle" }}<p class="muted card-subtitle">{{.subtitle}}</p>{{end -}}
+</header>
+{{end}}

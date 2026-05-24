@@ -1,0 +1,105 @@
+{{- /*
+  task_row — one <tr>. Self-targeting: edit/state/delete actions all
+  replace this <tr>'s outerHTML so the rest of the table is undisturbed.
+  Data: web.TaskRowVM
+*/ -}}
+{{define "task_row"}}
+<tr id="task-row-{{.ID}}" class="task-row task-row--status-{{.Status}}{{if .IsOverdue}} task-row--overdue{{end}}">
+    <td class="td-check">
+        <input type="checkbox" name="ids" value="{{.ID}}" aria-label="Select task {{.Title}}">
+    </td>
+    <td class="td-title">
+        <div class="task-title">{{.Title}}</div>
+        {{if .Description}}<div class="task-desc muted">{{.Description}}</div>{{end}}
+        {{if gt .CarryOverCount 0}}
+        <span class="chip chip--soft" title="Carried over {{.CarryOverCount}} time(s)">
+            ↻ {{.CarryOverCount}}
+        </span>
+        {{end}}
+    </td>
+    <td><span class="badge badge--priority-{{.Priority}}">{{.PriorityLabel}}</span></td>
+    <td><span class="chip chip--category">{{.CategoryLabel}}</span></td>
+    <td><span class="badge badge--status-{{.Status}}">{{.StatusLabel}}</span></td>
+    <td class="td-due">
+        {{if .IsOverdue}}
+        <span class="due-overdue">{{.DueDateLabel}}</span>
+        {{else}}
+        {{.DueDateLabel}}
+        {{end}}
+    </td>
+    <td class="td-actions">
+        {{template "task_actions" (dict "vm" . "target" (printf "#task-row-%s" .ID))}}
+    </td>
+</tr>
+{{end}}
+
+{{- /*
+  task_actions — quick actions for table row or mobile card.
+  Pass dict: vm (TaskRowVM), target (CSS selector for hx-target).
+*/ -}}
+{{define "task_actions"}}
+{{- $t := .vm -}}
+{{- $target := .target -}}
+<div class="action-row">
+    {{if $t.CanComplete}}
+    <button type="button" class="icon-button icon-button--success"
+            title="Mark completed"
+            data-optimistic="complete"
+            hx-post="/tasks/{{$t.ID}}/complete"
+            hx-target="{{$target}}"
+            hx-swap="outerHTML">
+        {{template "htmx_spinner" .}}
+        {{template "icon" (dict "name" "check")}}
+    </button>
+    {{end}}
+    {{if $t.CanInProgress}}
+    <button type="button" class="icon-button"
+            title="Mark in progress"
+            data-optimistic="in_progress"
+            hx-post="/tasks/{{$t.ID}}/in_progress"
+            hx-target="{{$target}}"
+            hx-swap="outerHTML">
+        {{template "htmx_spinner" .}}
+        {{template "icon" (dict "name" "play")}}
+    </button>
+    {{end}}
+    {{if $t.CanMiss}}
+    <button type="button" class="icon-button"
+            title="Mark missed"
+            data-optimistic="missed"
+            hx-post="/tasks/{{$t.ID}}/missed"
+            hx-target="{{$target}}"
+            hx-swap="outerHTML">
+        {{template "htmx_spinner" .}}
+        {{template "icon" (dict "name" "x")}}
+    </button>
+    {{end}}
+    {{if $t.CanCarry}}
+    <button type="button" class="icon-button"
+            title="Carry over to tomorrow"
+            hx-post="/tasks/{{$t.ID}}/carry_over"
+            hx-swap="none">
+        {{template "htmx_spinner" .}}
+        {{template "icon" (dict "name" "refresh")}}
+    </button>
+    {{end}}
+    <button type="button" class="icon-button"
+            title="Edit"
+            hx-get="/tasks/{{$t.ID}}/form"
+            hx-target="#task-modal"
+            hx-swap="innerHTML">
+        {{template "icon" (dict "name" "edit")}}
+    </button>
+    <button type="button" class="icon-button icon-button--danger"
+            title="Delete"
+            data-optimistic="delete"
+            data-confirm-danger="true"
+            hx-delete="/tasks/{{$t.ID}}"
+            hx-target="{{$target}}"
+            hx-swap="none"
+            hx-confirm="Delete this task? This cannot be undone.">
+        {{template "htmx_spinner" .}}
+        {{template "icon" (dict "name" "trash")}}
+    </button>
+</div>
+{{end}}

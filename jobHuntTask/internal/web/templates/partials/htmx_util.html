@@ -1,0 +1,67 @@
+{{- /*
+  htmx_util.html — reusable HTMX UX fragments.
+
+  Included once from base.html. Individual partials are also renderable
+  from Go handlers via RenderPartial.
+*/ -}}
+
+{{define "htmx_global_indicator"}}
+<div id="htmx-global-indicator"
+     class="htmx-global-indicator"
+     aria-hidden="true"
+     role="progressbar"></div>
+{{end}}
+
+{{define "htmx_confirm_modal"}}
+<div id="confirm-modal"
+     class="confirm-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="confirm-modal-title"
+     aria-hidden="true"
+     hidden>
+    <div class="confirm-modal-backdrop" data-action="confirm-cancel"></div>
+    <div class="confirm-modal-panel">
+        <h2 id="confirm-modal-title" class="confirm-modal-title">Confirm</h2>
+        <p id="confirm-modal-message" class="confirm-modal-message muted"></p>
+        <footer class="confirm-modal-foot">
+            <button type="button" class="btn btn-ghost" data-action="confirm-cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirm-modal-ok" data-action="confirm-ok">Confirm</button>
+        </footer>
+    </div>
+</div>
+{{end}}
+
+{{define "htmx_shortcuts_hint"}}
+<div id="shortcuts-hint" class="shortcuts-hint" hidden aria-hidden="true">
+    <kbd>?</kbd> shortcuts · <kbd>Esc</kbd> close · <kbd>/</kbd> search tasks · <kbd>n</kbd> new task
+</div>
+{{end}}
+
+{{define "htmx_spinner"}}
+<span class="htmx-indicator spinner">{{template "icon" (dict "name" "loader")}}</span>
+{{end}}
+
+{{define "inline_error"}}
+<div class="inline-error" role="alert">
+    {{template "icon" (dict "name" "alert")}}
+    <span>{{if hasKey . "message"}}{{index . "message"}}{{else}}{{.message}}{{end}}</span>
+</div>
+{{end}}
+
+{{define "retry_state"}}
+<div class="retry-state" role="alert" data-retryable>
+    <div class="retry-state-copy">
+        {{template "icon" (dict "name" "alert")}}
+        <span>{{.message}}</span>
+    </div>
+    <button type="button"
+            class="btn btn-ghost btn-sm"
+            hx-get="{{.url}}"
+            hx-target="{{.target}}"
+            hx-swap="{{.swap}}">
+        {{template "icon" (dict "name" "refresh")}}
+        <span>Retry</span>
+    </button>
+</div>
+{{end}}

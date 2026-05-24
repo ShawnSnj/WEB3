@@ -1,0 +1,17 @@
+{{- /*
+  tasks_empty — shown when the current view/filter combo returns no rows.
+  Picks a message per view to give the user a useful nudge.
+*/ -}}
+{{define "tasks_empty"}}
+{{- $view := .Query.View -}}
+{{- $title := "No tasks here yet" -}}
+{{- $msg := "Create a task to get started." -}}
+{{- if eq $view "today"        }}{{ $title = "Today is clear" }}{{ $msg = "Plan something — even one small win counts." }}{{end -}}
+{{- if eq $view "overdue"      }}{{ $title = "Nothing overdue" }}{{ $msg = "You're caught up. Nice work." }}{{end -}}
+{{- if eq $view "completed"    }}{{ $title = "No completions yet" }}{{ $msg = "Finished tasks show up here." }}{{end -}}
+{{- if eq $view "carried_over" }}{{ $title = "No carry-overs" }}{{ $msg = "Tasks rolled to a new day land here." }}{{end -}}
+{{template "empty_state" (dict
+    "icon" "inbox"
+    "title" $title
+    "message" $msg)}}
+{{end}}

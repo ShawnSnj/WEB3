@@ -1,0 +1,65 @@
+{{- /*
+  tasks_filter_bar — status / priority / category selects + free-text
+  search. Posts to /tasks/list with current view + sort preserved by
+  hidden inputs.
+  Data: web.TasksPageVM
+*/ -}}
+{{define "tasks_filter_bar"}}
+{{- $q := .Query -}}
+<form class="filter-bar"
+      hx-get="/tasks/list"
+      hx-target="#tasks-list"
+      hx-swap="outerHTML"
+      hx-push-url="true"
+      hx-trigger="change, search, submit">
+    <input type="hidden" name="view" value="{{$q.View}}">
+    <input type="hidden" name="sort" value="{{$q.Sort}}">
+    <input type="hidden" name="dir"  value="{{$q.SortDir}}">
+
+    <label class="filter">
+        <span class="filter-label">Status</span>
+        <select name="status">
+            <option value="">Any</option>
+            {{range .Statuses -}}
+            <option value="{{.}}"{{if eq $q.Status .}} selected{{end}}>{{statusLabel .}}</option>
+            {{- end}}
+        </select>
+    </label>
+
+    <label class="filter">
+        <span class="filter-label">Priority</span>
+        <select name="priority">
+            <option value="">Any</option>
+            {{range .Priorities -}}
+            <option value="{{.}}"{{if eq $q.Priority .}} selected{{end}}>{{priorityLabel .}}</option>
+            {{- end}}
+        </select>
+    </label>
+
+    <label class="filter">
+        <span class="filter-label">Category</span>
+        <select name="category">
+            <option value="">Any</option>
+            {{range .Categories -}}
+            <option value="{{.}}"{{if eq $q.Category .}} selected{{end}}>{{categoryLabel .}}</option>
+            {{- end}}
+        </select>
+    </label>
+
+    <label class="filter filter--search">
+        <span class="filter-label">Search</span>
+        <input type="search" name="q" value="{{$q.Search}}" placeholder="Title contains…">
+    </label>
+
+    {{if or $q.Status $q.Priority $q.Category $q.Search}}
+    <a class="filter-clear"
+       href="/tasks?view={{$q.View}}"
+       hx-get="/tasks/list?view={{$q.View}}"
+       hx-target="#tasks-list"
+       hx-swap="outerHTML"
+       hx-push-url="true">
+        Clear
+    </a>
+    {{end}}
+</form>
+{{end}}

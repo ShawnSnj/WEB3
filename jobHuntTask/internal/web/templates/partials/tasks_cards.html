@@ -1,0 +1,46 @@
+{{- /*
+  tasks_cards — mobile view (<760px). Renders the same data as the table
+  in card form. Toggled by CSS, not by JS, so HTMX swaps replace both
+  views correctly even when a viewport change happens between requests.
+*/ -}}
+{{define "tasks_cards"}}
+<ul class="tasks-cards" aria-label="Tasks (mobile)">
+    {{range .Tasks}}
+    {{template "task_card" .}}
+    {{end}}
+</ul>
+{{end}}
+
+{{define "task_card"}}
+<li id="task-card-{{.ID}}" class="task-card task-card--status-{{.Status}}{{if .IsOverdue}} task-card--overdue{{end}}">
+    {{template "task_card_body" .}}
+</li>
+{{end}}
+
+{{define "task_card_oob"}}
+<li id="task-card-{{.ID}}" class="task-card task-card--status-{{.Status}}{{if .IsOverdue}} task-card--overdue{{end}}" hx-swap-oob="outerHTML">
+    {{template "task_card_body" .}}
+</li>
+{{end}}
+
+{{define "task_card_body"}}
+    <header class="task-card-head">
+        <label class="task-card-check">
+            <input type="checkbox" name="ids" value="{{.ID}}" aria-label="Select task {{.Title}}">
+        </label>
+        <div class="task-card-title-block">
+            <div class="task-title">{{.Title}}</div>
+            {{if .Description}}<div class="task-desc muted">{{.Description}}</div>{{end}}
+        </div>
+    </header>
+
+    <div class="task-card-meta">
+        <span class="badge badge--priority-{{.Priority}}">{{.PriorityLabel}}</span>
+        <span class="chip chip--category">{{.CategoryLabel}}</span>
+        <span class="badge badge--status-{{.Status}}">{{.StatusLabel}}</span>
+        <span class="due-line{{if .IsOverdue}} due-line--overdue{{end}}">{{.DueDateLabel}}</span>
+        {{if gt .CarryOverCount 0}}<span class="chip chip--soft">↻ {{.CarryOverCount}}</span>{{end}}
+    </div>
+
+    {{template "task_actions" (dict "vm" . "target" (printf "#task-card-%s" .ID))}}
+{{end}}

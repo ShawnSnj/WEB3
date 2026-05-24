@@ -1,0 +1,31 @@
+{{define "content"}}
+{{- $d := .Data -}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<script src="/static/js/analytics.js" defer></script>
+
+<div class="analytics-page">
+    <header class="page-header">
+        <div>
+            <h2 class="page-title">Analytics</h2>
+            <p class="muted page-subtitle">Patterns, ROI, and where your time really goes.</p>
+        </div>
+        <form class="analytics-range-form"
+              hx-get="/analytics/refresh"
+              hx-target="#analytics-panels"
+              hx-swap="innerHTML"
+              hx-push-url="false"
+              hx-trigger="change">
+            <label class="sr-only" for="analytics-range">Time range</label>
+            <select id="analytics-range" name="range" class="input analytics-range-select">
+                <option value="7"{{if eq $d.Range "7"}} selected{{end}}>Last 7 days</option>
+                <option value="30"{{if eq $d.Range "30"}} selected{{end}}>Last 30 days</option>
+                <option value="90"{{if eq $d.Range "90"}} selected{{end}}>Last 90 days</option>
+            </select>
+        </form>
+    </header>
+
+    <div id="analytics-panels">
+        {{template "analytics_panels" $d}}
+    </div>
+</div>
+{{end}}

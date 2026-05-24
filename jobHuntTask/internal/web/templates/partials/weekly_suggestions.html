@@ -1,0 +1,32 @@
+{{- define "weekly_suggestions_card" -}}
+<article class="card weekly-card" data-card="suggestions" id="weekly-suggestions-card">
+    <header class="weekly-card-head">
+        <div>
+            <h3 class="weekly-card-title">Suggestion summary</h3>
+            <p class="muted weekly-card-sub">Engine insights for this week</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh suggestions"
+                hx-get="/reviews/weekly/cards/suggestions"
+                hx-target="#weekly-suggestions-card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+    {{if .Items}}
+    <ul class="weekly-suggestion-list">
+        {{range .Items}}
+        <li class="weekly-suggestion weekly-suggestion--{{.Severity}}">
+            <strong>{{.Title}}</strong>
+            <p class="muted">{{.Message}}</p>
+        </li>
+        {{end}}
+    </ul>
+    {{else}}
+    {{template "empty_state" (dict
+        "icon" "spark"
+        "title" "No suggestions"
+        "message" "The engine has nothing to flag right now.")}}
+    {{end}}
+</article>
+{{- end -}}

@@ -1,0 +1,40 @@
+{{- /*
+  dashboard_quick_actions_card — static action buttons. No data binding.
+  The "focus mode" action is a placeholder that flashes a toast for now;
+  it'll wire into the task-session service in a later step.
+*/ -}}
+{{define "dashboard_quick_actions_card"}}
+<article class="card dash-card" data-card="quick-actions">
+    <header class="dash-card-head">
+        <div>
+            <h2 class="card-title">Quick actions</h2>
+            <p class="muted card-subtitle">Jump into work</p>
+        </div>
+    </header>
+
+    <div class="quick-actions">
+        <a class="quick-action" href="/tasks">
+            <span class="quick-action-icon">{{template "icon" (dict "name" "plus")}}</span>
+            <span class="quick-action-label">
+                <strong>Add task</strong>
+                <small class="muted">Plan your next move</small>
+            </span>
+        </a>
+        <button type="button" class="quick-action"
+                onclick="window.JobHuntToast({tone:'info',message:'Focus mode coming soon'})">
+            <span class="quick-action-icon">{{template "icon" (dict "name" "flame")}}</span>
+            <span class="quick-action-label">
+                <strong>Start focus mode</strong>
+                <small class="muted">Kick off a session</small>
+            </span>
+        </button>
+        <a class="quick-action" href="/reviews/daily">
+            <span class="quick-action-icon">{{template "icon" (dict "name" "edit")}}</span>
+            <span class="quick-action-label">
+                <strong>Open daily review</strong>
+                <small class="muted">Reflect & log wins</small>
+            </span>
+        </a>
+    </div>
+</article>
+{{end}}

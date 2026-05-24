@@ -1,0 +1,17 @@
+{{- /*
+  tasks_list — the main hx-swap target. Renders desktop table + mobile
+  card list inside ONE form so bulk actions include all checkboxes from
+  either layout (the hidden one still posts its checked items, which is
+  fine — we render the same id set in both).
+  Data: web.TasksListVM
+*/ -}}
+{{define "tasks_list"}}
+<form id="tasks-form" class="tasks-list-shell" data-empty="{{if .Empty}}true{{else}}false{{end}}">
+    {{if .Empty}}
+        {{template "tasks_empty" .}}
+    {{else}}
+        {{template "tasks_table" .}}
+        {{template "tasks_cards" .}}
+    {{end}}
+</form>
+{{end}}

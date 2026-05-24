@@ -1,0 +1,31 @@
+{{- define "weekly_streak_card" -}}
+<article class="card weekly-card" data-card="streak" id="weekly-streak-card">
+    <header class="weekly-card-head">
+        <div>
+            <h3 class="weekly-card-title">Streak stats</h3>
+            <p class="muted weekly-card-sub">Consistency this week</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh streak"
+                hx-get="/reviews/weekly/cards/streak?week={{.WeekInput}}"
+                hx-target="#weekly-streak-card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+    <dl class="weekly-streak-grid">
+        <div>
+            <dt>Current</dt>
+            <dd>{{.Current}} <span class="muted">days</span></dd>
+        </div>
+        <div>
+            <dt>Longest</dt>
+            <dd>{{.Longest}} <span class="muted">days</span></dd>
+        </div>
+        <div>
+            <dt>Missed days</dt>
+            <dd>{{.MissedDays}} <span class="muted">this week</span></dd>
+        </div>
+    </dl>
+</article>
+{{- end -}}

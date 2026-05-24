@@ -1,0 +1,34 @@
+{{define "content"}}
+<div class="dashboard-page">
+    <header class="page-header">
+        <div>
+            <h2 class="page-title">Dashboard</h2>
+            <p class="muted page-subtitle">Today at a glance · focus on what moves the needle.</p>
+        </div>
+        <button type="button" class="btn btn-ghost"
+                hx-trigger="click"
+                hx-get="/dashboard"
+                hx-target="#main-content"
+                hx-swap="innerHTML"
+                hx-push-url="false">
+            {{template "icon" (dict "name" "refresh")}}
+            <span>Refresh</span>
+        </button>
+    </header>
+
+    <section class="dashboard-focus" aria-label="Today's focus">
+        {{template "dashboard_summary_card" .Data.Summary}}
+        {{template "dashboard_quick_actions_card" .}}
+    </section>
+
+    <section class="dashboard-support" aria-label="Progress">
+        {{template "dashboard_streak_card" .Data.Streak}}
+        {{template "dashboard_trend_card" .Data.Trend}}
+    </section>
+
+    <section class="dashboard-secondary" aria-label="Activity and suggestions">
+        {{template "dashboard_activity_card" .Data.Activity}}
+        {{template "dashboard_suggestions_card" .Data.Suggestions}}
+    </section>
+</div>
+{{end}}

@@ -1,0 +1,29 @@
+{{- /*
+  tasks_bulk_bar — toolbar above the table. Bulk actions read checkboxes
+  from #tasks-form (hx-include) so this works without any JavaScript.
+*/ -}}
+{{define "tasks_bulk_bar"}}
+<div class="bulk-bar" role="toolbar" aria-label="Bulk actions">
+    <span class="bulk-hint muted">Select rows to enable bulk actions</span>
+    <div class="bulk-actions">
+        <button type="button" class="btn btn-ghost"
+                hx-post="/tasks/bulk/complete"
+                hx-include="#tasks-form"
+                hx-swap="none">
+            {{template "htmx_spinner" .}}
+            {{template "icon" (dict "name" "check")}}
+            <span>Complete selected</span>
+        </button>
+        <button type="button" class="btn btn-danger-ghost"
+                data-confirm-danger="true"
+                hx-post="/tasks/bulk/delete"
+                hx-include="#tasks-form"
+                hx-swap="none"
+                hx-confirm="Delete the selected tasks? This cannot be undone.">
+            {{template "htmx_spinner" .}}
+            {{template "icon" (dict "name" "trash")}}
+            <span>Delete selected</span>
+        </button>
+    </div>
+</div>
+{{end}}

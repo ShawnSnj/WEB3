@@ -1,0 +1,55 @@
+{{- define "weekly_charts_card" -}}
+<article class="card weekly-card weekly-charts-card" data-card="charts" id="weekly-charts-card">
+    <header class="weekly-card-head">
+        <div>
+            <h3 class="weekly-card-title">Trends</h3>
+            <p class="muted weekly-card-sub">Completions & carry-over</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh charts"
+                hx-get="/reviews/weekly/cards/charts?week={{.WeekInput}}"
+                hx-target="#weekly-charts-card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+
+    <div class="weekly-charts-inner">
+        <section class="weekly-chart-block" aria-labelledby="weekly-completion-chart">
+            <h4 id="weekly-completion-chart" class="weekly-chart-title">Daily completions</h4>
+            {{if .HasCompletion}}
+            <div class="trend-chart" role="img" aria-label="{{.CompletionTotal}} tasks completed this week">
+                <ul class="trend-bars">
+                    {{range .CompletionDays}}
+                    <li class="trend-bar-cell">
+                        <span class="trend-count">{{.Count}}</span>
+                        <span class="trend-bar {{.HeightCls}}" aria-label="{{.Label}}: {{.Count}}"></span>
+                        <span class="trend-label">{{.Label}}</span>
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+            {{else}}
+            <p class="muted weekly-chart-empty">No completions recorded this week.</p>
+            {{end}}
+        </section>
+
+        <section class="weekly-chart-block" aria-labelledby="weekly-carry-chart">
+            <h4 id="weekly-carry-chart" class="weekly-chart-title">Carry-over trend</h4>
+            <div class="weekly-carry-bars" role="img"
+                 aria-label="Carry-over rate this week {{.CarryThisPct}} percent vs last week {{.CarryPrevPct}} percent">
+                <div class="weekly-carry-bar-cell">
+                    <span class="weekly-carry-label">Last week</span>
+                    <span class="weekly-carry-bar weekly-carry-bar--prev weekly-carry-bar--p{{carryBarBucket .CarryPrevPct}}"></span>
+                    <span class="weekly-carry-value">{{.CarryPrevPct}}%</span>
+                </div>
+                <div class="weekly-carry-bar-cell">
+                    <span class="weekly-carry-label">This week</span>
+                    <span class="weekly-carry-bar weekly-carry-bar--this weekly-carry-bar--p{{carryBarBucket .CarryThisPct}}"></span>
+                    <span class="weekly-carry-value">{{.CarryThisPct}}%</span>
+                </div>
+            </div>
+        </section>
+    </div>
+</article>
+{{- end -}}

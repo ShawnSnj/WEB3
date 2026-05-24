@@ -1,0 +1,29 @@
+{{- /*
+  navbar.html — top bar with mobile menu toggle, page title (mirrors
+  .Title), theme toggle, and a placeholder avatar.
+*/ -}}
+{{define "navbar"}}
+<header class="navbar" role="banner">
+    <button type="button"
+            class="icon-button menu-toggle"
+            aria-label="Toggle navigation"
+            aria-controls="sidebar"
+            aria-expanded="false"
+            data-action="toggle-sidebar">
+        {{template "icon" (dict "name" "menu")}}
+    </button>
+
+    <h1 class="navbar-title">{{.Title}}</h1>
+
+    <div class="navbar-actions">
+        <button type="button"
+                class="icon-button"
+                aria-label="Toggle dark mode"
+                data-action="toggle-theme">
+            <span data-theme-icon="dark">{{template "icon" (dict "name" "moon")}}</span>
+            <span data-theme-icon="light" hidden>{{template "icon" (dict "name" "sun")}}</span>
+        </button>
+        <div class="avatar" aria-hidden="true">JH</div>
+    </div>
+</header>
+{{end}}

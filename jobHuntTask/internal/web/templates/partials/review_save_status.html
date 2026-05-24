@@ -1,0 +1,17 @@
+{{- /*
+  review_save_status — autosave indicator swapped into #review-save-status.
+  Data: web.ReviewSaveStatusVM
+*/ -}}
+{{define "review_save_status"}}
+<span class="review-save review-save--{{.State}}" role="status">
+    {{if eq .State "saved"}}
+        {{template "icon" (dict "name" "check")}}
+        <span>{{.Message}}{{if .Time}} · {{.Time}}{{end}}</span>
+    {{else if eq .State "error"}}
+        {{template "icon" (dict "name" "x")}}
+        <span>{{.Message}}</span>
+    {{else}}
+        <span class="muted">{{.Message}}</span>
+    {{end}}
+</span>
+{{end}}

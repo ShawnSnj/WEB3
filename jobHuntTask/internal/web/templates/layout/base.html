@@ -1,0 +1,53 @@
+{{- /*
+  base.html — document shell.
+
+  The theme attribute is set before any CSS loads to prevent a flash of
+  the wrong theme. Sidebar and navbar are always present and persist
+  across HTMX content swaps; only #main-content is replaced.
+*/ -}}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <title>{{.Title}} · Job Hunt</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script>
+      // Bootstrapped pre-paint so the theme attribute is in place before
+      // first style application — prevents a flash on full page loads.
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (_) { /* ignore storage errors */ }
+      })();
+    </script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="app-shell">
+        {{template "sidebar" .}}
+
+        <div class="app-main">
+            {{template "navbar" .}}
+
+            <main id="main-content" class="content" tabindex="-1">
+                {{template "content" .}}
+            </main>
+        </div>
+    </div>
+
+    {{template "toast_region" .}}
+    {{template "htmx_global_indicator" .}}
+    {{template "htmx_confirm_modal" .}}
+    {{template "htmx_shortcuts_hint" .}}
+</body>
+</html>

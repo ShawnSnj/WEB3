@@ -1,0 +1,36 @@
+{{- define "weekly_categories_card" -}}
+<article class="card weekly-card" data-card="categories" id="weekly-categories-card">
+    <header class="weekly-card-head">
+        <div>
+            <h3 class="weekly-card-title">Category ROI</h3>
+            <p class="muted weekly-card-sub">Strongest vs weakest</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh categories"
+                hx-get="/reviews/weekly/cards/categories?week={{.WeekInput}}"
+                hx-target="#weekly-categories-card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+    {{if .HasData}}
+    <div class="weekly-category-pair">
+        <div class="weekly-category weekly-category--strong">
+            <span class="weekly-category-label">Strongest</span>
+            <strong>{{.StrongestName}}</strong>
+            <span class="muted">{{.StrongestPct}}% completion</span>
+        </div>
+        <div class="weekly-category weekly-category--weak">
+            <span class="weekly-category-label">Weakest</span>
+            <strong>{{.WeakestName}}</strong>
+            <span class="muted">{{.WeakestPct}}% completion</span>
+        </div>
+    </div>
+    {{else}}
+    {{template "empty_state" (dict
+        "icon" "spark"
+        "title" "No category data"
+        "message" "Tag tasks with categories to compare performance.")}}
+    {{end}}
+</article>
+{{- end -}}

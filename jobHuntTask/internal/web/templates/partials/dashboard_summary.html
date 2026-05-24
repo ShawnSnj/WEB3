@@ -1,0 +1,64 @@
+{{- /*
+  dashboard_summary_card — Today's at-a-glance metrics (hero treatment).
+  Data: web.SummaryCardVM
+*/ -}}
+{{define "dashboard_summary_card"}}
+<article class="card dash-card dash-card--hero card--accent" data-card="summary"
+         hx-get="/dashboard/cards/summary"
+         hx-trigger="refresh-summary from:body"
+         hx-target="this"
+         hx-swap="outerHTML">
+    <header class="dash-card-head">
+        <div>
+            <h2 class="card-title">Today</h2>
+            <p class="muted card-subtitle">{{.Date.Format "Monday, Jan 2"}}</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh summary"
+                hx-get="/dashboard/cards/summary"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "refresh")}}
+        </button>
+    </header>
+
+    {{- if .HasData -}}
+    <div class="summary-hero">
+        <div class="summary-hero-main">
+            <div class="summary-hero-label">Completion</div>
+            <div class="summary-hero-value">{{.CompletionPct}}<span>%</span></div>
+        </div>
+        <dl class="summary-grid">
+            <div class="summary-stat">
+                <dt>Total</dt>
+                <dd>{{.Total}}</dd>
+            </div>
+            <div class="summary-stat summary-stat--success">
+                <dt>Done</dt>
+                <dd>{{.Completed}}</dd>
+            </div>
+            <div class="summary-stat summary-stat--warn">
+                <dt>Overdue</dt>
+                <dd>{{.Overdue}}</dd>
+            </div>
+            <div class="summary-stat summary-stat--info">
+                <dt>Carried</dt>
+                <dd>{{.CarryOver}}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="summary-progress" role="progressbar"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.CompletionPct}}"
+         aria-label="Today's completion">
+        <div class="summary-progress-bar summary-progress-bar--p{{.CompletionStep}}"></div>
+        <span class="summary-progress-label">{{.Completed}} of {{.Total}} tasks complete</span>
+    </div>
+    {{- else -}}
+    {{template "empty_state" (dict
+        "icon" "inbox"
+        "title" "No tasks today"
+        "message" "Create a task or carry one over to get started.")}}
+    {{- end -}}
+</article>
+{{end}}

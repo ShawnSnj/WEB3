@@ -1,0 +1,20 @@
+{{- define "analytics_comparison" -}}
+<article class="card analytics-comparison-card">
+    <header class="card-head">
+        <h2 class="card-title">Trend comparison</h2>
+        <p class="muted card-subtitle">{{.PeriodLabel}} vs {{.PrevPeriodLabel}}</p>
+    </header>
+    <dl class="analytics-comparison-grid">
+        <div>
+            <dt>Completion rate</dt>
+            <dd>{{.CompletionPct}}%</dd>
+            <dd class="muted analytics-delta">{{analyticsDeltaHint .CompletionPPDelta "pp"}}</dd>
+        </div>
+        <div>
+            <dt>Tasks completed</dt>
+            <dd>{{.Completed}}</dd>
+            <dd class="muted analytics-delta">{{analyticsDeltaHint .CompletedDelta ""}}</dd>
+        </div>
+    </dl>
+</article>
+{{- end -}}

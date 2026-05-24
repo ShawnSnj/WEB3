@@ -1,0 +1,45 @@
+{{- /*
+  dashboard_trend_card — 7-day completion bar chart, server-rendered HTML
+  (no JS, no SVG, no inline styles — uses CSS height buckets).
+  Data: web.TrendCardVM
+*/ -}}
+{{define "dashboard_trend_card"}}
+<article class="card dash-card" data-card="trend">
+    <header class="dash-card-head">
+        <div>
+            <h2 class="card-title">7-day completions</h2>
+            <p class="muted card-subtitle">
+                {{.Total}} completed · peak {{.MaxDay}} in a single day
+            </p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh trend"
+                hx-get="/dashboard/cards/trend"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "refresh")}}
+        </button>
+    </header>
+
+    {{if and .Days (gt .Total 0)}}
+    <div class="trend-chart" role="img"
+         aria-label="Daily completions for the last 7 days, total {{.Total}}">
+        <ul class="trend-bars">
+            {{range .Days}}
+            <li class="trend-bar-cell{{if .IsToday}} trend-bar-cell--today{{end}}">
+                <span class="trend-count">{{.Count}}</span>
+                <span class="trend-bar {{.HeightCls}}"
+                      aria-label="{{.Label}}: {{.Count}} completions"></span>
+                <span class="trend-label">{{.Label}}</span>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{else}}
+    {{template "empty_state" (dict
+        "icon" "chart"
+        "title" "No data yet"
+        "message" "Complete a task to start seeing your trend.")}}
+    {{end}}
+</article>
+{{end}}

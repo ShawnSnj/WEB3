@@ -1,0 +1,68 @@
+{{- /*
+  weekly_notes_section — four reflection text areas with autosave.
+  Data: web.WeeklyNotesVM
+*/ -}}
+{{define "weekly_notes_section"}}
+<div class="weekly-notes-section" id="weekly-notes-section">
+    <header class="weekly-notes-head">
+        <h3 class="weekly-section-title">Reflection</h3>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh notes"
+                hx-get="/reviews/weekly/sections/notes?week={{.WeekInput}}"
+                hx-target="#weekly-notes-section"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+
+    <div class="weekly-notes-grid">
+        <form class="review-section card review-card weekly-note-card"
+              hx-patch="/reviews/weekly/autosave?section=wins&week={{.WeekInput}}"
+              hx-target="#weekly-save-status"
+              hx-swap="innerHTML"
+              hx-trigger="keyup changed delay:900ms from:textarea">
+            <input type="hidden" name="week" value="{{.WeekInput}}">
+            <label class="review-label" for="weekly-wins">Wins</label>
+            <p class="muted review-hint">What went well this week?</p>
+            <textarea id="weekly-wins" name="wins" class="review-textarea" rows="5"
+                      placeholder="Shipped 3 applications&#10;Maintained daily streak">{{.Wins}}</textarea>
+        </form>
+
+        <form class="review-section card review-card weekly-note-card"
+              hx-patch="/reviews/weekly/autosave?section=bottlenecks&week={{.WeekInput}}"
+              hx-target="#weekly-save-status"
+              hx-swap="innerHTML"
+              hx-trigger="keyup changed delay:900ms from:textarea">
+            <input type="hidden" name="week" value="{{.WeekInput}}">
+            <label class="review-label" for="weekly-bottlenecks">Bottlenecks</label>
+            <p class="muted review-hint">What blocked progress?</p>
+            <textarea id="weekly-bottlenecks" name="bottlenecks" class="review-textarea" rows="5"
+                      placeholder="Too many context switches&#10;Unclear job requirements">{{.Bottlenecks}}</textarea>
+        </form>
+
+        <form class="review-section card review-card weekly-note-card"
+              hx-patch="/reviews/weekly/autosave?section=improvement&week={{.WeekInput}}"
+              hx-target="#weekly-save-status"
+              hx-swap="innerHTML"
+              hx-trigger="keyup changed delay:900ms from:textarea">
+            <input type="hidden" name="week" value="{{.WeekInput}}">
+            <label class="review-label" for="weekly-improvement">Improvement notes</label>
+            <p class="muted review-hint">What will you do differently?</p>
+            <textarea id="weekly-improvement" name="improvement_notes" class="review-textarea" rows="5"
+                      placeholder="Batch outreach on Tuesdays&#10;Shorter task estimates">{{.ImprovementNotes}}</textarea>
+        </form>
+
+        <form class="review-section card review-card weekly-note-card"
+              hx-patch="/reviews/weekly/autosave?section=priorities&week={{.WeekInput}}"
+              hx-target="#weekly-save-status"
+              hx-swap="innerHTML"
+              hx-trigger="keyup changed delay:900ms from:textarea">
+            <input type="hidden" name="week" value="{{.WeekInput}}">
+            <label class="review-label" for="weekly-priorities">Next week priorities</label>
+            <p class="muted review-hint">Top 3–5 focus areas</p>
+            <textarea id="weekly-priorities" name="next_week_priorities" class="review-textarea" rows="5"
+                      placeholder="1. Follow up on interviews&#10;2. Portfolio refresh">{{.NextWeekPriorities}}</textarea>
+        </form>
+    </div>
+</div>
+{{end}}

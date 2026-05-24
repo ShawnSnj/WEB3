@@ -1,0 +1,34 @@
+{{- /*
+  analytics_chart_card — reusable Chart.js card with HTMX refresh.
+  Data: web.AnalyticsChartVM
+*/ -}}
+{{define "analytics_chart_card"}}
+<article class="card analytics-chart-card" id="card-{{.ChartID}}">
+    <header class="analytics-card-head">
+        <div>
+            <h3 class="card-title">{{.Title}}</h3>
+            {{if .Subtitle}}<p class="muted card-subtitle">{{.Subtitle}}</p>{{end}}
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh chart"
+                hx-get="/analytics/charts/{{chartRefreshPath .ChartID}}?range={{.Range}}"
+                hx-target="#card-{{.ChartID}}"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+    {{if .Empty}}
+    {{template "empty_state" (dict
+        "icon" "chart"
+        "title" .EmptyTitle
+        "message" .EmptyMsg)}}
+    {{else}}
+    <div class="analytics-chart-wrap">
+        <canvas id="{{.ChartID}}" aria-label="{{.Title}}"></canvas>
+        <script type="application/json" class="analytics-chart-config"
+                data-chart-id="{{.ChartID}}"
+                data-chart-type="{{.ChartType}}">{{.ConfigJSON}}</script>
+    </div>
+    {{end}}
+</article>
+{{end}}

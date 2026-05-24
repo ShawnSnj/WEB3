@@ -1,0 +1,37 @@
+{{define "content"}}
+{{- $q := .Data.Query -}}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Tasks</h2>
+        <p class="muted page-subtitle">Plan, execute, and carry over what matters today.</p>
+    </div>
+    <div class="page-actions">
+        <button type="button" class="btn btn-primary"
+                data-shortcut="new-task"
+                hx-get="/tasks/form"
+                hx-target="#task-modal"
+                hx-swap="innerHTML"
+                aria-haspopup="dialog">
+            {{template "htmx_spinner" .}}
+            {{template "icon" (dict "name" "plus")}}
+            <span>New task</span>
+        </button>
+    </div>
+</div>
+
+{{template "tasks_tabs" .Data}}
+{{template "tasks_filter_bar" .Data}}
+{{template "tasks_bulk_bar" .Data}}
+
+<div id="tasks-list-host"
+     hx-get="{{.Data.Query.ListPath}}"
+     hx-trigger="tasks-changed from:body"
+     hx-target="#tasks-list"
+     hx-swap="outerHTML">
+    {{template "tasks_list" .Data.List}}
+</div>
+
+{{/* Modal slot — populated on demand by hx-get into innerHTML.
+     Empty by default so it doesn't consume any space. */}}
+<div id="task-modal" role="presentation"></div>
+{{end}}

@@ -1,0 +1,43 @@
+{{- /*
+  dashboard_suggestions_card — rule-engine output for the user.
+  Data: web.SuggestionCardVM
+*/ -}}
+{{define "dashboard_suggestions_card"}}
+<article class="card dash-card" data-card="suggestions">
+    <header class="dash-card-head">
+        <div>
+            <h2 class="card-title">Suggestions</h2>
+            <p class="muted card-subtitle">Patterns the engine noticed</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh suggestions"
+                hx-get="/dashboard/cards/suggestions"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "refresh")}}
+        </button>
+    </header>
+
+    {{if .Items}}
+    <ul class="suggestion-list">
+        {{range .Items}}
+        <li class="suggestion suggestion--{{.Severity}}">
+            <div class="suggestion-bar" aria-hidden="true"></div>
+            <div class="suggestion-body">
+                <header class="suggestion-head">
+                    <strong class="suggestion-title">{{.Title}}</strong>
+                    <span class="badge badge--{{.Severity}}">{{.Severity}}</span>
+                </header>
+                <p class="suggestion-message muted">{{.Message}}</p>
+            </div>
+        </li>
+        {{end}}
+    </ul>
+    {{else}}
+    {{template "empty_state" (dict
+        "icon" "spark"
+        "title" "Nothing to flag"
+        "message" "When patterns emerge, suggestions will appear here.")}}
+    {{end}}
+</article>
+{{end}}

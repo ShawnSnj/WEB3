@@ -1,0 +1,50 @@
+{{define "content"}}
+{{- $d := .Data -}}
+<div class="review-page">
+    <header class="review-header">
+        <div>
+            <h2 class="page-title">Daily Review</h2>
+            <p class="muted page-subtitle">{{$d.DateLabel}}{{if $d.IsToday}} · today{{end}}</p>
+        </div>
+        <div class="review-header-actions">
+            <nav class="review-date-nav" aria-label="Review date">
+                <a class="icon-button" href="{{$d.PrevPath}}"
+                   hx-get="{{$d.PrevPath}}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   aria-label="Previous day">
+                    {{template "icon" (dict "name" "chevron-left")}}
+                </a>
+                <input type="date" class="review-date-input" value="{{$d.DateInput}}"
+                       aria-label="Review date"
+                       onchange="window.location.href='/reviews/daily?date='+this.value">
+                <a class="icon-button" href="{{$d.NextPath}}"
+                   hx-get="{{$d.NextPath}}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   aria-label="Next day">
+                    {{template "icon" (dict "name" "chevron-right")}}
+                </a>
+            </nav>
+            <div id="review-save-status" class="review-save-status" aria-live="polite">
+                {{template "review_save_status" $d.SaveStatus}}
+            </div>
+        </div>
+    </header>
+
+    <div class="review-layout">
+        <div class="review-journal">
+            {{template "review_journal" $d}}
+        </div>
+        <div class="review-sidebar-wrap"
+             hx-get="{{$d.SnapshotPath}}"
+             hx-trigger="review-snapshot-refresh from:body"
+             hx-target="#review-snapshot"
+             hx-swap="outerHTML">
+            {{template "review_snapshot" $d.Snapshot}}
+        </div>
+    </div>
+</div>
+{{end}}

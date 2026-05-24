@@ -1,0 +1,25 @@
+{{- /*
+  analytics_panels — all refreshable analytics sections. Swapped as a
+  unit when the time range changes, or chart-by-chart via individual
+  refresh buttons.
+  Data: web.AnalyticsPageVM
+*/ -}}
+{{define "analytics_panels"}}
+<div id="analytics-kpis">
+    {{template "analytics_kpis" .KPIs}}
+</div>
+
+<div id="analytics-comparison">
+    {{template "analytics_comparison" .Comparison}}
+</div>
+
+<div class="analytics-charts-grid">
+    <div id="analytics-chart-completion">{{template "analytics_chart_card" .Completion}}</div>
+    <div id="analytics-chart-productivity">{{template "analytics_chart_card" .Productivity}}</div>
+    <div id="analytics-chart-carry">{{template "analytics_chart_card" .Carry}}</div>
+    <div id="analytics-chart-overdue">{{template "analytics_chart_card" .Overdue}}</div>
+    <div id="analytics-chart-category">{{template "analytics_chart_card" .Category}}</div>
+    <div id="analytics-chart-execution">{{template "analytics_chart_card" .Execution}}</div>
+    <div id="analytics-chart-streak" class="analytics-chart-wide">{{template "analytics_chart_card" .Streak}}</div>
+</div>
+{{end}}

@@ -1,0 +1,41 @@
+{{- /*
+  weekly_stats_card — top metric strip (4 stats).
+  Data: web.WeeklyStatsVM
+*/ -}}
+{{define "weekly_stats_card"}}
+<article class="card weekly-card weekly-stats-card" data-card="stats"
+         id="weekly-stats-card">
+    <header class="weekly-card-head">
+        <h3 class="weekly-card-title">Week at a glance</h3>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh stats"
+                hx-get="/reviews/weekly/cards/stats?week={{.WeekInput}}"
+                hx-target="#weekly-stats-card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+    <dl class="weekly-stat-grid">
+        <div class="weekly-stat">
+            <dt>Completion rate</dt>
+            <dd>{{.CompletionPct}}<span class="weekly-stat-unit">%</span></dd>
+            <dd class="muted weekly-stat-hint">{{.CompletedCount}} of {{.TotalTasks}} tasks</dd>
+        </div>
+        <div class="weekly-stat weekly-stat--warn">
+            <dt>Missed tasks</dt>
+            <dd>{{.MissedCount}}</dd>
+            <dd class="muted weekly-stat-hint">did not finish</dd>
+        </div>
+        <div class="weekly-stat weekly-stat--info">
+            <dt>Carry-over</dt>
+            <dd>{{.CarryOverPct}}<span class="weekly-stat-unit">%</span></dd>
+            <dd class="muted weekly-stat-hint">{{.CarryOverCount}} rolled{{if ne .CarryOverDelta 0}} · {{if gt .CarryOverDelta 0}}+{{end}}{{.CarryOverDelta}}pp vs last{{end}}</dd>
+        </div>
+        <div class="weekly-stat weekly-stat--accent">
+            <dt>Avg focus time</dt>
+            <dd>{{.FocusAvgPerDay}}<span class="weekly-stat-unit">m</span></dd>
+            <dd class="muted weekly-stat-hint">{{.FocusMinutes}}m total</dd>
+        </div>
+    </dl>
+</article>
+{{end}}

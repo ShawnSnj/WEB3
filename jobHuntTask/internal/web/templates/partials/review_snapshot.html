@@ -1,0 +1,68 @@
+{{- /*
+  review_snapshot — execution summary sidebar card content.
+  Data: web.ReviewSnapshotVM
+*/ -}}
+{{define "review_snapshot"}}
+<div class="review-sidebar card review-card" id="review-snapshot">
+    <header class="review-sidebar-head">
+        <div>
+            <h3 class="review-sidebar-title">Execution</h3>
+            <p class="muted review-sidebar-sub">{{.DateLabel}}</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh snapshot"
+                hx-get="/reviews/daily/snapshot?date={{.Date.Format "2006-01-02"}}"
+                hx-target="#review-snapshot"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "spark")}}
+        </button>
+    </header>
+
+    <div class="review-stat-hero">
+        <div class="review-stat-value">{{.ExecutionMinutes}}</div>
+        <div class="muted review-stat-label">execution minutes</div>
+    </div>
+
+    {{template "review_task_group" (dict
+        "Title" "Completed"
+        "Count" .CompletedCount
+        "Tasks" .Completed
+        "Tone" "success"
+        "Empty" "Nothing completed yet.")}}
+
+    {{template "review_task_group" (dict
+        "Title" "Unfinished"
+        "Count" .UnfinishedCount
+        "Tasks" .Unfinished
+        "Tone" "info"
+        "Empty" "All caught up.")}}
+
+    {{template "review_task_group" (dict
+        "Title" "Overdue"
+        "Count" .OverdueCount
+        "Tasks" .Overdue
+        "Tone" "warn"
+        "Empty" "Nothing overdue.")}}
+</div>
+{{end}}
+
+{{define "review_task_group"}}
+<section class="review-task-group review-task-group--{{.Tone}}">
+    <h4 class="review-task-group-title">
+        {{.Title}}
+        <span class="review-task-count">{{.Count}}</span>
+    </h4>
+    {{if .Tasks}}
+    <ul class="review-task-list">
+        {{range .Tasks}}
+        <li class="review-task-item">
+            <span class="review-task-title">{{.Title}}</span>
+            <span class="muted review-task-meta">{{.Category}}{{if gt .Minutes 0}} · {{.Minutes}}m{{end}}</span>
+        </li>
+        {{end}}
+    </ul>
+    {{else}}
+    <p class="muted review-task-empty">{{.Empty}}</p>
+    {{end}}
+</section>
+{{end}}

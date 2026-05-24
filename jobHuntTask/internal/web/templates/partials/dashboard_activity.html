@@ -1,0 +1,76 @@
+{{- /*
+  dashboard_activity_card — three small feeds in one card.
+  Data: web.ActivityCardVM
+*/ -}}
+{{define "dashboard_activity_card"}}
+<article class="card dash-card" data-card="activity">
+    <header class="dash-card-head">
+        <div>
+            <h2 class="card-title">Recent activity</h2>
+            <p class="muted card-subtitle">Last few things across the app</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh activity"
+                hx-get="/dashboard/cards/activity"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "refresh")}}
+        </button>
+    </header>
+
+    <div class="activity-cols">
+        <section class="activity-col" aria-labelledby="activity-completed">
+            <h3 id="activity-completed" class="activity-col-title">Completed</h3>
+            {{if .RecentlyCompleted}}
+            <ul class="activity-list">
+                {{range .RecentlyCompleted}}
+                {{template "_activity_item" .}}
+                {{end}}
+            </ul>
+            {{else}}
+            <p class="muted activity-empty">Nothing yet today.</p>
+            {{end}}
+        </section>
+
+        <section class="activity-col" aria-labelledby="activity-reminders">
+            <h3 id="activity-reminders" class="activity-col-title">Reminders</h3>
+            {{if .RecentReminders}}
+            <ul class="activity-list">
+                {{range .RecentReminders}}
+                {{template "_activity_item" .}}
+                {{end}}
+            </ul>
+            {{else}}
+            <p class="muted activity-empty">No reminders queued.</p>
+            {{end}}
+        </section>
+
+        <section class="activity-col" aria-labelledby="activity-reviews">
+            <h3 id="activity-reviews" class="activity-col-title">Reflections</h3>
+            {{if .LatestReviews}}
+            <ul class="activity-list">
+                {{range .LatestReviews}}
+                {{template "_activity_item" .}}
+                {{end}}
+            </ul>
+            {{else}}
+            <p class="muted activity-empty">No reviews recorded yet.</p>
+            {{end}}
+        </section>
+    </div>
+</article>
+{{end}}
+
+{{- /* Reusable row inside any activity-col */ -}}
+{{define "_activity_item"}}
+<li class="activity-item activity-item--{{with .Tone}}{{.}}{{else}}info{{end}}">
+    <span class="activity-dot" aria-hidden="true"></span>
+    <span class="activity-body">
+        <span class="activity-title">{{.Title}}</span>
+        {{- if .Subtitle -}}
+        <span class="activity-sub muted">{{.Subtitle}}</span>
+        {{- end -}}
+    </span>
+    <span class="activity-when muted">{{.When}}</span>
+</li>
+{{end}}

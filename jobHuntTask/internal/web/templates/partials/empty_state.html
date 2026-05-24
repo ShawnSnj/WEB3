@@ -1,0 +1,39 @@
+{{- /*
+  empty_state.html — placeholder for any list/section that has no data yet.
+
+  Usage:
+    {{template "empty_state" (dict
+        "icon"    "inbox"
+        "title"   "No tasks yet"
+        "message" "Create your first task to get started."
+        "action"  (dict "label" "New task" "href" "/tasks"))}}
+
+  All fields except title are optional.
+*/ -}}
+{{define "empty_state"}}
+<div class="empty-state" role="status">
+    {{- if hasKey . "icon" -}}
+    <div class="empty-state-icon" aria-hidden="true">
+        {{template "icon" (dict "name" .icon)}}
+    </div>
+    {{- end -}}
+    <h3 class="empty-state-title">{{.title}}</h3>
+    {{- if hasKey . "message" -}}
+    <p class="empty-state-message muted">{{.message}}</p>
+    {{- end -}}
+    {{- if hasKey . "action" -}}
+        {{- with .action -}}
+            {{- if hasKey . "hx_get" -}}
+        <button type="button" class="btn btn-primary"
+                hx-get="{{.hx_get}}"
+                hx-target="{{.hx_target}}"
+                hx-swap="{{if hasKey . "hx_swap"}}{{.hx_swap}}{{else}}outerHTML{{end}}">
+            {{.label}}
+        </button>
+            {{- else -}}
+        <a class="btn btn-primary" href="{{.href}}">{{.label}}</a>
+            {{- end -}}
+        {{- end -}}
+    {{- end -}}
+</div>
+{{end}}

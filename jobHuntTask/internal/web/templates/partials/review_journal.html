@@ -1,0 +1,115 @@
+{{- /*
+  review_journal — distraction-free journal cards. Each section autosaves
+  independently via PATCH /reviews/daily/autosave?section=…
+  Data: web.DailyReviewPageVM
+*/ -}}
+{{define "review_journal"}}
+{{- $date := .DateInput -}}
+{{- $r := .Review -}}
+
+<form class="review-section review-section--hero"
+      hx-patch="/reviews/daily/autosave?section=reflection&date={{$date}}"
+      hx-target="#review-save-status"
+      hx-swap="innerHTML"
+      hx-trigger="keyup changed delay:900ms from:textarea">
+    <input type="hidden" name="date" value="{{$date}}">
+    <label class="review-label" for="reflection">Reflections</label>
+    <p class="muted review-hint">How did today feel? What did you learn?</p>
+    <textarea id="reflection" name="reflection" class="review-textarea review-textarea--large"
+              rows="8" placeholder="Today I focused on…">{{$r.Reflection}}</textarea>
+</form>
+
+<div class="review-two-col">
+    <form class="review-section card review-card"
+          hx-patch="/reviews/daily/autosave?section=wins&date={{$date}}"
+          hx-target="#review-save-status"
+          hx-swap="innerHTML"
+          hx-trigger="keyup changed delay:900ms from:textarea">
+        <input type="hidden" name="date" value="{{$date}}">
+        <label class="review-label" for="wins">Wins</label>
+        <p class="muted review-hint">One per line</p>
+        <textarea id="wins" name="wins" class="review-textarea" rows="6"
+                  placeholder="Shipped a PR&#10;Had a good call">{{$r.WinsText}}</textarea>
+    </form>
+
+    <form class="review-section card review-card"
+          hx-patch="/reviews/daily/autosave?section=blockers&date={{$date}}"
+          hx-target="#review-save-status"
+          hx-swap="innerHTML"
+          hx-trigger="keyup changed delay:900ms from:textarea">
+        <input type="hidden" name="date" value="{{$date}}">
+        <label class="review-label" for="blockers">Blockers</label>
+        <p class="muted review-hint">What slowed you down?</p>
+        <textarea id="blockers" name="blockers" class="review-textarea" rows="6"
+                  placeholder="Waiting on feedback&#10;Low energy after lunch">{{$r.BlockersText}}</textarea>
+    </form>
+</div>
+
+<div class="review-two-col">
+    <form class="review-section card review-card"
+          hx-patch="/reviews/daily/autosave?section=distractions&date={{$date}}"
+          hx-target="#review-save-status"
+          hx-swap="innerHTML"
+          hx-trigger="keyup changed delay:900ms from:textarea">
+        <input type="hidden" name="date" value="{{$date}}">
+        <label class="review-label" for="distractions">Distractions</label>
+        <p class="muted review-hint">One per line — be honest</p>
+        <textarea id="distractions" name="distractions" class="review-textarea" rows="5"
+                  placeholder="Social media&#10;Context switching">{{$r.DistractionsText}}</textarea>
+    </form>
+
+    <form class="review-section card review-card"
+          hx-patch="/reviews/daily/autosave?section=notes&date={{$date}}"
+          hx-target="#review-save-status"
+          hx-swap="innerHTML"
+          hx-trigger="keyup changed delay:900ms from:textarea">
+        <input type="hidden" name="date" value="{{$date}}">
+        <label class="review-label" for="notes">Notes</label>
+        <p class="muted review-hint">Anything else worth capturing</p>
+        <textarea id="notes" name="notes" class="review-textarea" rows="5"
+                  placeholder="Follow up tomorrow on…">{{$r.Notes}}</textarea>
+    </form>
+</div>
+
+<form class="review-section card review-card review-scores"
+      hx-patch="/reviews/daily/autosave?section=scores&date={{$date}}"
+      hx-target="#review-save-status"
+      hx-swap="innerHTML"
+      hx-trigger="change delay:300ms">
+    <input type="hidden" name="date" value="{{$date}}">
+    <div class="review-score-row">
+        <div class="review-score">
+            <label class="review-label" for="energy_level">Energy level</label>
+            <p class="muted review-hint">0 = drained · 10 = peak</p>
+            <div class="review-range-wrap">
+                <input id="energy_level" name="energy_level" type="range"
+                       min="0" max="10" step="1" value="{{$r.EnergyLevel}}"
+                       class="review-range" aria-valuemin="0" aria-valuemax="10"
+                       oninput="this.parentElement.querySelector('output').textContent=this.value">
+                <output class="review-range-value" for="energy_level">{{$r.EnergyLevel}}</output>
+            </div>
+        </div>
+        <div class="review-score">
+            <label class="review-label" for="productivity_score">Productivity score</label>
+            <p class="muted review-hint">Honest read on output</p>
+            <div class="review-range-wrap">
+                <input id="productivity_score" name="productivity_score" type="range"
+                       min="0" max="10" step="1" value="{{$r.ProductivityScore}}"
+                       class="review-range" aria-valuemin="0" aria-valuemax="10"
+                       oninput="this.parentElement.querySelector('output').textContent=this.value">
+                <output class="review-range-value" for="productivity_score">{{$r.ProductivityScore}}</output>
+            </div>
+        </div>
+    </div>
+</form>
+
+<form class="review-submit-bar"
+      hx-post="/reviews/daily/submit?date={{$date}}"
+      hx-include=".review-journal .review-section"
+      hx-target="#review-save-status"
+      hx-swap="innerHTML">
+    <input type="hidden" name="date" value="{{$date}}">
+    <button type="submit" class="btn btn-primary">Save review</button>
+    <span class="muted review-submit-hint">Autosave handles drafts — use this when you're done.</span>
+</form>
+{{end}}

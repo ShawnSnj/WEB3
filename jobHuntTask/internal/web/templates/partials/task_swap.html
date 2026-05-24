@@ -1,0 +1,13 @@
+{{- /*
+  task_swap — row + mobile card OOB bundle returned after state changes.
+  Data: web.TaskRowVM
+*/ -}}
+{{define "task_swap_bundle"}}
+{{template "task_row" .}}
+{{template "task_card_oob" .}}
+{{end}}
+
+{{define "task_delete_bundle"}}
+<tr id="task-row-{{.ID}}" hx-swap-oob="delete"></tr>
+<li id="task-card-{{.ID}}" hx-swap-oob="delete"></li>
+{{end}}

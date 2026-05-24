@@ -1,0 +1,50 @@
+{{- /*
+  dashboard_streak_card — completion-day streak.
+  Data: web.StreakCardVM
+*/ -}}
+{{define "dashboard_streak_card"}}
+<article class="card dash-card" data-card="streak">
+    <header class="dash-card-head">
+        <div>
+            <h2 class="card-title">Streak</h2>
+            <p class="muted card-subtitle">Consecutive completion days</p>
+        </div>
+        <button type="button" class="icon-button card-refresh"
+                aria-label="Refresh streak"
+                hx-get="/dashboard/cards/streak"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            {{template "icon" (dict "name" "refresh")}}
+        </button>
+    </header>
+
+    <div class="streak-hero">
+        <div class="streak-flame" aria-hidden="true">
+            {{template "icon" (dict "name" "flame")}}
+        </div>
+        <div>
+            <div class="streak-current">{{.Current}}</div>
+            <div class="muted streak-current-label">day streak</div>
+        </div>
+    </div>
+
+    <dl class="streak-meta">
+        <div>
+            <dt>Longest</dt>
+            <dd>{{.Longest}} <span class="muted">days</span></dd>
+        </div>
+        <div>
+            <dt>Missed this week</dt>
+            <dd>{{.MissedDays}} <span class="muted">days</span></dd>
+        </div>
+        <div>
+            <dt>Today</dt>
+            <dd>{{.TodayCount}} <span class="muted">done</span></dd>
+        </div>
+    </dl>
+
+    {{if .LastCompletion}}
+    <p class="muted streak-last-line">Last completion: {{.LastCompletion.Format "Mon, Jan 2"}}</p>
+    {{end}}
+</article>
+{{end}}

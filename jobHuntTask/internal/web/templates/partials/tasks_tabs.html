@@ -1,0 +1,24 @@
+{{- /*
+  tasks_tabs — view selector. Each tab swaps the list container without a
+  page reload. Active state set server-side so reloads / shared URLs work.
+  Data: web.TasksPageVM (uses .Query and .Counts).
+*/ -}}
+{{define "tasks_tabs"}}
+{{- $q := .Query -}}
+{{- $counts := .Counts -}}
+<nav class="tasks-tabs" aria-label="Task views">
+    {{range $v := views -}}
+    {{- $q2 := $q.WithView $v.Key -}}
+    <a class="tab{{if eq $q.View $v.Key}} tab--active{{end}}"
+       href="{{$q2.PagePath}}"
+       hx-get="{{$q2.ListPath}}"
+       hx-target="#tasks-list"
+       hx-swap="outerHTML"
+       hx-push-url="{{$q2.PagePath}}"
+       {{if eq $q.View $v.Key}}aria-current="page"{{end}}>
+        <span class="tab-label">{{$v.Label}}</span>
+        <span class="tab-count">{{viewCount $v.Key $counts}}</span>
+    </a>
+    {{- end}}
+</nav>
+{{end}}

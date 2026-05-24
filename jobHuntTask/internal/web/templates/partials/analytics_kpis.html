@@ -1,0 +1,23 @@
+{{- define "analytics_kpis" -}}
+<section class="metric-grid analytics-kpis" aria-label="Headline metrics">
+    {{template "card_simple" (dict
+        "title" "Tasks completed"
+        "value" .Completed
+        "hint" (analyticsDeltaHint .CompletedDelta "vs prior period")
+        "tone" "accent")}}
+    {{template "card_simple" (dict
+        "title" "Completion rate"
+        "value" (printf "%d%%" .CompletionPct)
+        "hint" (printf "%d day streak · best %d" .CurrentStreak .LongestStreak)
+        "tone" "success")}}
+    {{template "card_simple" (dict
+        "title" "Overdue rate"
+        "value" (printf "%d%%" .OverduePct)
+        "hint" (printf "Carry-over %d%%" .CarryOverPct)
+        "tone" "warn")}}
+    {{template "card_simple" (dict
+        "title" "Avg execution time"
+        "value" (printf "%d min" .AvgExecMinutes)
+        "hint" "Completed tasks only")}}
+</section>
+{{- end -}}

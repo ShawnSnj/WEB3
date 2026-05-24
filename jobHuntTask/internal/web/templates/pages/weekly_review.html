@@ -1,0 +1,58 @@
+{{define "content"}}
+{{- $d := .Data -}}
+<div class="weekly-page">
+    <header class="weekly-header">
+        <div>
+            <h2 class="page-title">Weekly Review</h2>
+            <p class="muted page-subtitle">{{$d.WeekLabel}} · 7-day report</p>
+        </div>
+        <div class="weekly-header-actions">
+            <nav class="review-date-nav" aria-label="Week navigation">
+                <a class="icon-button" href="{{$d.PrevPath}}"
+                   hx-get="{{$d.PrevPath}}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   aria-label="Previous week">
+                    {{template "icon" (dict "name" "chevron-left")}}
+                </a>
+                <input type="date" class="review-date-input" value="{{$d.WeekInput}}"
+                       aria-label="Week start"
+                       onchange="window.location.href='/reviews/weekly?week='+this.value">
+                <a class="icon-button" href="{{$d.NextPath}}"
+                   hx-get="{{$d.NextPath}}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   aria-label="Next week"
+                   {{if $d.IsCurrent}}aria-disabled="true" tabindex="-1" style="opacity:0.4;pointer-events:none"{{end}}>
+                    {{template "icon" (dict "name" "chevron-right")}}
+                </a>
+            </nav>
+            <div id="weekly-save-status" class="review-save-status" aria-live="polite">
+                {{template "review_save_status" $d.SaveStatus}}
+            </div>
+        </div>
+    </header>
+
+    <section class="weekly-report" aria-label="Weekly report">
+        <div class="weekly-stats-row">
+            {{template "weekly_stats_card" $d.Stats}}
+        </div>
+
+        <div class="weekly-grid-two">
+            {{template "weekly_charts_card" $d.Charts}}
+            {{template "weekly_streak_card" $d.Streak}}
+        </div>
+
+        <div class="weekly-grid-two">
+            {{template "weekly_categories_card" $d.Categories}}
+            {{template "weekly_suggestions_card" $d.Suggestions}}
+        </div>
+
+        <section class="weekly-notes-wrap" aria-label="Reflection notes">
+            {{template "weekly_notes_section" $d.Notes}}
+        </section>
+    </section>
+</div>
+{{end}}
