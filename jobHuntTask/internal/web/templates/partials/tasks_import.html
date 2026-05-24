@@ -1,0 +1,75 @@
+{{- /*
+  tasks_import_form — CSV paste import modal.
+  Data: web.TasksImportFormVM
+*/ -}}
+{{define "tasks_import_form"}}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="import-form-title" tabindex="-1">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel modal-panel--wide" role="document">
+        <header class="modal-head">
+            <div>
+                <h2 id="import-form-title" class="modal-title">Import daily tasks</h2>
+                <p class="muted card-subtitle">Paste CSV from a spreadsheet or upload a file.</p>
+            </div>
+            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                {{template "icon" (dict "name" "x")}}
+            </button>
+        </header>
+
+        <div class="import-help">
+            <p class="muted">Columns: <code>task_id</code>, <code>title</code>, <code>category</code>, <code>priority</code>, <code>estimated_minutes</code>, <code>due_date</code>, <code>notes</code>. Category aliases like <code>application</code>, <code>outreach</code>, <code>portfolio</code> are mapped automatically. Blank <code>due_date</code> → today.</p>
+            <a class="btn btn-ghost btn-sm" href="/tasks/import/template.csv" download="daily_tasks_template.csv">
+                {{template "icon" (dict "name" "inbox")}}
+                <span>Download template</span>
+            </a>
+        </div>
+
+        <form class="import-form"
+              hx-post="/tasks/import"
+              hx-target="#import-result"
+              hx-swap="innerHTML"
+              enctype="multipart/form-data">
+            <label class="field">
+                <span class="field-label">Default due date (when row is blank)</span>
+                <input type="date" name="default_due" value="{{.DefaultDue}}">
+            </label>
+
+            <label class="field">
+                <span class="field-label">CSV file</span>
+                <input type="file" name="file" accept=".csv,text/csv" class="import-file">
+            </label>
+
+            <label class="field">
+                <span class="field-label">Or paste CSV</span>
+                <textarea name="csv" rows="10" class="import-textarea" placeholder="title,description,category,priority,estimated_minutes,due_date&#10;Apply to Acme,,job_apply,high,30,"></textarea>
+            </label>
+
+            <div id="import-result"></div>
+
+            <footer class="modal-foot">
+                <button type="button" class="btn btn-ghost" data-action="close-modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    {{template "htmx_spinner" .}}
+                    <span>Import tasks</span>
+                </button>
+            </footer>
+        </form>
+    </div>
+</div>
+{{end}}
+
+{{define "tasks_import_result"}}
+<div class="import-result" role="status">
+    <p class="import-result-summary">
+        Imported <strong>{{.Created}}</strong> task(s).
+        {{if gt .Skipped 0}}<span class="muted">{{.Skipped}} row(s) skipped.</span>{{end}}
+    </p>
+    {{if .Errors}}
+    <ul class="import-errors">
+        {{range .Errors}}
+        <li>Line {{.Line}}{{if .Title}} · {{.Title}}{{end}} — {{.Message}}</li>
+        {{end}}
+    </ul>
+    {{end}}
+</div>
+{{end}}

@@ -181,7 +181,7 @@ Server-rendered pages with partial refresh. No SPA framework.
 | Page | Path | What it does |
 | ---- | ---- | ------------ |
 | **Dashboard** | `/dashboard` | Focus-first home: today's completion hero, streak, 7-day trend, recent activity, rule-based suggestions. Cards refresh independently via HTMX. |
-| **Tasks** | `/tasks` | Full task CRUD, filters (today/overdue/completed/carried/all), sortable table + mobile cards, bulk complete/delete, modal create/edit, optimistic row updates. |
+| **Tasks** | `/tasks` | Full task CRUD, **CSV import** for daily plans, filters (today/overdue/completed/carried/all), sortable table + mobile cards, bulk complete/delete, modal create/edit, optimistic row updates. |
 | **Daily review** | `/reviews/daily` | End-of-day journal: reflection, wins, blockers, distractions, notes, energy/productivity scores. Autosaves per section; sidebar snapshot of completed/unfinished/overdue tasks. |
 | **Weekly review** | `/reviews/weekly` | 7-day report: stats, streak, category breakdown, carry-over charts, suggestions, editable wins/bottlenecks/priorities. Week navigation + autosave notes. |
 | **Analytics** | `/analytics` | Chart.js dashboards: completion trend, category ROI, weekly productivity, carry-over/overdue rates, execution time, streak history. Filterable 7/30/90-day ranges with HTMX panel refresh. |
@@ -310,6 +310,53 @@ make psql           # postgres shell in container
 `learning` · `interview` · `misc`
 
 Statuses: `pending` → `in_progress` → `completed` | `missed` (with carry-over support).
+
+---
+
+## Import daily tasks (CSV)
+
+Plan your day in a spreadsheet (Notion, Google Sheets, Excel), export as CSV, then import on the **Tasks** page via **Import**.
+
+**Tasks views:** **Today** shows items due now or overdue; **Upcoming** shows the next 7 days (use this after importing a multi-day plan).
+
+### Template
+
+Download from the app: **Tasks → Import → Download template**, or copy
+[`docs/daily_tasks_template.csv`](docs/daily_tasks_template.csv).
+
+```csv
+title,description,category,priority,estimated_minutes,due_date
+Apply to Acme Corp,Submit via Greenhouse,job_apply,high,45,
+Reach out to recruiter,,recruiter_outreach,medium,20,
+Post on LinkedIn,,twitter,low,15,
+```
+
+| Column | Required | Notes |
+| ------ | -------- | ----- |
+| `title` | yes* | Task name — or provide `task_id` as label when title is empty |
+| `task_id` | no | External code (e.g. `W1D1-01`); ignored except as title fallback |
+| `description` | no | Free text |
+| `category` | no | App category or common alias — see mapping below |
+| `notes` | no | Alias for `description` |
+| `priority` | no | `low` / `medium` / `high` / `urgent` (case-insensitive) |
+| `estimated_minutes` | no | Integer or decimal (`45`, `45.0`, `60 min`) |
+| `due_date` | no | `YYYY-MM-DD`; **blank = today** (ideal for daily imports) |
+
+**Category aliases** (import maps these to the app's fixed categories):
+
+| Your label | Stored as |
+| ---------- | --------- |
+| `application`, `apply` | `job_apply` |
+| `outreach`, `recruiter` | `recruiter_outreach` |
+| `portfolio`, `readme` | `github` |
+| `visibility`, `social`, `content` | `twitter` |
+| `branding`, `linkedin` | `networking` |
+| `study`, `practice`, `prep` | `learning` |
+| `interview`, `mock_interview`, `system_design` | `interview` |
+| `career`, `research`, `review`, `planning` | `misc` |
+| anything else unrecognized | `misc` |
+
+The import modal also lets you set a **default due date** for rows with blank dates. Rows with errors are skipped and listed in the result summary.
 
 ---
 

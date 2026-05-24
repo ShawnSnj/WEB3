@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -45,6 +46,9 @@ func (h *TasksHandler) Register(r *gin.Engine) {
 	r.GET("/tasks", h.page)
 	g := r.Group("/tasks")
 	g.GET("/list", h.list)
+	g.GET("/import/form", h.importForm)
+	g.GET("/import/template.csv", h.importTemplate)
+	g.POST("/import", h.importCSV)
 	g.GET("/form", h.formNew)
 	g.GET("/:id/form", h.formEdit)
 	g.GET("/:id/row", h.row)
@@ -68,15 +72,18 @@ type tasksView string
 
 const (
 	viewToday      tasksView = "today"
+	viewUpcoming   tasksView = "upcoming"
 	viewOverdue    tasksView = "overdue"
 	viewCompleted  tasksView = "completed"
 	viewCarried    tasksView = "carried_over"
 	viewAll        tasksView = "all"
 )
 
+const upcomingWindowDays = 7
+
 func (v tasksView) Valid() bool {
 	switch v {
-	case viewToday, viewOverdue, viewCompleted, viewCarried, viewAll:
+	case viewToday, viewUpcoming, viewOverdue, viewCompleted, viewCarried, viewAll:
 		return true
 	}
 	return false
@@ -201,10 +208,19 @@ func (q tasksQuery) toFilter(now time.Time) repository.TaskFilter {
 
 	switch q.View {
 	case viewToday:
-		// "Today" = anything with no due_date OR due_date <= end of today,
-		// and status != completed/missed (unless user filtered explicitly).
+		// Due today or earlier; active tasks only unless status is filtered.
 		end := startOfDay(now).Add(24 * time.Hour)
 		f.DueBefore = &end
+		if len(f.Statuses) == 0 {
+			f.Statuses = []model.Status{model.StatusPending, model.StatusInProgress}
+		}
+	case viewUpcoming:
+		// Next N calendar days after today (exclusive of today).
+		dayStart := startOfDay(now)
+		from := dayStart.Add(24 * time.Hour)
+		to := dayStart.Add(time.Duration(upcomingWindowDays+1) * 24 * time.Hour)
+		f.DueAfter = &from
+		f.DueBefore = &to
 		if len(f.Statuses) == 0 {
 			f.Statuses = []model.Status{model.StatusPending, model.StatusInProgress}
 		}
@@ -247,13 +263,18 @@ type TasksPageVM struct {
 }
 
 type TasksListVM struct {
-	Query tasksQuery
-	Tasks []TaskRowVM
-	Empty bool
+	Query            tasksQuery
+	Tasks            []TaskRowVM
+	Empty            bool
+	EmptyTitle       string
+	EmptyMessage     string
+	EmptyActionLabel string
+	EmptyActionHref  string
 }
 
 type TasksCountsVM struct {
 	Today       int
+	Upcoming    int
 	Overdue     int
 	Completed   int
 	CarriedOver int
@@ -356,7 +377,42 @@ func (h *TasksHandler) buildList(ctx context.Context, q tasksQuery) TasksListVM 
 		reverse(vm.Tasks)
 	}
 	vm.Empty = len(vm.Tasks) == 0
+	if vm.Empty {
+		h.applyEmptyStateHint(ctx, q, now, &vm)
+	}
 	return vm
+}
+
+func (h *TasksHandler) applyEmptyStateHint(ctx context.Context, q tasksQuery, now time.Time, vm *TasksListVM) {
+	if h.tasks == nil || q.View != viewToday {
+		return
+	}
+	upcoming, err := h.tasks.List(ctx, tasksQuery{View: viewUpcoming}.toFilter(now))
+	if err != nil || len(upcoming) == 0 {
+		return
+	}
+	vm.EmptyTitle = "Nothing due today"
+	msg := fmt.Sprintf("%d task(s) scheduled in the next %d days.", len(upcoming), upcomingWindowDays)
+	if earliest := earliestDueDate(upcoming); earliest != nil {
+		msg = fmt.Sprintf("%d task(s) scheduled starting %s.", len(upcoming), earliest.Format("Mon, Jan 2"))
+	}
+	vm.EmptyMessage = msg
+	vm.EmptyActionLabel = "View upcoming"
+	vm.EmptyActionHref = q.WithView(viewUpcoming).PagePath()
+}
+
+func earliestDueDate(tasks []*model.Task) *time.Time {
+	var earliest *time.Time
+	for _, t := range tasks {
+		if t.DueDate == nil {
+			continue
+		}
+		if earliest == nil || t.DueDate.Before(*earliest) {
+			d := *t.DueDate
+			earliest = &d
+		}
+	}
+	return earliest
 }
 
 func (h *TasksHandler) buildCounts(ctx context.Context) TasksCountsVM {
@@ -365,7 +421,7 @@ func (h *TasksHandler) buildCounts(ctx context.Context) TasksCountsVM {
 		return out
 	}
 	now := h.clock.Now()
-	for _, view := range []tasksView{viewToday, viewOverdue, viewCompleted, viewCarried} {
+	for _, view := range []tasksView{viewToday, viewUpcoming, viewOverdue, viewCompleted, viewCarried} {
 		q := tasksQuery{View: view}
 		tasks, err := h.tasks.List(ctx, q.toFilter(now))
 		if err != nil {
@@ -375,6 +431,8 @@ func (h *TasksHandler) buildCounts(ctx context.Context) TasksCountsVM {
 		switch view {
 		case viewToday:
 			out.Today = len(tasks)
+		case viewUpcoming:
+			out.Upcoming = len(tasks)
 		case viewOverdue:
 			out.Overdue = len(tasks)
 		case viewCompleted:

@@ -17,8 +17,9 @@ type ViewItem struct {
 func tasksFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"views": func() []ViewItem {
-			return []ViewItem{
+		return []ViewItem{
 				{viewToday, "Today"},
+				{viewUpcoming, "Upcoming"},
 				{viewOverdue, "Overdue"},
 				{viewCompleted, "Completed"},
 				{viewCarried, "Carried over"},
@@ -29,6 +30,8 @@ func tasksFuncMap() template.FuncMap {
 			switch v {
 			case viewToday:
 				return c.Today
+			case viewUpcoming:
+				return c.Upcoming
 			case viewOverdue:
 				return c.Overdue
 			case viewCompleted:

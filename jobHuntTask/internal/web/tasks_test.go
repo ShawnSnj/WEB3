@@ -164,6 +164,11 @@ func matchesFilter(t *model.Task, f repository.TaskFilter) bool {
 	if f.DueBefore != nil && t.DueDate != nil && !t.DueDate.Before(*f.DueBefore) {
 		return false
 	}
+	if f.DueAfter != nil {
+		if t.DueDate == nil || t.DueDate.Before(*f.DueAfter) {
+			return false
+		}
+	}
 	if f.CarriedOver != nil {
 		want := *f.CarriedOver
 		got := t.CarryOverCount > 0
@@ -199,6 +204,10 @@ func containsCategory(cs []model.Category, c model.Category) bool {
 	return false
 }
 
+type testClock struct{ now time.Time }
+
+func (c testClock) Now() time.Time { return c.now }
+
 // ---------------------------------------------------------------------------
 // Harness
 // ---------------------------------------------------------------------------
@@ -210,6 +219,10 @@ type tasksHarness struct {
 }
 
 func newTasksHarness(t *testing.T) *tasksHarness {
+	return newTasksHarnessAt(t, time.Now().UTC())
+}
+
+func newTasksHarnessAt(t *testing.T, now time.Time) *tasksHarness {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -218,8 +231,9 @@ func newTasksHarness(t *testing.T) *tasksHarness {
 		t.Fatalf("web.New: %v", err)
 	}
 	repo := newInMemTaskRepo()
-	svc := service.NewTaskService(repo, service.SystemClock)
-	h := web.NewTasksHandler(rd, svc, service.SystemClock,
+	clk := testClock{now: now}
+	svc := service.NewTaskService(repo, clk)
+	h := web.NewTasksHandler(rd, svc, clk,
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	r := gin.New()
@@ -280,7 +294,7 @@ func TestTasksPage_RendersAllTabsAndFilterBar(t *testing.T) {
 		`class="bulk-bar"`,
 		`id="tasks-list-host"`,
 		`id="task-modal"`,
-		`Today`, `Overdue`, `Completed`, `Carried over`, `All`,
+		`Today`, `Upcoming`, `Overdue`, `Completed`, `Carried over`, `All`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %q in page body", want)
@@ -300,6 +314,49 @@ func TestTasksPage_EmptyView(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "Today is clear") {
 		t.Error("expected today empty-state copy")
+	}
+}
+
+func TestTasksList_UpcomingView(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+
+	todayDue := time.Date(2026, 5, 24, 0, 0, 0, 0, time.UTC)
+	tomorrowDue := time.Date(2026, 5, 25, 0, 0, 0, 0, time.UTC)
+	soonDue := time.Date(2026, 5, 28, 0, 0, 0, 0, time.UTC)
+	farDue := time.Date(2026, 6, 10, 0, 0, 0, 0, time.UTC)
+
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due today"; tk.DueDate = &todayDue })
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due tomorrow"; tk.DueDate = &tomorrowDue })
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due soon"; tk.DueDate = &soonDue })
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due later"; tk.DueDate = &farDue })
+
+	w := doGet(t, h.router, "/tasks/list?view=upcoming", true)
+	body := w.Body.String()
+	if !strings.Contains(body, "Due tomorrow") || !strings.Contains(body, "Due soon") {
+		t.Fatalf("expected upcoming tasks in body: %s", body)
+	}
+	if strings.Contains(body, "Due today") || strings.Contains(body, "Due later") {
+		t.Fatalf("today/far tasks should not appear in upcoming view: %s", body)
+	}
+}
+
+func TestTasksList_TodayEmptyShowsUpcomingHint(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+
+	tomorrowDue := time.Date(2026, 5, 25, 0, 0, 0, 0, time.UTC)
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Future task"; tk.DueDate = &tomorrowDue })
+
+	w := doGet(t, h.router, "/tasks/list?view=today", true)
+	body := w.Body.String()
+	if !strings.Contains(body, "Nothing due today") {
+		t.Fatalf("expected contextual empty title, got: %s", body)
+	}
+	if !strings.Contains(body, "scheduled starting") || !strings.Contains(body, "View upcoming") {
+		t.Fatalf("expected upcoming hint and action, got: %s", body)
 	}
 }
 
@@ -662,6 +719,41 @@ func TestTasks_InvalidIDReturns400(t *testing.T) {
 	w := doGet(t, h.router, "/tasks/not-a-uuid/form", true)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestTasks_ImportCSV(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	csv := "title,description,category,priority,estimated_minutes,due_date\nImported task,,job_apply,high,30,\n"
+	form := url.Values{"csv": {csv}}
+	w := doForm(t, h.router, http.MethodPost, "/tasks/import", form)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "Imported") {
+		t.Fatalf("expected result partial, got %s", w.Body.String())
+	}
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
+		t.Error("expected tasks-changed trigger")
+	}
+	tasks, _ := h.repo.List(context.Background(), repository.TaskFilter{})
+	if len(tasks) != 1 || tasks[0].Title != "Imported task" {
+		t.Fatalf("repo = %+v", tasks)
+	}
+}
+
+func TestTasks_ImportTemplate(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	req := httptest.NewRequest(http.MethodGet, "/tasks/import/template.csv", nil)
+	w := httptest.NewRecorder()
+	h.router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "title,description") {
+		t.Error("expected csv header in template")
 	}
 }
 

@@ -6,6 +6,14 @@
         <p class="muted page-subtitle">Plan, execute, and carry over what matters today.</p>
     </div>
     <div class="page-actions">
+        <button type="button" class="btn btn-ghost"
+                hx-get="/tasks/import/form"
+                hx-target="#task-modal"
+                hx-swap="innerHTML"
+                aria-haspopup="dialog">
+            {{template "icon" (dict "name" "inbox")}}
+            <span>Import</span>
+        </button>
         <button type="button" class="btn btn-primary"
                 data-shortcut="new-task"
                 hx-get="/tasks/form"

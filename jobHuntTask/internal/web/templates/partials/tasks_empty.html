@@ -6,12 +6,23 @@
 {{- $view := .Query.View -}}
 {{- $title := "No tasks here yet" -}}
 {{- $msg := "Create a task to get started." -}}
-{{- if eq $view "today"        }}{{ $title = "Today is clear" }}{{ $msg = "Plan something — even one small win counts." }}{{end -}}
+{{- if .EmptyTitle -}}{{ $title = .EmptyTitle }}{{end -}}
+{{- if .EmptyMessage -}}{{ $msg = .EmptyMessage }}{{end -}}
+{{- if and (not .EmptyTitle) (eq $view "today")        }}{{ $title = "Today is clear" }}{{ $msg = "Plan something — even one small win counts." }}{{end -}}
+{{- if and (not .EmptyTitle) (eq $view "upcoming")     }}{{ $title = "Nothing upcoming" }}{{ $msg = "Tasks due in the next 7 days appear here." }}{{end -}}
 {{- if eq $view "overdue"      }}{{ $title = "Nothing overdue" }}{{ $msg = "You're caught up. Nice work." }}{{end -}}
 {{- if eq $view "completed"    }}{{ $title = "No completions yet" }}{{ $msg = "Finished tasks show up here." }}{{end -}}
 {{- if eq $view "carried_over" }}{{ $title = "No carry-overs" }}{{ $msg = "Tasks rolled to a new day land here." }}{{end -}}
+{{- if .EmptyActionLabel -}}
+{{template "empty_state" (dict
+    "icon" "inbox"
+    "title" $title
+    "message" $msg
+    "action" (dict "label" .EmptyActionLabel "href" .EmptyActionHref))}}
+{{- else -}}
 {{template "empty_state" (dict
     "icon" "inbox"
     "title" $title
     "message" $msg)}}
+{{- end -}}
 {{end}}

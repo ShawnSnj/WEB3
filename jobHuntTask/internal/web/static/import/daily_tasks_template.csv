@@ -1,0 +1,6 @@
+title,description,category,priority,estimated_minutes,due_date
+Apply to Acme Corp,Submit via Greenhouse portal,job_apply,high,45,
+Reach out to recruiter at Stripe,LinkedIn DM,recruiter_outreach,medium,20,
+Push portfolio fix to GitHub,Update README + deploy,github,medium,30,
+Post job-search update,,twitter,low,15,
+Study system design — caching,Read chapter + notes,learning,medium,60,
