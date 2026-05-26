@@ -123,6 +123,11 @@ func AllPriorities() []Priority {
 	return []Priority{PriorityLow, PriorityMedium, PriorityHigh, PriorityUrgent}
 }
 
+// AllStatuses returns every supported task status in lifecycle order.
+func AllStatuses() []Status {
+	return []Status{StatusPending, StatusInProgress, StatusCompleted, StatusMissed}
+}
+
 // Bump returns the next-higher priority, capping at urgent. Used when an
 // unfinished task is carried over to the following day.
 func (p Priority) Bump() Priority {

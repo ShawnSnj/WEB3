@@ -197,6 +197,26 @@ func (r *PostgresTaskRepository) List(ctx context.Context, f TaskFilter) ([]*mod
 		args = append(args, *f.DueAfter)
 		idx++
 	}
+	if f.CompletedAfter != nil {
+		where = append(where, fmt.Sprintf("completed_at >= $%d", idx))
+		args = append(args, *f.CompletedAfter)
+		idx++
+	}
+	if f.CompletedBefore != nil {
+		where = append(where, fmt.Sprintf("completed_at < $%d", idx))
+		args = append(args, *f.CompletedBefore)
+		idx++
+	}
+	if f.UpdatedAfter != nil {
+		where = append(where, fmt.Sprintf("updated_at >= $%d", idx))
+		args = append(args, *f.UpdatedAfter)
+		idx++
+	}
+	if f.UpdatedBefore != nil {
+		where = append(where, fmt.Sprintf("updated_at < $%d", idx))
+		args = append(args, *f.UpdatedBefore)
+		idx++
+	}
 	if f.OnlyOverdue {
 		where = append(where,
 			fmt.Sprintf("due_date < $%d", idx),

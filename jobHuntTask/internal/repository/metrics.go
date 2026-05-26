@@ -14,6 +14,11 @@ type MetricsRepository interface {
 	// [from, to).
 	StatusBreakdown(ctx context.Context, from, to time.Time) (model.StatusBreakdown, error)
 
+	// StatusBreakdownDueBefore returns counts grouped by status for tasks
+	// whose due_date is strictly before `before` (typically start-of-tomorrow
+	// in APP_TIMEZONE). Matches the /tasks?view=today filter semantics.
+	StatusBreakdownDueBefore(ctx context.Context, before time.Time) (model.StatusBreakdown, error)
+
 	// CompletionCounts returns (completed, total) for tasks created in
 	// [from, to). Equivalent to StatusBreakdown but cheaper when only the
 	// rate is needed.
@@ -22,6 +27,10 @@ type MetricsRepository interface {
 	// CarryOverCounts returns (carried_over, total) for tasks created in
 	// [from, to). "Carried-over" means carry_over_count > 0.
 	CarryOverCounts(ctx context.Context, from, to time.Time) (model.Counts, error)
+
+	// CarryOverCountsDueBefore returns (carried_over, total) for tasks whose
+	// due_date is strictly before `before`. "Carried-over" means carry_over_count > 0.
+	CarryOverCountsDueBefore(ctx context.Context, before time.Time) (model.Counts, error)
 
 	// OverdueLive returns the current count of non-terminal, overdue tasks
 	// regardless of date range — it's a snapshot of "now".

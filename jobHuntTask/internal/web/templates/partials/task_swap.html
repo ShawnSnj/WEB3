@@ -1,9 +1,10 @@
 {{- /*
   task_swap — row + mobile card OOB bundle returned after state changes.
+  Both layouts update via hx-swap-oob so actions work from either view.
   Data: web.TaskRowVM
 */ -}}
 {{define "task_swap_bundle"}}
-{{template "task_row" .}}
+{{template "task_row_oob" .}}
 {{template "task_card_oob" .}}
 {{end}}
 

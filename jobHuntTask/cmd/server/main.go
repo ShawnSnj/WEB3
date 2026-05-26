@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/shawn/jobhunttask/internal/api"
+	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/config"
 	"github.com/shawn/jobhunttask/internal/database"
 	"github.com/shawn/jobhunttask/internal/logger"
@@ -42,11 +43,17 @@ func run() error {
 		return err
 	}
 
+	cal, err := calendar.Load(cfg.App.Timezone)
+	if err != nil {
+		return err
+	}
+
 	log := logger.New(cfg.Log)
 	log.Info("starting application",
 		slog.String("name", cfg.App.Name),
 		slog.String("version", cfg.App.Version),
 		slog.String("env", cfg.App.Environment),
+		slog.String("timezone", cfg.App.Timezone),
 	)
 
 	// Root context cancelled on SIGINT/SIGTERM.
@@ -68,10 +75,10 @@ func run() error {
 	metricsRepo := repository.NewPostgresMetricsRepository(pool)
 	suggestionRepo := repository.NewPostgresSuggestionRepository(pool)
 
-	taskSvc := service.NewTaskService(taskRepo, service.SystemClock)
+	taskSvc := service.NewTaskService(taskRepo, service.SystemClock, cal)
 	reviewSvc := service.NewDailyReviewService(reviewRepo, service.SystemClock)
 	sessionSvc := service.NewTaskSessionService(sessionRepo, taskSvc, service.SystemClock)
-	metricsSvc := service.NewMetricsService(metricsRepo, service.SystemClock)
+	metricsSvc := service.NewMetricsService(metricsRepo, service.SystemClock, cal)
 	suggestionSvc := service.NewSuggestionService(
 		suggestionRepo, metricsRepo, metricsSvc, nil, service.SystemClock,
 		service.SuggestionServiceConfig{},
@@ -141,14 +148,14 @@ func run() error {
 	// Wire the data-backed dashboard (full page + per-card refresh endpoints).
 	dashboard := web.NewDashboardHandler(
 		renderer, taskSvc, reviewSvc, reminderSvc,
-		metricsSvc, suggestionSvc, service.SystemClock,
+		metricsSvc, suggestionSvc, service.SystemClock, cal,
 		log.With(slog.String("component", "dashboard")),
 	)
 	dashboard.Register(router)
 
 	// Wire the data-backed tasks page (full CRUD + state transitions + bulk).
 	tasksPage := web.NewTasksHandler(
-		renderer, taskSvc, service.SystemClock,
+		renderer, taskSvc, sessionSvc, service.SystemClock, cal,
 		log.With(slog.String("component", "tasks_ui")),
 	)
 	tasksPage.Register(router)

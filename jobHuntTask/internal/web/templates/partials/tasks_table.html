@@ -11,7 +11,7 @@
             <tr>
                 <th class="th-check">
                     <input type="checkbox" aria-label="Select all"
-                           onclick="document.querySelectorAll('#tasks-form input[name=ids]').forEach(c=>c.checked=this.checked)">
+                           onclick="document.querySelectorAll('input[name=ids][form=tasks-form]').forEach(c=>c.checked=this.checked)">
                 </th>
                 <th class="th-title">
                     {{template "tasks_sort_link" (dict "Q" $q "Field" "created_at" "Label" "Task")}}
@@ -40,6 +40,7 @@
 {{define "tasks_sort_link"}}
 {{- $q2 := .Q.WithSort .Field -}}
 <a class="sort-link{{if eq .Q.Sort .Field}} sort-link--active{{end}}"
+   data-list-nav="true"
    hx-get="{{$q2.ListPath}}"
    hx-target="#tasks-list"
    hx-swap="outerHTML"

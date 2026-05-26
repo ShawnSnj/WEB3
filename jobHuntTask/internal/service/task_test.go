@@ -197,7 +197,7 @@ func newSvc(t *testing.T) (*service.TaskService, *fakeRepo, *fixedClock) {
 	t.Helper()
 	clk := &fixedClock{t: time.Date(2026, 5, 24, 9, 0, 0, 0, time.UTC)}
 	repo := newFakeRepo(clk.Now)
-	return service.NewTaskService(repo, clk), repo, clk
+	return service.NewTaskService(repo, clk, nil), repo, clk
 }
 
 func TestService_Create_DefaultsAndValidation(t *testing.T) {
@@ -246,6 +246,24 @@ func TestService_StateMachine(t *testing.T) {
 		t.Errorf("status got %q want in_progress", t2.Status)
 	}
 
+	// in_progress -> pending (cancel)
+	t2b, err := svc.MarkPending(ctx, t1.ID)
+	if err != nil {
+		t.Fatalf("MarkPending: %v", err)
+	}
+	if t2b.Status != model.StatusPending {
+		t.Errorf("status got %q want pending", t2b.Status)
+	}
+
+	// pending -> in_progress again
+	t2, err = svc.MarkInProgress(ctx, t1.ID)
+	if err != nil {
+		t.Fatalf("MarkInProgress again: %v", err)
+	}
+	if t2.Status != model.StatusInProgress {
+		t.Errorf("status got %q want in_progress", t2.Status)
+	}
+
 	// in_progress -> completed with actual_minutes
 	clk.t = clk.t.Add(30 * time.Minute)
 	t3, err := svc.MarkCompleted(ctx, t1.ID, 25)
@@ -265,6 +283,45 @@ func TestService_StateMachine(t *testing.T) {
 	// completed -> anywhere is rejected
 	if _, err := svc.MarkInProgress(ctx, t1.ID); !errors.Is(err, model.ErrInvalidTransition) {
 		t.Errorf("expected ErrInvalidTransition, got %v", err)
+	}
+}
+
+func TestService_SetStatus_AllowsAnyValidChange(t *testing.T) {
+	t.Parallel()
+	svc, _, clk := newSvc(t)
+	ctx := context.Background()
+
+	t1, _ := svc.Create(ctx, service.CreateTaskInput{Title: "Reopen me"})
+	_, _ = svc.MarkCompleted(ctx, t1.ID, 10)
+
+	reopened, err := svc.SetStatus(ctx, t1.ID, model.StatusPending)
+	if err != nil {
+		t.Fatalf("SetStatus pending: %v", err)
+	}
+	if reopened.Status != model.StatusPending {
+		t.Errorf("status = %q, want pending", reopened.Status)
+	}
+	if reopened.CompletedAt != nil {
+		t.Errorf("CompletedAt should be cleared, got %v", reopened.CompletedAt)
+	}
+
+	missed, err := svc.SetStatus(ctx, t1.ID, model.StatusMissed)
+	if err != nil {
+		t.Fatalf("SetStatus missed: %v", err)
+	}
+	if missed.Status != model.StatusMissed {
+		t.Errorf("status = %q, want missed", missed.Status)
+	}
+
+	done, err := svc.SetStatus(ctx, t1.ID, model.StatusCompleted)
+	if err != nil {
+		t.Fatalf("SetStatus completed: %v", err)
+	}
+	if done.Status != model.StatusCompleted {
+		t.Errorf("status = %q, want completed", done.Status)
+	}
+	if done.CompletedAt == nil || !done.CompletedAt.Equal(clk.Now()) {
+		t.Errorf("CompletedAt = %v, want %v", done.CompletedAt, clk.Now())
 	}
 }
 

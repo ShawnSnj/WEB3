@@ -17,6 +17,9 @@ type analyticsMetricsRepo struct {
 func (r *analyticsMetricsRepo) StatusBreakdown(_ context.Context, _, _ time.Time) (model.StatusBreakdown, error) {
 	return model.StatusBreakdown{Completed: 3}, nil
 }
+func (r *analyticsMetricsRepo) StatusBreakdownDueBefore(_ context.Context, _ time.Time) (model.StatusBreakdown, error) {
+	return model.StatusBreakdown{Completed: 3}, nil
+}
 func (r *analyticsMetricsRepo) CompletionCounts(_ context.Context, from, to time.Time) (model.Counts, error) {
 	key := from.Format("2006-01-02") + "/" + to.Format("2006-01-02")
 	if c, ok := r.completionCounts[key]; ok {
@@ -25,6 +28,9 @@ func (r *analyticsMetricsRepo) CompletionCounts(_ context.Context, from, to time
 	return model.Counts{N: 2, Total: 4}, nil
 }
 func (r *analyticsMetricsRepo) CarryOverCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
+	return model.Counts{N: 1, Total: 5}, nil
+}
+func (r *analyticsMetricsRepo) CarryOverCountsDueBefore(_ context.Context, _ time.Time) (model.Counts, error) {
 	return model.Counts{N: 1, Total: 5}, nil
 }
 func (r *analyticsMetricsRepo) OverdueLive(_ context.Context, _ time.Time) (int, error) { return 0, nil }
@@ -61,7 +67,7 @@ func TestParseAnalyticsRange(t *testing.T) {
 func TestRangeWindow(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 5, 24, 15, 0, 0, 0, time.UTC)
-	svc := service.NewMetricsService(&analyticsMetricsRepo{}, fixedAnalyticsClock{t: now})
+	svc := service.NewMetricsService(&analyticsMetricsRepo{}, fixedAnalyticsClock{t: now}, nil)
 	from, to := svc.RangeWindow(service.AnalyticsRange7)
 	if to.Sub(from) != 7*24*time.Hour {
 		t.Fatalf("window = %v", to.Sub(from))
@@ -80,7 +86,7 @@ func TestTrendComparisonFor(t *testing.T) {
 			"2026-05-11/2026-05-18": {N: 4, Total: 10},
 		},
 	}
-	svc := service.NewMetricsService(repo, fixedAnalyticsClock{t: now})
+	svc := service.NewMetricsService(repo, fixedAnalyticsClock{t: now}, nil)
 	from := now.AddDate(0, 0, -6)
 	to := now.Add(24 * time.Hour)
 	trend, err := svc.TrendComparisonFor(context.Background(), from, to)
@@ -98,7 +104,7 @@ func TestStreakHistoryFillsGaps(t *testing.T) {
 	repo := &analyticsMetricsRepo{
 		daily: []model.DailyCompletion{{Date: now, Count: 2}},
 	}
-	svc := service.NewMetricsService(repo, fixedAnalyticsClock{t: now})
+	svc := service.NewMetricsService(repo, fixedAnalyticsClock{t: now}, nil)
 	from := now.AddDate(0, 0, -2)
 	to := now.Add(24 * time.Hour)
 	days, err := svc.StreakHistory(context.Background(), from, to)

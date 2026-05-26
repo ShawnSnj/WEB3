@@ -7,6 +7,7 @@
 {{define "tasks_filter_bar"}}
 {{- $q := .Query -}}
 <form class="filter-bar"
+      data-list-nav="true"
       hx-get="/tasks/list"
       hx-target="#tasks-list"
       hx-swap="outerHTML"

@@ -29,10 +29,16 @@ type stubAnalyticsMetricsRepo struct {
 func (r *stubAnalyticsMetricsRepo) StatusBreakdown(_ context.Context, _, _ time.Time) (model.StatusBreakdown, error) {
 	return r.breakdown, nil
 }
+func (r *stubAnalyticsMetricsRepo) StatusBreakdownDueBefore(_ context.Context, _ time.Time) (model.StatusBreakdown, error) {
+	return r.breakdown, nil
+}
 func (r *stubAnalyticsMetricsRepo) CompletionCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
 	return r.completed, nil
 }
 func (r *stubAnalyticsMetricsRepo) CarryOverCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
+	return r.carry, nil
+}
+func (r *stubAnalyticsMetricsRepo) CarryOverCountsDueBefore(_ context.Context, _ time.Time) (model.Counts, error) {
 	return r.carry, nil
 }
 func (r *stubAnalyticsMetricsRepo) OverdueLive(_ context.Context, _ time.Time) (int, error) {
@@ -80,7 +86,7 @@ func newAnalyticsHarness(t *testing.T) *gin.Engine {
 			{Category: model.CategoryNetworking, Total: 3, Completed: 2, CompletionRate: 0.67},
 		},
 	}
-	metricsSvc := service.NewMetricsService(metricsRepo, clk)
+	metricsSvc := service.NewMetricsService(metricsRepo, clk, nil)
 
 	r := gin.New()
 	h := web.NewAnalyticsHandler(rd, metricsSvc, clk, slog.New(slog.NewTextHandler(io.Discard, nil)))

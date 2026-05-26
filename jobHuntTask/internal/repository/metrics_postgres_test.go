@@ -76,6 +76,37 @@ func TestMetrics_StatusBreakdown_And_CompletionCounts(t *testing.T) {
 	}
 }
 
+func TestMetrics_StatusBreakdownDueBefore(t *testing.T) {
+	pool := newTestPool(t)
+	taskRepo := repository.NewPostgresTaskRepository(pool)
+	metricsRepo := repository.NewPostgresMetricsRepository(pool)
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	tomorrow := today.Add(24 * time.Hour)
+	yesterday := today.Add(-24 * time.Hour)
+
+	// Due today — should count toward today's dashboard.
+	seedMetricsTask(t, taskRepo, &model.Task{Title: "due-today", DueDate: &today, Status: model.StatusPending})
+	seedMetricsTask(t, taskRepo, &model.Task{Title: "due-today-2", DueDate: &today, Status: model.StatusInProgress})
+	// Due tomorrow — should not count.
+	seedMetricsTask(t, taskRepo, &model.Task{Title: "due-tomorrow", DueDate: &tomorrow, Status: model.StatusPending})
+	// Created today but due yesterday — should count (matches tasks today tab).
+	seedMetricsTask(t, taskRepo, &model.Task{Title: "overdue", DueDate: &yesterday, Status: model.StatusPending})
+
+	bd, err := metricsRepo.StatusBreakdownDueBefore(ctx, tomorrow)
+	if err != nil {
+		t.Fatalf("StatusBreakdownDueBefore: %v", err)
+	}
+	if bd.Pending != 2 || bd.InProgress != 1 {
+		t.Fatalf("breakdown = %+v, want pending=2 in_progress=1", bd)
+	}
+	if bd.Total() != 3 {
+		t.Fatalf("total = %d, want 3", bd.Total())
+	}
+}
+
 func TestMetrics_CarryOver_And_AvgActualMinutes(t *testing.T) {
 	pool := newTestPool(t)
 	taskRepo := repository.NewPostgresTaskRepository(pool)

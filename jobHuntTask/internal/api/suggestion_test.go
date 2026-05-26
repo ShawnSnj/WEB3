@@ -108,10 +108,16 @@ type apiStubMetricsRepo struct{}
 func (apiStubMetricsRepo) StatusBreakdown(_ context.Context, _, _ time.Time) (model.StatusBreakdown, error) {
 	return model.StatusBreakdown{}, nil
 }
+func (apiStubMetricsRepo) StatusBreakdownDueBefore(_ context.Context, _ time.Time) (model.StatusBreakdown, error) {
+	return model.StatusBreakdown{}, nil
+}
 func (apiStubMetricsRepo) CompletionCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
 	return model.Counts{}, nil
 }
 func (apiStubMetricsRepo) CarryOverCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
+	return model.Counts{}, nil
+}
+func (apiStubMetricsRepo) CarryOverCountsDueBefore(_ context.Context, _ time.Time) (model.Counts, error) {
 	return model.Counts{}, nil
 }
 func (apiStubMetricsRepo) OverdueLive(_ context.Context, _ time.Time) (int, error) { return 0, nil }
@@ -140,7 +146,7 @@ func newSuggestionRouter(t *testing.T) (*gin.Engine, *apiFakeSuggestionRepo) {
 	gin.SetMode(gin.TestMode)
 	repo := newAPIFakeSuggestionRepo()
 	metricsRepo := apiStubMetricsRepo{}
-	metricsSvc := service.NewMetricsService(metricsRepo, service.SystemClock)
+	metricsSvc := service.NewMetricsService(metricsRepo, service.SystemClock, nil)
 	svc := service.NewSuggestionService(repo, metricsRepo, metricsSvc, nil, service.SystemClock, service.SuggestionServiceConfig{})
 	r := api.NewRouter(api.Deps{
 		Config:            config.Config{},

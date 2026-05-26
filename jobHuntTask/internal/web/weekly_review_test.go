@@ -70,10 +70,16 @@ type stubMetricsRepoWeekly struct {
 func (r *stubMetricsRepoWeekly) StatusBreakdown(_ context.Context, _, _ time.Time) (model.StatusBreakdown, error) {
 	return r.breakdown, nil
 }
+func (r *stubMetricsRepoWeekly) StatusBreakdownDueBefore(_ context.Context, _ time.Time) (model.StatusBreakdown, error) {
+	return r.breakdown, nil
+}
 func (r *stubMetricsRepoWeekly) CompletionCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
 	return model.Counts{}, nil
 }
 func (r *stubMetricsRepoWeekly) CarryOverCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
+	return r.carry, nil
+}
+func (r *stubMetricsRepoWeekly) CarryOverCountsDueBefore(_ context.Context, _ time.Time) (model.Counts, error) {
 	return r.carry, nil
 }
 func (r *stubMetricsRepoWeekly) OverdueLive(_ context.Context, _ time.Time) (int, error) { return 0, nil }
@@ -123,9 +129,9 @@ func newWeeklyHarness(t *testing.T) *weeklyHarness {
 			{Category: model.CategoryLearning, Total: 3, Completed: 1, CompletionRate: 0.33},
 		},
 	}
-	metricsSvc := service.NewMetricsService(metricsRepo, clk)
+	metricsSvc := service.NewMetricsService(metricsRepo, clk, nil)
 	reviewSvc := service.NewWeeklyReviewService(reviews, clk)
-	taskSvc := service.NewTaskService(newInMemTaskRepo(), clk)
+	taskSvc := service.NewTaskService(newInMemTaskRepo(), clk, nil)
 	sessionSvc := service.NewTaskSessionService(&memSessionRepo{}, taskSvc, clk)
 	sugSvc := service.NewSuggestionService(
 		&weeklyStubSuggestionRepo{items: []*model.Suggestion{

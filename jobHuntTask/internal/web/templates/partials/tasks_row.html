@@ -5,8 +5,19 @@
 */ -}}
 {{define "task_row"}}
 <tr id="task-row-{{.ID}}" class="task-row task-row--status-{{.Status}}{{if .IsOverdue}} task-row--overdue{{end}}">
+    {{template "task_row_cells" .}}
+</tr>
+{{end}}
+
+{{define "task_row_oob"}}
+<tr id="task-row-{{.ID}}" hx-swap-oob="outerHTML" class="task-row task-row--status-{{.Status}}{{if .IsOverdue}} task-row--overdue{{end}}">
+    {{template "task_row_cells" .}}
+</tr>
+{{end}}
+
+{{define "task_row_cells"}}
     <td class="td-check">
-        <input type="checkbox" name="ids" value="{{.ID}}" aria-label="Select task {{.Title}}">
+        <input type="checkbox" name="ids" value="{{.ID}}" form="tasks-form" aria-label="Select task {{.Title}}">
     </td>
     <td class="td-title">
         <div class="task-title">{{.Title}}</div>
@@ -19,7 +30,7 @@
     </td>
     <td><span class="badge badge--priority-{{.Priority}}">{{.PriorityLabel}}</span></td>
     <td><span class="chip chip--category">{{.CategoryLabel}}</span></td>
-    <td><span class="badge badge--status-{{.Status}}">{{.StatusLabel}}</span></td>
+    <td><span class="badge badge--status-{{.Status}}">{{.StatusLabel}}</span>{{template "task_timer" .}}</td>
     <td class="td-due">
         {{if .IsOverdue}}
         <span class="due-overdue">{{.DueDateLabel}}</span>
@@ -30,12 +41,13 @@
     <td class="td-actions">
         {{template "task_actions" (dict "vm" . "target" (printf "#task-row-%s" .ID))}}
     </td>
-</tr>
 {{end}}
 
 {{- /*
   task_actions — quick actions for table row or mobile card.
   Pass dict: vm (TaskRowVM), target (CSS selector for hx-target).
+  State transitions use hx-swap="none" + OOB row/card bundles so desktop
+  and mobile stay in sync.
 */ -}}
 {{define "task_actions"}}
 {{- $t := .vm -}}
@@ -43,24 +55,32 @@
 <div class="action-row">
     {{if $t.CanComplete}}
     <button type="button" class="icon-button icon-button--success"
-            title="Mark completed"
+            title="Finish and save time"
             data-optimistic="complete"
-            hx-post="/tasks/{{$t.ID}}/complete"
-            hx-target="{{$target}}"
-            hx-swap="outerHTML">
+            data-task-action="complete"
+            data-task-id="{{$t.ID}}">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "check")}}
     </button>
     {{end}}
     {{if $t.CanInProgress}}
     <button type="button" class="icon-button"
-            title="Mark in progress"
+            title="Start timer"
             data-optimistic="in_progress"
-            hx-post="/tasks/{{$t.ID}}/in_progress"
-            hx-target="{{$target}}"
-            hx-swap="outerHTML">
+            data-task-action="in_progress"
+            data-task-id="{{$t.ID}}">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "play")}}
+    </button>
+    {{end}}
+    {{if $t.CanPending}}
+    <button type="button" class="icon-button"
+            title="Cancel in progress"
+            data-optimistic="pending"
+            data-task-action="pending"
+            data-task-id="{{$t.ID}}">
+        {{template "htmx_spinner" .}}
+        {{template "icon" (dict "name" "chevron-left")}}
     </button>
     {{end}}
     {{if $t.CanMiss}}
@@ -68,8 +88,9 @@
             title="Mark missed"
             data-optimistic="missed"
             hx-post="/tasks/{{$t.ID}}/missed"
-            hx-target="{{$target}}"
-            hx-swap="outerHTML">
+            hx-target="body"
+            hx-swap="none"
+            hx-confirm="Mark this task as missed?">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "x")}}
     </button>
@@ -78,16 +99,17 @@
     <button type="button" class="icon-button"
             title="Carry over to tomorrow"
             hx-post="/tasks/{{$t.ID}}/carry_over"
-            hx-swap="none">
+            hx-target="body"
+            hx-swap="none"
+            hx-confirm="Carry this task to tomorrow? The current task will be marked missed.">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "refresh")}}
     </button>
     {{end}}
     <button type="button" class="icon-button"
             title="Edit"
-            hx-get="/tasks/{{$t.ID}}/form"
-            hx-target="#task-modal"
-            hx-swap="innerHTML">
+            data-load-task-form="/tasks/{{$t.ID}}/form"
+            aria-haspopup="dialog">
         {{template "icon" (dict "name" "edit")}}
     </button>
     <button type="button" class="icon-button icon-button--danger"
@@ -95,11 +117,25 @@
             data-optimistic="delete"
             data-confirm-danger="true"
             hx-delete="/tasks/{{$t.ID}}"
-            hx-target="{{$target}}"
+            hx-target="body"
             hx-swap="none"
             hx-confirm="Delete this task? This cannot be undone.">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "trash")}}
     </button>
 </div>
+{{end}}
+
+{{define "task_timer"}}
+{{- if .TimerActive -}}
+<span class="task-timer chip chip--active"
+      data-task-timer
+      data-started-at="{{.SessionStartedUnix}}"
+      data-paused-seconds="{{.SessionPausedSeconds}}"
+      {{if .SessionPaused}}data-paused="true" data-paused-at="{{.SessionPausedUnix}}"{{end}}
+      aria-live="polite"
+      title="Time tracking">{{.ElapsedLabel}}</span>
+{{- else if and (eq .Status "completed") (gt .ActualMinutes 0) -}}
+<span class="task-timer chip chip--soft" title="Time spent">{{.ActualMinutes}} min</span>
+{{- end -}}
 {{end}}

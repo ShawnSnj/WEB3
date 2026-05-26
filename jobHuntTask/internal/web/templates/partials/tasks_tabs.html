@@ -6,11 +6,12 @@
 {{define "tasks_tabs"}}
 {{- $q := .Query -}}
 {{- $counts := .Counts -}}
-<nav class="tasks-tabs" aria-label="Task views">
+<nav class="tasks-tabs" aria-label="Task views" data-list-nav="true">
     {{range $v := views -}}
     {{- $q2 := $q.WithView $v.Key -}}
     <a class="tab{{if eq $q.View $v.Key}} tab--active{{end}}"
        href="{{$q2.PagePath}}"
+       data-view="{{$v.Key}}"
        hx-get="{{$q2.ListPath}}"
        hx-target="#tasks-list"
        hx-swap="outerHTML"

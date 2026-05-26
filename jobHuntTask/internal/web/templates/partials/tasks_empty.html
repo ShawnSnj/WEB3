@@ -13,6 +13,7 @@
 {{- if eq $view "overdue"      }}{{ $title = "Nothing overdue" }}{{ $msg = "You're caught up. Nice work." }}{{end -}}
 {{- if eq $view "completed"    }}{{ $title = "No completions yet" }}{{ $msg = "Finished tasks show up here." }}{{end -}}
 {{- if eq $view "carried_over" }}{{ $title = "No carry-overs" }}{{ $msg = "Tasks rolled to a new day land here." }}{{end -}}
+{{- if eq $view "all"            }}{{ $title = "No tasks yet" }}{{ $msg = "Every task lives here — create one to begin." }}{{end -}}
 {{- if .EmptyActionLabel -}}
 {{template "empty_state" (dict
     "icon" "inbox"

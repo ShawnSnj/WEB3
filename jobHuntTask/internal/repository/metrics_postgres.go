@@ -46,6 +46,26 @@ func (r *PostgresMetricsRepository) StatusBreakdown(ctx context.Context, from, t
 	return b, nil
 }
 
+func (r *PostgresMetricsRepository) StatusBreakdownDueBefore(ctx context.Context, before time.Time) (model.StatusBreakdown, error) {
+	const q = `
+        SELECT
+            COUNT(*) FILTER (WHERE status = 'pending')     AS pending,
+            COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress,
+            COUNT(*) FILTER (WHERE status = 'completed')   AS completed,
+            COUNT(*) FILTER (WHERE status = 'missed')      AS missed
+        FROM tasks
+        WHERE due_date IS NOT NULL AND due_date < $1
+    `
+	var b model.StatusBreakdown
+	err := r.pool.QueryRow(ctx, q, before).Scan(
+		&b.Pending, &b.InProgress, &b.Completed, &b.Missed,
+	)
+	if err != nil {
+		return model.StatusBreakdown{}, fmt.Errorf("status breakdown due before: %w", err)
+	}
+	return b, nil
+}
+
 // ---------------------------------------------------------------------------
 // CompletionCounts
 // ---------------------------------------------------------------------------
@@ -80,6 +100,21 @@ func (r *PostgresMetricsRepository) CarryOverCounts(ctx context.Context, from, t
 	var c model.Counts
 	if err := r.pool.QueryRow(ctx, q, from, to).Scan(&c.N, &c.Total); err != nil {
 		return model.Counts{}, fmt.Errorf("carry-over counts: %w", err)
+	}
+	return c, nil
+}
+
+func (r *PostgresMetricsRepository) CarryOverCountsDueBefore(ctx context.Context, before time.Time) (model.Counts, error) {
+	const q = `
+        SELECT
+            COUNT(*) FILTER (WHERE carry_over_count > 0) AS carried,
+            COUNT(*) AS total
+        FROM tasks
+        WHERE due_date IS NOT NULL AND due_date < $1
+    `
+	var c model.Counts
+	if err := r.pool.QueryRow(ctx, q, before).Scan(&c.N, &c.Total); err != nil {
+		return model.Counts{}, fmt.Errorf("carry-over counts due before: %w", err)
 	}
 	return c, nil
 }

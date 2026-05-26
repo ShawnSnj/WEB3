@@ -39,10 +39,16 @@ type stubMetricsRepo struct {
 func (r *stubMetricsRepo) StatusBreakdown(_ context.Context, _, _ time.Time) (model.StatusBreakdown, error) {
 	return r.statusBreakdown, nil
 }
+func (r *stubMetricsRepo) StatusBreakdownDueBefore(_ context.Context, _ time.Time) (model.StatusBreakdown, error) {
+	return r.statusBreakdown, nil
+}
 func (r *stubMetricsRepo) CompletionCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
 	return model.Counts{}, nil
 }
 func (r *stubMetricsRepo) CarryOverCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
+	return r.carryCounts, nil
+}
+func (r *stubMetricsRepo) CarryOverCountsDueBefore(_ context.Context, _ time.Time) (model.Counts, error) {
 	return r.carryCounts, nil
 }
 func (r *stubMetricsRepo) OverdueLive(_ context.Context, _ time.Time) (int, error) {
@@ -229,16 +235,16 @@ func newDashboardHarness(t *testing.T) *dashboardHarness {
 	rmr := &stubReminderRepo{}
 	sr := &stubSuggestionRepo{}
 
-	taskSvc := service.NewTaskService(tr, service.SystemClock)
+	taskSvc := service.NewTaskService(tr, service.SystemClock, nil)
 	reviewSvc := service.NewDailyReviewService(rr, service.SystemClock)
-	metricsSvc := service.NewMetricsService(mr, service.SystemClock)
+	metricsSvc := service.NewMetricsService(mr, service.SystemClock, nil)
 	reminderSvc := service.NewReminderService(rmr, nil, service.SystemClock,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		service.ReminderServiceConfig{MaxAttempts: 3, BatchSize: 50})
 	sugSvc := service.NewSuggestionService(sr, mr, metricsSvc, nil, service.SystemClock, service.SuggestionServiceConfig{})
 
 	h := web.NewDashboardHandler(rd, taskSvc, reviewSvc, reminderSvc, metricsSvc, sugSvc,
-		service.SystemClock, slog.New(slog.NewTextHandler(io.Discard, nil)))
+		service.SystemClock, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	r := gin.New()
 	if err := web.MountStatic(r); err != nil {
@@ -471,7 +477,7 @@ func TestDashboard_NilServicesRenderEmptyCards(t *testing.T) {
 		t.Fatalf("web.New: %v", err)
 	}
 	// Every service nil — handler should still render the page without panicking.
-	h := web.NewDashboardHandler(rd, nil, nil, nil, nil, nil, service.SystemClock,
+	h := web.NewDashboardHandler(rd, nil, nil, nil, nil, nil, service.SystemClock, nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 	r := gin.New()
 	if err := web.MountStatic(r); err != nil {

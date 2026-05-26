@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/model"
 	"github.com/shawn/jobhunttask/internal/repository"
 )
 
 // MetricsService composes individual aggregation queries from the repo into
 // the higher-level dashboard views. It owns the time-window semantics:
-//   - "today" is the calendar day in UTC: [00:00, +24h)
+//   - "today" counts tasks due today or earlier (due_date < start-of-tomorrow),
+//     matching /tasks?view=today
 //   - "weekly" is a rolling 7-day window ending today (inclusive of today)
 //   - "trend" compares the rolling 7-day window to the prior 7-day window
 //
@@ -20,36 +22,39 @@ import (
 type MetricsService struct {
 	repo  repository.MetricsRepository
 	clock Clock
+	cal   *calendar.Calendar
 }
 
 // NewMetricsService wires the service to a repository. When clock is nil,
-// a real wall-clock is used.
-func NewMetricsService(repo repository.MetricsRepository, clock Clock) *MetricsService {
+// a real wall-clock is used. When cal is nil, UTC calendar-day boundaries are used.
+func NewMetricsService(repo repository.MetricsRepository, clock Clock, cal *calendar.Calendar) *MetricsService {
 	if clock == nil {
 		clock = realClock{}
 	}
-	return &MetricsService{repo: repo, clock: clock}
+	if cal == nil {
+		cal = calendar.UTC()
+	}
+	return &MetricsService{repo: repo, clock: clock, cal: cal}
 }
 
 // ---------------------------------------------------------------------------
 // Window helpers
 // ---------------------------------------------------------------------------
 
-func startOfDayUTC(t time.Time) time.Time {
-	t = t.UTC()
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+func (s *MetricsService) startOfDay(t time.Time) time.Time {
+	return s.cal.StartOfDay(t)
 }
 
-// todayWindow returns [start-of-today UTC, start-of-tomorrow UTC).
+// todayWindow returns [start-of-today, start-of-tomorrow) in APP_TIMEZONE.
 func (s *MetricsService) todayWindow() (time.Time, time.Time) {
-	from := startOfDayUTC(s.clock.Now())
+	from := s.startOfDay(s.clock.Now())
 	return from, from.Add(24 * time.Hour)
 }
 
 // weeklyWindow returns the rolling 7-day window ending now: the lower bound
 // is start-of-day 6 days ago; the upper bound is start-of-tomorrow.
 func (s *MetricsService) weeklyWindow() (time.Time, time.Time) {
-	today := startOfDayUTC(s.clock.Now())
+	today := s.startOfDay(s.clock.Now())
 	return today.AddDate(0, 0, -6), today.Add(24 * time.Hour)
 }
 
@@ -66,8 +71,8 @@ func (s *MetricsService) previousWeeklyWindow() (time.Time, time.Time) {
 // TodayCarryOver returns the count of carry-over tasks (carry_over_count > 0)
 // created today. Used by the dashboard summary card.
 func (s *MetricsService) TodayCarryOver(ctx context.Context) (int, error) {
-	from, to := s.todayWindow()
-	counts, err := s.repo.CarryOverCounts(ctx, from, to)
+	_, to := s.todayWindow()
+	counts, err := s.repo.CarryOverCountsDueBefore(ctx, to)
 	if err != nil {
 		return 0, err
 	}
@@ -79,7 +84,8 @@ func (s *MetricsService) Today(ctx context.Context) (model.DailyStats, error) {
 	from, to := s.todayWindow()
 	now := s.clock.Now()
 
-	breakdown, err := s.repo.StatusBreakdown(ctx, from, to)
+	// Due-date semantics match /tasks?view=today (due today or earlier).
+	breakdown, err := s.repo.StatusBreakdownDueBefore(ctx, to)
 	if err != nil {
 		return model.DailyStats{}, fmt.Errorf("today breakdown: %w", err)
 	}
@@ -124,14 +130,14 @@ func (s *MetricsService) Weekly(ctx context.Context) (model.WeeklyStats, error) 
 // (normalised to UTC midnight). Used by the weekly review page when browsing
 // past windows.
 func (s *MetricsService) WeeklyFor(ctx context.Context, from time.Time) (model.WeeklyStats, error) {
-	from = startOfDayUTC(from)
+	from = s.startOfDay(from)
 	to := from.AddDate(0, 0, 7)
 	return s.weeklyForRange(ctx, from, to)
 }
 
 // CarryOverRateFor returns the carry-over rate for [from, from+7d).
 func (s *MetricsService) CarryOverRateFor(ctx context.Context, from time.Time) (float64, int, error) {
-	from = startOfDayUTC(from)
+	from = s.startOfDay(from)
 	to := from.AddDate(0, 0, 7)
 	counts, err := s.repo.CarryOverCounts(ctx, from, to)
 	if err != nil {
@@ -178,18 +184,18 @@ func (s *MetricsService) weeklyForRange(ctx context.Context, from, to time.Time)
 		CarryOverRate:    carry.Rate(),
 		OverdueRate:      overdueRate,
 		AvgActualMinutes: avg,
-		DailyCompletions: fillDailyGaps(daily, from, to),
+		DailyCompletions: s.fillDailyGaps(daily, from, to),
 	}, nil
 }
 
 // fillDailyGaps takes a sparse list of (day, count) and emits a dense list
 // with one entry per day in [from, to).
-func fillDailyGaps(sparse []model.DailyCompletion, from, to time.Time) []model.DailyCompletion {
-	from = startOfDayUTC(from)
-	to = startOfDayUTC(to)
+func (s *MetricsService) fillDailyGaps(sparse []model.DailyCompletion, from, to time.Time) []model.DailyCompletion {
+	from = s.startOfDay(from)
+	to = s.startOfDay(to)
 	byDay := make(map[time.Time]int, len(sparse))
 	for _, d := range sparse {
-		byDay[startOfDayUTC(d.Date)] = d.Count
+		byDay[s.startOfDay(d.Date)] = d.Count
 	}
 	out := make([]model.DailyCompletion, 0, 7)
 	for d := from; d.Before(to); d = d.AddDate(0, 0, 1) {
@@ -242,7 +248,7 @@ const streakLookback = 365
 // counted if it has completions; otherwise the streak is allowed to extend
 // from yesterday (a one-day grace so a check at 9 AM doesn't read "0").
 func (s *MetricsService) Streak(ctx context.Context) (model.Streak, error) {
-	today := startOfDayUTC(s.clock.Now())
+	today := s.startOfDay(s.clock.Now())
 	from := today.AddDate(0, 0, -streakLookback)
 	to := today.Add(24 * time.Hour)
 
@@ -254,7 +260,7 @@ func (s *MetricsService) Streak(ctx context.Context) (model.Streak, error) {
 	byDay := make(map[time.Time]int, len(counts))
 	var lastCompletion time.Time
 	for _, c := range counts {
-		day := startOfDayUTC(c.Date)
+		day := s.startOfDay(c.Date)
 		byDay[day] = c.Count
 		if c.Count > 0 && day.After(lastCompletion) {
 			lastCompletion = day

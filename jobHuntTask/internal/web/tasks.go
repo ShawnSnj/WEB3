@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/model"
 	"github.com/shawn/jobhunttask/internal/repository"
 	"github.com/shawn/jobhunttask/internal/service"
@@ -24,20 +25,32 @@ import (
 // TaskService — all HTMX glue, query parsing, and view-model projection
 // lives here.
 type TasksHandler struct {
-	rd    *Renderer
-	tasks *service.TaskService
-	clock service.Clock
-	log   *slog.Logger
+	rd       *Renderer
+	tasks    *service.TaskService
+	sessions *service.TaskSessionService
+	clock    service.Clock
+	cal      *calendar.Calendar
+	log      *slog.Logger
 }
 
-func NewTasksHandler(rd *Renderer, tasks *service.TaskService, clock service.Clock, log *slog.Logger) *TasksHandler {
+func NewTasksHandler(
+	rd *Renderer,
+	tasks *service.TaskService,
+	sessions *service.TaskSessionService,
+	clock service.Clock,
+	cal *calendar.Calendar,
+	log *slog.Logger,
+) *TasksHandler {
 	if clock == nil {
 		clock = service.SystemClock
+	}
+	if cal == nil {
+		cal = calendar.UTC()
 	}
 	if log == nil {
 		log = slog.Default()
 	}
-	return &TasksHandler{rd: rd, tasks: tasks, clock: clock, log: log}
+	return &TasksHandler{rd: rd, tasks: tasks, sessions: sessions, clock: clock, cal: cal, log: log}
 }
 
 // Register installs all routes. The full page lives at /tasks; everything
@@ -46,6 +59,7 @@ func (h *TasksHandler) Register(r *gin.Engine) {
 	r.GET("/tasks", h.page)
 	g := r.Group("/tasks")
 	g.GET("/list", h.list)
+	g.GET("/tabs", h.tabs)
 	g.GET("/import/form", h.importForm)
 	g.GET("/import/template.csv", h.importTemplate)
 	g.POST("/import", h.importCSV)
@@ -57,6 +71,7 @@ func (h *TasksHandler) Register(r *gin.Engine) {
 	g.DELETE("/:id", h.delete)
 	g.POST("/:id/complete", h.markComplete)
 	g.POST("/:id/in_progress", h.markInProgress)
+	g.POST("/:id/pending", h.markPending)
 	g.POST("/:id/missed", h.markMissed)
 	g.POST("/:id/carry_over", h.carryOver)
 	g.POST("/bulk/complete", h.bulkComplete)
@@ -193,7 +208,7 @@ func (q tasksQuery) SortIcon(field string) string {
 // toFilter projects a query into a repository TaskFilter. The view drives
 // the date / status / carried_over predicates; explicit filters override
 // what the view sets where it makes sense.
-func (q tasksQuery) toFilter(now time.Time) repository.TaskFilter {
+func (q tasksQuery) toFilter(now time.Time, cal *calendar.Calendar) repository.TaskFilter {
 	f := repository.TaskFilter{Limit: 200}
 
 	if q.Status != "" {
@@ -208,15 +223,16 @@ func (q tasksQuery) toFilter(now time.Time) repository.TaskFilter {
 
 	switch q.View {
 	case viewToday:
-		// Due today or earlier; active tasks only unless status is filtered.
-		end := startOfDay(now).Add(24 * time.Hour)
+		// Due today or earlier; active tasks. Finished tasks for the day are
+		// merged in listTodayView so completed work stays visible on Today.
+		end := cal.StartOfDay(now).Add(24 * time.Hour)
 		f.DueBefore = &end
 		if len(f.Statuses) == 0 {
 			f.Statuses = []model.Status{model.StatusPending, model.StatusInProgress}
 		}
 	case viewUpcoming:
 		// Next N calendar days after today (exclusive of today).
-		dayStart := startOfDay(now)
+		dayStart := cal.StartOfDay(now)
 		from := dayStart.Add(24 * time.Hour)
 		to := dayStart.Add(time.Duration(upcomingWindowDays+1) * 24 * time.Hour)
 		f.DueAfter = &from
@@ -249,6 +265,82 @@ func (q tasksQuery) toFilter(now time.Time) repository.TaskFilter {
 	return f
 }
 
+// listForView loads tasks for a tab. Today also includes finished work due
+// today or completed/missed during the current calendar day.
+func (h *TasksHandler) listForView(ctx context.Context, q tasksQuery, now time.Time) ([]*model.Task, error) {
+	if q.View == viewToday && q.Status == "" {
+		return h.listTodayView(ctx, q, now)
+	}
+	return h.tasks.List(ctx, q.toFilter(now, h.cal))
+}
+
+func (h *TasksHandler) listTodayView(ctx context.Context, q tasksQuery, now time.Time) ([]*model.Task, error) {
+	dayStart := h.cal.StartOfDay(now)
+	dayEnd := dayStart.Add(24 * time.Hour)
+	base := q.toFilter(now, h.cal)
+
+	active, err := h.tasks.List(ctx, base)
+	if err != nil {
+		return nil, err
+	}
+
+	orderBy := base.OrderBy
+	limit := base.Limit
+	if limit <= 0 {
+		limit = 200
+	}
+
+	dueTodayDone, err := h.tasks.List(ctx, repository.TaskFilter{
+		Statuses:  []model.Status{model.StatusCompleted, model.StatusMissed},
+		DueAfter:  &dayStart,
+		DueBefore: &dayEnd,
+		Limit:     limit,
+		OrderBy:   orderBy,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	completedToday, err := h.tasks.List(ctx, repository.TaskFilter{
+		Statuses:        []model.Status{model.StatusCompleted},
+		CompletedAfter:  &dayStart,
+		CompletedBefore: &dayEnd,
+		Limit:           limit,
+		OrderBy:         orderBy,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	missedToday, err := h.tasks.List(ctx, repository.TaskFilter{
+		Statuses:      []model.Status{model.StatusMissed},
+		UpdatedAfter:  &dayStart,
+		UpdatedBefore: &dayEnd,
+		Limit:         limit,
+		OrderBy:       orderBy,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mergeTasksByID(active, dueTodayDone, completedToday, missedToday), nil
+}
+
+func mergeTasksByID(groups ...[]*model.Task) []*model.Task {
+	seen := make(map[uuid.UUID]struct{})
+	out := make([]*model.Task, 0)
+	for _, group := range groups {
+		for _, t := range group {
+			if _, ok := seen[t.ID]; ok {
+				continue
+			}
+			seen[t.ID] = struct{}{}
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
 // ---------------------------------------------------------------------------
 // View models
 // ---------------------------------------------------------------------------
@@ -278,6 +370,7 @@ type TasksCountsVM struct {
 	Overdue     int
 	Completed   int
 	CarriedOver int
+	All         int
 }
 
 type TaskRowVM struct {
@@ -301,8 +394,17 @@ type TaskRowVM struct {
 	CreatedAt        time.Time
 	CanComplete      bool
 	CanInProgress    bool
+	CanPending       bool
 	CanMiss          bool
 	CanCarry         bool
+	TimerActive      bool
+	SessionID        string
+	SessionStartedUnix int64
+	SessionPausedSeconds int
+	SessionPaused    bool
+	SessionPausedUnix int64
+	ElapsedSeconds   int
+	ElapsedLabel     string
 }
 
 type TaskFormVM struct {
@@ -314,10 +416,12 @@ type TaskFormVM struct {
 	Description string
 	Priority   string
 	Category   string
+	Status     string
 	Estimated  int
 	DueDate    string // YYYY-MM-DD or ""
 	Categories []model.Category
 	Priorities []model.Priority
+	Statuses   []model.Status
 	Error      string
 }
 
@@ -335,6 +439,14 @@ func (h *TasksHandler) list(c *gin.Context) {
 	q := parseQuery(c)
 	vm := h.buildList(c.Request.Context(), q)
 	h.rd.RenderPartial(c, "tasks_list", vm)
+}
+
+func (h *TasksHandler) tabs(c *gin.Context) {
+	q := parseQuery(c)
+	h.rd.RenderPartial(c, "tasks_tabs", TasksPageVM{
+		Query:  q,
+		Counts: h.buildCounts(c.Request.Context()),
+	})
 }
 
 func (h *TasksHandler) buildPage(ctx context.Context, q tasksQuery) TasksPageVM {
@@ -357,7 +469,7 @@ func (h *TasksHandler) buildList(ctx context.Context, q tasksQuery) TasksListVM 
 		return vm
 	}
 	now := h.clock.Now()
-	tasks, err := h.tasks.List(ctx, q.toFilter(now))
+	tasks, err := h.listForView(ctx, q, now)
 	if err != nil {
 		h.log.Warn("tasks.list", slog.String("err", err.Error()))
 		return vm
@@ -369,7 +481,7 @@ func (h *TasksHandler) buildList(ctx context.Context, q tasksQuery) TasksListVM 
 		if needle != "" && !strings.Contains(strings.ToLower(t.Title), needle) {
 			continue
 		}
-		vm.Tasks = append(vm.Tasks, toRowVM(t, now))
+		vm.Tasks = append(vm.Tasks, h.toRowVM(ctx, t, now))
 	}
 	// Apply sort direction (the repo already ordered ASC; flip if needed).
 	if q.SortDir == "desc" {
@@ -387,7 +499,7 @@ func (h *TasksHandler) applyEmptyStateHint(ctx context.Context, q tasksQuery, no
 	if h.tasks == nil || q.View != viewToday {
 		return
 	}
-	upcoming, err := h.tasks.List(ctx, tasksQuery{View: viewUpcoming}.toFilter(now))
+	upcoming, err := h.tasks.List(ctx, tasksQuery{View: viewUpcoming}.toFilter(now, h.cal))
 	if err != nil || len(upcoming) == 0 {
 		return
 	}
@@ -421,9 +533,9 @@ func (h *TasksHandler) buildCounts(ctx context.Context) TasksCountsVM {
 		return out
 	}
 	now := h.clock.Now()
-	for _, view := range []tasksView{viewToday, viewUpcoming, viewOverdue, viewCompleted, viewCarried} {
+	for _, view := range []tasksView{viewToday, viewUpcoming, viewOverdue, viewCompleted, viewCarried, viewAll} {
 		q := tasksQuery{View: view}
-		tasks, err := h.tasks.List(ctx, q.toFilter(now))
+		tasks, err := h.listForView(ctx, q, now)
 		if err != nil {
 			h.log.Warn("tasks.counts", slog.String("view", string(view)), slog.String("err", err.Error()))
 			continue
@@ -439,6 +551,8 @@ func (h *TasksHandler) buildCounts(ctx context.Context) TasksCountsVM {
 			out.Completed = len(tasks)
 		case viewCarried:
 			out.CarriedOver = len(tasks)
+		case viewAll:
+			out.All = len(tasks)
 		}
 	}
 	return out
@@ -449,7 +563,7 @@ func (h *TasksHandler) buildCounts(ctx context.Context) TasksCountsVM {
 // ---------------------------------------------------------------------------
 
 func (h *TasksHandler) formNew(c *gin.Context) {
-	vm := newFormVM("create", "/tasks", "post", nil)
+	vm := h.newFormVM("create", "/tasks", "post", nil)
 	h.rd.RenderPartial(c, "task_form", vm)
 }
 
@@ -463,7 +577,7 @@ func (h *TasksHandler) formEdit(c *gin.Context) {
 		h.notFoundOrErr(c, err)
 		return
 	}
-	vm := newFormVM("edit", "/tasks/"+id.String(), "patch", t)
+	vm := h.newFormVM("edit", "/tasks/"+id.String(), "patch", t)
 	h.rd.RenderPartial(c, "task_form", vm)
 }
 
@@ -477,7 +591,7 @@ func (h *TasksHandler) row(c *gin.Context) {
 		h.notFoundOrErr(c, err)
 		return
 	}
-	h.rd.RenderPartial(c, "task_row", toRowVM(t, h.clock.Now()))
+	h.rd.RenderPartial(c, "task_row", h.toRowVM(c.Request.Context(), t, h.clock.Now()))
 }
 
 func (h *TasksHandler) create(c *gin.Context) {
@@ -492,7 +606,7 @@ func (h *TasksHandler) create(c *gin.Context) {
 		Category:         model.Category(c.PostForm("category")),
 		EstimatedMinutes: atoiOr(c.PostForm("estimated_minutes"), 0),
 	}
-	if d, ok := parseDateInput(c.PostForm("due_date")); ok {
+	if d, ok := h.cal.ParseDate(c.PostForm("due_date")); ok {
 		in.DueDate = &d
 	}
 	t, err := h.tasks.Create(c.Request.Context(), in)
@@ -503,7 +617,7 @@ func (h *TasksHandler) create(c *gin.Context) {
 	setToast(c, "success", "Task created")
 	h.triggerTasksChanged(c)
 	c.Status(http.StatusCreated)
-	h.rd.RenderPartial(c, "task_row", toRowVM(t, h.clock.Now()))
+	h.rd.RenderPartial(c, "task_row", h.toRowVM(c.Request.Context(), t, h.clock.Now()))
 }
 
 func (h *TasksHandler) update(c *gin.Context) {
@@ -537,11 +651,28 @@ func (h *TasksHandler) update(c *gin.Context) {
 	if v, ok := c.GetPostForm("due_date"); ok {
 		if v == "" {
 			in.ClearDueDate = true
-		} else if d, ok := parseDateInput(v); ok {
+		} else if d, ok := h.cal.ParseDate(v); ok {
 			in.DueDate = &d
 		}
 	}
-	t, err := h.tasks.Update(c.Request.Context(), id, in)
+	ctx := c.Request.Context()
+	if v := c.PostForm("status"); v != "" {
+		st := model.Status(v)
+		if !st.IsValid() {
+			if cur, ferr := h.tasks.Get(ctx, id); ferr == nil {
+				h.renderFormError(c, "edit", "/tasks/"+id.String(), "patch", cur, model.ErrInvalidStatus)
+				return
+			}
+		} else if err := h.applyStatusFromForm(ctx, id, st); err != nil {
+			if cur, ferr := h.tasks.Get(ctx, id); ferr == nil {
+				h.renderFormError(c, "edit", "/tasks/"+id.String(), "patch", cur, err)
+				return
+			}
+			h.transitionErr(c, err)
+			return
+		}
+	}
+	t, err := h.tasks.Update(ctx, id, in)
 	if err != nil {
 		// On invalid input, re-render the form with the error so the
 		// inline edit row stays editable.
@@ -553,7 +684,52 @@ func (h *TasksHandler) update(c *gin.Context) {
 		return
 	}
 	setToast(c, "success", "Task updated")
+	h.triggerTasksChanged(c)
 	h.renderTaskSwap(c, t)
+}
+
+func (h *TasksHandler) applyStatusFromForm(ctx context.Context, id uuid.UUID, to model.Status) error {
+	cur, err := h.tasks.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if cur.Status == to {
+		return nil
+	}
+	if !to.IsValid() {
+		return model.ErrInvalidStatus
+	}
+
+	if h.sessions != nil && to != model.StatusInProgress && to != model.StatusCompleted {
+		if sess, serr := h.sessions.CurrentForTask(ctx, id); serr == nil && sess != nil {
+			if _, err := h.sessions.Stop(ctx, sess.ID, service.FinishSessionInput{}); err != nil {
+				h.log.Warn("tasks.session.stop", slog.String("task_id", id.String()), slog.String("err", err.Error()))
+			}
+		}
+	}
+
+	switch to {
+	case model.StatusCompleted:
+		if h.sessions != nil {
+			if sess, serr := h.sessions.CurrentForTask(ctx, id); serr == nil && sess != nil {
+				_, err = h.sessions.Complete(ctx, sess.ID, service.FinishSessionInput{})
+				return err
+			}
+		}
+		_, err = h.tasks.SetStatus(ctx, id, to)
+	case model.StatusInProgress:
+		if _, err = h.tasks.SetStatus(ctx, id, to); err != nil {
+			return err
+		}
+		if h.sessions != nil {
+			if _, err := h.sessions.Start(ctx, id); err != nil && !errors.Is(err, model.ErrSessionAlreadyRunning) {
+				h.log.Warn("tasks.session.start", slog.String("task_id", id.String()), slog.String("err", err.Error()))
+			}
+		}
+	default:
+		_, err = h.tasks.SetStatus(ctx, id, to)
+	}
+	return err
 }
 
 func (h *TasksHandler) delete(c *gin.Context) {
@@ -579,13 +755,32 @@ func (h *TasksHandler) markComplete(c *gin.Context) {
 	if !ok {
 		return
 	}
-	actual := atoiOr(c.PostForm("actual_minutes"), 0)
-	t, err := h.tasks.MarkCompleted(c.Request.Context(), id, actual)
+	ctx := c.Request.Context()
+
+	var t *model.Task
+	var err error
+	if h.sessions != nil {
+		if sess, serr := h.sessions.CurrentForTask(ctx, id); serr == nil && sess != nil {
+			if _, err = h.sessions.Complete(ctx, sess.ID, service.FinishSessionInput{}); err != nil {
+				h.transitionErr(c, err)
+				return
+			}
+			t, err = h.tasks.Get(ctx, id)
+		}
+	}
+	if t == nil {
+		actual := atoiOr(c.PostForm("actual_minutes"), 0)
+		t, err = h.tasks.MarkCompleted(ctx, id, actual)
+	}
 	if err != nil {
 		h.transitionErr(c, err)
 		return
 	}
-	setToast(c, "success", "Marked completed")
+	msg := "Marked completed"
+	if t.ActualMinutes > 0 {
+		msg = fmt.Sprintf("Completed in %d min", t.ActualMinutes)
+	}
+	setToast(c, "success", msg)
 	h.triggerTasksChanged(c)
 	h.renderTaskSwap(c, t)
 }
@@ -595,12 +790,42 @@ func (h *TasksHandler) markInProgress(c *gin.Context) {
 	if !ok {
 		return
 	}
-	t, err := h.tasks.MarkInProgress(c.Request.Context(), id)
+	ctx := c.Request.Context()
+	t, err := h.tasks.MarkInProgress(ctx, id)
 	if err != nil {
 		h.transitionErr(c, err)
 		return
 	}
-	setToast(c, "info", "Marked in progress")
+	if h.sessions != nil {
+		if _, err := h.sessions.Start(ctx, id); err != nil && !errors.Is(err, model.ErrSessionAlreadyRunning) {
+			h.log.Warn("tasks.session.start", slog.String("task_id", id.String()), slog.String("err", err.Error()))
+		}
+	}
+	setToast(c, "info", "Timer started")
+	h.triggerTasksChanged(c)
+	h.renderTaskSwap(c, t)
+}
+
+func (h *TasksHandler) markPending(c *gin.Context) {
+	id, ok := h.parseID(c)
+	if !ok {
+		return
+	}
+	ctx := c.Request.Context()
+	if h.sessions != nil {
+		if sess, err := h.sessions.CurrentForTask(ctx, id); err == nil && sess != nil {
+			if _, err := h.sessions.Stop(ctx, sess.ID, service.FinishSessionInput{}); err != nil {
+				h.log.Warn("tasks.session.stop", slog.String("task_id", id.String()), slog.String("err", err.Error()))
+			}
+		}
+	}
+	t, err := h.tasks.MarkPending(ctx, id)
+	if err != nil {
+		h.transitionErr(c, err)
+		return
+	}
+	setToast(c, "info", "Returned to pending")
+	h.triggerTasksChanged(c)
 	h.renderTaskSwap(c, t)
 }
 
@@ -719,7 +944,7 @@ func (h *TasksHandler) notFoundOrErr(c *gin.Context, err error) {
 }
 
 func (h *TasksHandler) renderTaskSwap(c *gin.Context, t *model.Task) {
-	h.rd.RenderPartial(c, "task_swap_bundle", toRowVM(t, h.clock.Now()))
+	h.rd.RenderPartial(c, "task_swap_bundle", h.toRowVM(c.Request.Context(), t, h.clock.Now()))
 }
 
 func (h *TasksHandler) renderTaskDelete(c *gin.Context, id uuid.UUID) {
@@ -743,7 +968,7 @@ func (h *TasksHandler) transitionErr(c *gin.Context, err error) {
 }
 
 func (h *TasksHandler) renderFormError(c *gin.Context, mode, action, method string, t *model.Task, err error) {
-	vm := newFormVM(mode, action, method, t)
+	vm := h.newFormVM(mode, action, method, t)
 	vm.Error = humanError(err)
 	c.Status(http.StatusUnprocessableEntity)
 	h.rd.RenderPartial(c, "task_form", vm)
@@ -777,6 +1002,10 @@ func humanError(err error) string {
 		return "Estimated minutes must be ≥ 0."
 	case errors.Is(err, model.ErrActualNegative):
 		return "Actual minutes must be ≥ 0."
+	case errors.Is(err, model.ErrInvalidTransition):
+		return "That status change isn't allowed."
+	case errors.Is(err, model.ErrInvalidStatus):
+		return "Invalid status."
 	}
 	return "Could not save the task."
 }
@@ -785,7 +1014,7 @@ func humanError(err error) string {
 // Projection helpers
 // ---------------------------------------------------------------------------
 
-func toRowVM(t *model.Task, now time.Time) TaskRowVM {
+func (h *TasksHandler) toRowVM(ctx context.Context, t *model.Task, now time.Time) TaskRowVM {
 	v := TaskRowVM{
 		ID:               t.ID.String(),
 		Title:            t.Title,
@@ -804,20 +1033,53 @@ func toRowVM(t *model.Task, now time.Time) TaskRowVM {
 		CreatedAt:        t.CreatedAt,
 	}
 	if t.DueDate != nil {
-		v.DueDateLabel = relativeDue(*t.DueDate, now)
-		v.DueDateInput = t.DueDate.Format("2006-01-02")
+		v.DueDateLabel = h.cal.RelativeDue(*t.DueDate, now)
+		v.DueDateInput = h.cal.FormatDate(*t.DueDate)
 		v.IsOverdue = t.DueDate.Before(now) && !t.Status.IsTerminal()
 	} else {
 		v.DueDateLabel = "—"
 	}
-	v.CanComplete = t.Status.CanTransitionTo(model.StatusCompleted)
-	v.CanInProgress = t.Status.CanTransitionTo(model.StatusInProgress)
+	v.CanComplete = t.Status == model.StatusPending || t.Status == model.StatusInProgress
+	v.CanInProgress = t.Status == model.StatusPending
+	v.CanPending = t.Status == model.StatusInProgress
 	v.CanMiss = t.Status.CanTransitionTo(model.StatusMissed)
 	v.CanCarry = !t.Status.IsTerminal()
+
+	if h.sessions != nil && t.Status == model.StatusInProgress {
+		sess, err := h.sessions.CurrentForTask(ctx, t.ID)
+		if err == nil && sess != nil && sess.Status.IsRunning() {
+			v.TimerActive = true
+			v.SessionID = sess.ID.String()
+			v.SessionStartedUnix = sess.StartedAt.Unix()
+			v.SessionPausedSeconds = sess.TotalPausedSeconds
+			v.SessionPaused = sess.Status == model.SessionStatusPaused
+			if sess.PausedAt != nil {
+				v.SessionPausedUnix = sess.PausedAt.Unix()
+			}
+			v.ElapsedSeconds = sess.EffectiveSeconds(now)
+			v.ElapsedLabel = formatElapsedSeconds(v.ElapsedSeconds)
+		}
+	}
 	return v
 }
 
-func newFormVM(mode, action, method string, t *model.Task) TaskFormVM {
+func formatElapsedSeconds(sec int) string {
+	if sec < 0 {
+		sec = 0
+	}
+	h := sec / 3600
+	m := (sec % 3600) / 60
+	s := sec % 60
+	if h > 0 {
+		return fmt.Sprintf("%dh %02dm", h, m)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm %02ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
+}
+
+func (h *TasksHandler) newFormVM(mode, action, method string, t *model.Task) TaskFormVM {
 	vm := TaskFormVM{
 		Mode: mode, Action: action, Method: method,
 		Categories: model.AllCategories(),
@@ -831,9 +1093,11 @@ func newFormVM(mode, action, method string, t *model.Task) TaskFormVM {
 		vm.Description = t.Description
 		vm.Priority = string(t.Priority)
 		vm.Category = string(t.Category)
+		vm.Status = string(t.Status)
+		vm.Statuses = model.AllStatuses()
 		vm.Estimated = t.EstimatedMinutes
 		if t.DueDate != nil {
-			vm.DueDate = t.DueDate.Format("2006-01-02")
+			vm.DueDate = h.cal.FormatDate(*t.DueDate)
 		}
 	}
 	return vm
@@ -887,36 +1151,6 @@ func humanCategory(c model.Category) string {
 		return "Misc"
 	}
 	return string(c)
-}
-
-func relativeDue(due, now time.Time) string {
-	d := due.Sub(now)
-	abs := d
-	if abs < 0 {
-		abs = -abs
-	}
-	switch {
-	case abs < 24*time.Hour:
-		if d < 0 {
-			return "overdue"
-		}
-		return "today"
-	case d < 0:
-		return "due " + due.Format("Jan 2")
-	}
-	return "due " + due.Format("Jan 2")
-}
-
-func parseDateInput(s string) (time.Time, bool) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return time.Time{}, false
-	}
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return time.Time{}, false
-	}
-	return t, true
 }
 
 func atoiOr(s string, def int) int {

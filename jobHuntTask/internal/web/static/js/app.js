@@ -123,6 +123,54 @@
     window.JobHuntToast = showToast;
 
     // ------------------------------------------------------------------
+    // 3b. Task timers (in-progress session tracking)
+    // ------------------------------------------------------------------
+
+    let taskTimerInterval = null;
+
+    function formatElapsedSeconds(totalSec) {
+        if (totalSec < 0) totalSec = 0;
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        if (h > 0) return h + 'h ' + String(m).padStart(2, '0') + 'm';
+        if (m > 0) return m + 'm ' + String(s).padStart(2, '0') + 's';
+        return s + 's';
+    }
+
+    function elapsedFromTimerEl(el) {
+        const startedMs = parseInt(el.dataset.startedAt, 10) * 1000;
+        if (!startedMs) return 0;
+        const pausedSec = parseInt(el.dataset.pausedSeconds || '0', 10) || 0;
+        const nowMs = Date.now();
+        let elapsed = Math.floor((nowMs - startedMs) / 1000) - pausedSec;
+        if (el.dataset.paused === 'true' && el.dataset.pausedAt) {
+            const pausedAtMs = parseInt(el.dataset.pausedAt, 10) * 1000;
+            if (pausedAtMs) {
+                elapsed -= Math.floor((nowMs - pausedAtMs) / 1000);
+            }
+        }
+        return elapsed;
+    }
+
+    function tickTaskTimers() {
+        document.querySelectorAll('[data-task-timer]').forEach(function (el) {
+            el.textContent = formatElapsedSeconds(elapsedFromTimerEl(el));
+        });
+    }
+
+    function syncTaskTimerInterval() {
+        const hasTimers = document.querySelector('[data-task-timer]');
+        if (hasTimers && !taskTimerInterval) {
+            taskTimerInterval = setInterval(tickTaskTimers, 1000);
+            tickTaskTimers();
+        } else if (!hasTimers && taskTimerInterval) {
+            clearInterval(taskTimerInterval);
+            taskTimerInterval = null;
+        }
+    }
+
+    // ------------------------------------------------------------------
     // 4. Global loading indicator
     // ------------------------------------------------------------------
 
@@ -143,6 +191,7 @@
     const confirmMessage = document.getElementById('confirm-modal-message');
     const confirmOk = document.getElementById('confirm-modal-ok');
     let confirmCallback = null;
+    let pendingConfirmRequest = null;
 
     function openConfirm(opts) {
         if (!confirmModal) {
@@ -167,6 +216,7 @@
         if (!confirmModal || !confirmModal.classList.contains('is-open')) return false;
         const cb = confirmCallback;
         confirmCallback = null;
+        pendingConfirmRequest = null;
         confirmModal.classList.remove('is-open');
         confirmModal.hidden = true;
         confirmModal.setAttribute('aria-hidden', 'true');
@@ -180,21 +230,56 @@
         return true;
     }
 
+    function isConfirmOpen() {
+        return !!(confirmModal && confirmModal.classList.contains('is-open'));
+    }
+
+    function isTasksListNav(elt) {
+        return !!(elt && (elt.dataset.listNav === 'true' || elt.closest('[data-list-nav="true"]')));
+    }
+
+    // Used by hx-vals on #tasks-list-host to preserve the active tab/filters
+    // when tasks-changed triggers a list refresh.
+    window.tasksQueryParams = function () {
+        const p = new URLSearchParams(window.location.search);
+        return {
+            view: p.get('view') || 'today',
+            sort: p.get('sort') || 'due_date',
+            dir: p.get('dir') || 'asc',
+            status: p.get('status') || '',
+            priority: p.get('priority') || '',
+            category: p.get('category') || '',
+            q: p.get('q') || '',
+        };
+    };
+
     document.body.addEventListener('htmx:confirm', function (e) {
-        e.preventDefault();
         const elt = e.detail.elt;
-        const isDanger = !!(elt && (
-            elt.getAttribute('hx-delete') ||
+        if (!elt || !elt.getAttribute('hx-confirm')) {
+            return;
+        }
+        e.preventDefault();
+        if (isConfirmOpen()) {
+            e.detail.issueRequest(false);
+            return;
+        }
+        pendingConfirmRequest = e.detail;
+        const isDanger = !!(elt.getAttribute('hx-delete') ||
             elt.dataset.confirmDanger === 'true' ||
             elt.classList.contains('btn-danger-ghost') ||
-            elt.classList.contains('icon-button--danger')
-        ));
+            elt.classList.contains('icon-button--danger'));
         openConfirm({
             message: e.detail.question || 'Are you sure?',
             danger: isDanger,
             confirmLabel: isDanger ? 'Delete' : 'Confirm',
-            onConfirm: function () { e.detail.issueRequest(true); },
-            onCancel: function () { e.detail.issueRequest(false); },
+            onConfirm: function () {
+                if (pendingConfirmRequest) pendingConfirmRequest.issueRequest(true);
+                pendingConfirmRequest = null;
+            },
+            onCancel: function () {
+                if (pendingConfirmRequest) pendingConfirmRequest.issueRequest(false);
+                pendingConfirmRequest = null;
+            },
         });
     });
 
@@ -216,6 +301,100 @@
         dialog.classList.add('is-entering');
         setTimeout(function () { dialog.classList.remove('is-entering'); }, 220);
         dialog.focus();
+        if (window.htmx && typeof htmx.process === 'function') {
+            htmx.process(slot);
+        }
+        const firstInput = slot.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+    }
+
+    function openTaskForm(url) {
+        const slot = document.getElementById('task-modal');
+        if (!slot || !url) return;
+
+        pendingRequests++;
+        setGlobalLoading(true);
+
+        fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return { ok: resp.ok, html: html };
+            });
+        }).then(function (result) {
+            if (!result.ok) {
+                showToast({ tone: 'danger', message: 'Could not open the task form.' });
+                return;
+            }
+            slot.innerHTML = result.html;
+            bindModalSlot(slot);
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+        });
+    }
+
+    function submitTaskForm(form) {
+        const url = form.dataset.action;
+        const method = (form.dataset.method || 'post').toUpperCase();
+        if (!url) return;
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.classList.add('htmx-request');
+        pendingRequests++;
+        setGlobalLoading(true);
+
+        fetch(url, {
+            method: method,
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+            body: new FormData(form),
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return {
+                    ok: resp.ok,
+                    status: resp.status,
+                    html: html,
+                    trigger: resp.headers.get('HX-Trigger'),
+                };
+            });
+        }).then(function (result) {
+            if (result.status === 422) {
+                const slot = document.getElementById('task-modal');
+                if (slot) {
+                    slot.innerHTML = result.html;
+                    bindModalSlot(slot);
+                }
+                return;
+            }
+            if (!result.ok) {
+                dispatchHXTrigger(result.trigger);
+                if (!result.trigger) {
+                    showToast({ tone: 'danger', message: 'Could not save the task.' });
+                }
+                return;
+            }
+            dispatchHXTrigger(result.trigger);
+            applyOOBSwaps(result.html);
+            closeModalSlot();
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            if (submitBtn) submitBtn.classList.remove('htmx-request');
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+            syncTaskTimerInterval();
+        });
     }
 
     // ------------------------------------------------------------------
@@ -236,18 +415,37 @@
             target: target,
         });
         target.classList.add('htmx-optimistic', 'htmx-optimistic--' + kind);
+        const id = target.id && target.id.split('-').pop();
+        let peer = null;
+        if (id) {
+            peer = document.getElementById(
+                target.id.startsWith('task-row-') ? 'task-card-' + id : 'task-row-' + id
+            );
+        }
         if (kind === 'delete') {
             target.classList.add('htmx-optimistic--removing');
-            const id = target.id && target.id.split('-').pop();
-            if (id) {
-                const peer = document.getElementById(
-                    target.id.startsWith('task-row-') ? 'task-card-' + id : 'task-row-' + id
-                );
-                if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--delete', 'htmx-optimistic--removing');
+            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--delete', 'htmx-optimistic--removing');
+        }
+        if (kind === 'complete') {
+            target.classList.add('task-row--status-completed', 'task-card--status-completed');
+            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--complete', 'task-row--status-completed', 'task-card--status-completed');
+        }
+        if (kind === 'in_progress') {
+            target.classList.add('task-row--status-in_progress', 'task-card--status-in_progress');
+            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--in_progress', 'task-row--status-in_progress', 'task-card--status-in_progress');
+        }
+        if (kind === 'missed') {
+            target.classList.add('task-row--status-missed', 'task-card--status-missed');
+            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--missed', 'task-row--status-missed', 'task-card--status-missed');
+        }
+        if (kind === 'pending') {
+            target.classList.remove('task-row--status-in_progress', 'task-card--status-in_progress');
+            target.classList.add('task-row--status-pending', 'task-card--status-pending');
+            if (peer) {
+                peer.classList.remove('task-row--status-in_progress', 'task-card--status-in_progress');
+                peer.classList.add('htmx-optimistic', 'htmx-optimistic--pending', 'task-row--status-pending', 'task-card--status-pending');
             }
         }
-        if (kind === 'complete') target.classList.add('task-row--status-completed', 'task-card--status-completed');
-        if (kind === 'in_progress') target.classList.add('task-row--status-in_progress', 'task-card--status-in_progress');
     }
 
     function revertOptimistic(elt) {
@@ -297,6 +495,7 @@
         const target = evt.detail && evt.detail.target;
         const elt = evt.detail && evt.detail.elt;
         if (!target || !elt || target.id !== 'tasks-list') return;
+        if (isTasksListNav(elt)) return;
         if (target.querySelector('.retry-state')) return;
         const url = elt.getAttribute('hx-get') || elt.getAttribute('hx-post') || '';
         if (!url) return;
@@ -313,9 +512,13 @@
     }
 
     document.body.addEventListener('htmx:beforeRequest', function (e) {
+        const elt = e.detail.elt;
+        if (isTasksListNav(elt) && isConfirmOpen()) {
+            e.preventDefault();
+            return;
+        }
         pendingRequests++;
         setGlobalLoading(true);
-        const elt = e.detail.elt;
         if (elt) {
             elt.classList.add('htmx-request');
             applyOptimistic(elt);
@@ -333,8 +536,10 @@
         if (target) target.classList.remove('htmx-loading');
         if (!e.detail.successful) {
             revertOptimistic(elt);
-            showToast({ tone: 'danger', message: friendlyError(e) });
-            maybeInjectRetry(e);
+            if (!isTasksListNav(elt)) {
+                showToast({ tone: 'danger', message: friendlyError(e) });
+                maybeInjectRetry(e);
+            }
         } else {
             optimisticSnapshots.delete(elt);
         }
@@ -344,8 +549,33 @@
         if (e.detail.target) e.detail.target.classList.add('htmx-swapping');
     });
 
+    function syncTasksFilterView() {
+        const view = new URLSearchParams(window.location.search).get('view') || 'today';
+        const input = document.querySelector('.filter-bar input[name="view"]');
+        if (input && input.value !== view) {
+            input.value = view;
+        }
+    }
+
+    function syncTasksTabActive() {
+        if (!window.location.pathname.startsWith('/tasks')) return;
+        const view = new URLSearchParams(window.location.search).get('view') || 'today';
+        document.querySelectorAll('.tasks-tabs .tab').forEach(function (tab) {
+            const active = tab.dataset.view === view;
+            tab.classList.toggle('tab--active', active);
+            if (active) tab.setAttribute('aria-current', 'page');
+            else tab.removeAttribute('aria-current');
+        });
+        syncTasksFilterView();
+    }
+
     document.body.addEventListener('htmx:afterSettle', function (e) {
         if (e.detail.target) e.detail.target.classList.remove('htmx-swapping');
+        if (e.detail.target && e.detail.target.id === 'tasks-list') {
+            syncTasksTabActive();
+            if (window.htmx) htmx.process(e.detail.target);
+            syncTaskTimerInterval();
+        }
         if (e.detail.target && e.detail.target.id === 'main-content') {
             refreshActiveNav();
             updateNavbarTitle();
@@ -355,11 +585,135 @@
         if (e.detail.target && e.detail.target.id === 'task-modal') {
             bindModalSlot(e.detail.target);
         }
+        syncTaskTimerInterval();
     });
 
     // ------------------------------------------------------------------
     // 9. Delegated actions
     // ------------------------------------------------------------------
+
+    function dispatchHXTrigger(header) {
+        if (!header) return;
+        try {
+            var events = JSON.parse(header);
+            Object.keys(events).forEach(function (name) {
+                document.body.dispatchEvent(new CustomEvent(name, {
+                    detail: events[name],
+                    bubbles: true,
+                }));
+            });
+        } catch (_) { /* ignore malformed trigger JSON */ }
+    }
+
+    function applyOOBSwaps(html) {
+        if (!html || !html.trim()) return;
+        var tpl = document.createElement('template');
+        tpl.innerHTML = html.trim();
+        tpl.content.querySelectorAll('[hx-swap-oob]').forEach(function (el) {
+            var mode = el.getAttribute('hx-swap-oob');
+            var id = el.id;
+            if (!id) return;
+            var target = document.getElementById(id);
+            if (!target) return;
+            var clean = el.cloneNode(true);
+            clean.removeAttribute('hx-swap-oob');
+            if (mode === 'delete') {
+                target.remove();
+            } else if (mode === 'outerHTML') {
+                target.outerHTML = clean.outerHTML;
+            } else if (mode === 'innerHTML') {
+                target.innerHTML = clean.innerHTML;
+            }
+        });
+        if (window.htmx && typeof htmx.process === 'function') {
+            htmx.process(document.body);
+        }
+    }
+
+    function runTaskAction(btn) {
+        var id = btn.dataset.taskId;
+        var action = btn.dataset.taskAction;
+        if (!id || !action) return;
+
+        btn.classList.add('htmx-request');
+        applyOptimistic(btn);
+        pendingRequests++;
+        setGlobalLoading(true);
+
+        fetch('/tasks/' + encodeURIComponent(id) + '/' + action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return {
+                    ok: resp.ok,
+                    status: resp.status,
+                    html: html,
+                    trigger: resp.headers.get('HX-Trigger'),
+                };
+            });
+        }).then(function (result) {
+            if (!result.ok) {
+                revertOptimistic(btn);
+                dispatchHXTrigger(result.trigger);
+                if (!result.trigger) {
+                    showToast({
+                        tone: 'danger',
+                        message: result.status >= 500
+                            ? 'Something went wrong on the server.'
+                            : 'Could not update the task.',
+                    });
+                }
+                return;
+            }
+            optimisticSnapshots.delete(btn);
+            dispatchHXTrigger(result.trigger);
+            applyOOBSwaps(result.html);
+        }).catch(function () {
+            revertOptimistic(btn);
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            btn.classList.remove('htmx-request');
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+            syncTaskTimerInterval();
+        });
+    }
+
+    // Instant task transitions (complete / in progress / pending) use fetch
+    // so they work even when HTMX CDN is blocked or not yet loaded.
+    document.body.addEventListener('click', function (e) {
+        const opener = e.target.closest('[data-load-task-form]');
+        if (opener) {
+            e.preventDefault();
+            e.stopPropagation();
+            openTaskForm(opener.dataset.loadTaskForm);
+            return;
+        }
+
+        const btn = e.target.closest('[data-task-action]');
+        if (!btn || btn.hasAttribute('hx-confirm') || btn.disabled) return;
+        if (btn.classList.contains('htmx-request')) return;
+
+        const id = btn.dataset.taskId;
+        const action = btn.dataset.taskAction;
+        if (!id || !action) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        runTaskAction(btn);
+    });
+
+    document.body.addEventListener('submit', function (e) {
+        const form = e.target.closest('.task-form');
+        if (!form) return;
+        e.preventDefault();
+        submitTaskForm(form);
+    });
 
     document.addEventListener('click', function (e) {
         const trigger = e.target.closest('[data-action]');
@@ -373,12 +727,17 @@
                 isSidebarOpen() ? closeSidebar() : openSidebar();
                 break;
             case 'close-modal':
+                e.preventDefault();
                 closeModalSlot();
                 break;
             case 'confirm-ok':
+                e.preventDefault();
+                e.stopPropagation();
                 closeConfirm(true);
                 break;
             case 'confirm-cancel':
+                e.preventDefault();
+                e.stopPropagation();
                 closeConfirm(false);
                 break;
         }
@@ -408,6 +767,10 @@
 
     function openNewTaskModal() {
         const btn = document.querySelector('[data-shortcut="new-task"]');
+        if (btn && btn.dataset.loadTaskForm) {
+            openTaskForm(btn.dataset.loadTaskForm);
+            return;
+        }
         if (btn) btn.click();
     }
 
@@ -466,4 +829,5 @@
     });
 
     refreshActiveNav();
+    syncTaskTimerInterval();
 })();

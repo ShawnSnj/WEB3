@@ -69,7 +69,7 @@ func (s *TaskService) ImportFromCSV(ctx context.Context, r io.Reader, defaultDue
 			continue
 		}
 
-		in, rowErr := parseImportRow(row, col, defaultDue)
+		in, rowErr := s.parseImportRow(row, col, defaultDue)
 		if rowErr != "" {
 			out.Skipped++
 			out.Errors = append(out.Errors, ImportRowError{
@@ -153,7 +153,7 @@ func normalizeImportHeader(s string) string {
 	}
 }
 
-func parseImportRow(row []string, col map[string]int, defaultDue time.Time) (CreateTaskInput, string) {
+func (s *TaskService) parseImportRow(row []string, col map[string]int, defaultDue time.Time) (CreateTaskInput, string) {
 	title := strings.TrimSpace(cell(row, col, "title"))
 	if title == "" {
 		// Some sheets use task_id as the visible label when title is empty.
@@ -180,10 +180,10 @@ func parseImportRow(row []string, col map[string]int, defaultDue time.Time) (Cre
 
 	dueRaw := strings.TrimSpace(cell(row, col, "due_date"))
 	if dueRaw == "" {
-		d := startOfDayUTC(defaultDue)
+		d := s.cal.StartOfDay(defaultDue)
 		in.DueDate = &d
 	} else {
-		d, ok := parseImportDate(dueRaw)
+		d, ok := s.parseImportDate(dueRaw)
 		if !ok {
 			return CreateTaskInput{}, "due_date must be YYYY-MM-DD"
 		}
@@ -330,13 +330,13 @@ func isBlankImportRow(row []string) bool {
 	return true
 }
 
-func parseImportDate(s string) (time.Time, bool) {
-	s = strings.TrimSpace(s)
-	if t, err := time.Parse("2006-01-02", s); err == nil {
-		return startOfDayUTC(t), true
+func (s *TaskService) parseImportDate(raw string) (time.Time, bool) {
+	raw = strings.TrimSpace(raw)
+	if d, ok := s.cal.ParseDate(raw); ok {
+		return d, true
 	}
-	if t, err := time.Parse("1/2/2006", s); err == nil {
-		return startOfDayUTC(t), true
+	if d, ok := s.cal.ParseDateSlash(raw); ok {
+		return d, true
 	}
 	return time.Time{}, false
 }

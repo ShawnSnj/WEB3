@@ -123,7 +123,7 @@ func newTestRouter(t *testing.T) (*gin.Engine, *memRepo) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	repo := newMemRepo()
-	svc := service.NewTaskService(repo, service.SystemClock)
+	svc := service.NewTaskService(repo, service.SystemClock, nil)
 	r := api.NewRouter(api.Deps{
 		Config:      config.Config{},
 		Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),

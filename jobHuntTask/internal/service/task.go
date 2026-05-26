@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/model"
 	"github.com/shawn/jobhunttask/internal/repository"
 )
@@ -74,14 +75,19 @@ type ListTasksInput = repository.TaskFilter
 type TaskService struct {
 	repo  repository.TaskRepository
 	clock Clock
+	cal   *calendar.Calendar
 }
 
 // NewTaskService constructs a service. Pass SystemClock for production.
-func NewTaskService(repo repository.TaskRepository, clock Clock) *TaskService {
+// When cal is nil, UTC calendar-day boundaries are used.
+func NewTaskService(repo repository.TaskRepository, clock Clock, cal *calendar.Calendar) *TaskService {
 	if clock == nil {
 		clock = SystemClock
 	}
-	return &TaskService{repo: repo, clock: clock}
+	if cal == nil {
+		cal = calendar.UTC()
+	}
+	return &TaskService{repo: repo, clock: clock, cal: cal}
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +173,34 @@ func (s *TaskService) Update(ctx context.Context, id uuid.UUID, in UpdateTaskInp
 	return s.repo.Update(ctx, id, u)
 }
 
+// SetStatus assigns status directly (edit form). Any valid status may be
+// selected, including reopening a completed or missed task. Side effects:
+// moving to completed sets completed_at; leaving completed clears it.
+func (s *TaskService) SetStatus(ctx context.Context, id uuid.UUID, to model.Status) (*model.Task, error) {
+	if !to.IsValid() {
+		return nil, model.ErrInvalidStatus
+	}
+	cur, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if cur.Status == to {
+		return cur, nil
+	}
+
+	u := repository.TaskUpdate{Status: &to}
+	switch to {
+	case model.StatusCompleted:
+		now := s.clock.Now()
+		u.CompletedAt = &now
+	default:
+		if cur.Status == model.StatusCompleted {
+			u.ClearCompletedAt = true
+		}
+	}
+	return s.repo.Update(ctx, id, u)
+}
+
 // ---------------------------------------------------------------------------
 // Delete
 // ---------------------------------------------------------------------------
@@ -183,6 +217,11 @@ func (s *TaskService) Delete(ctx context.Context, id uuid.UUID) error {
 // MarkInProgress moves a task from pending → in_progress.
 func (s *TaskService) MarkInProgress(ctx context.Context, id uuid.UUID) (*model.Task, error) {
 	return s.transition(ctx, id, model.StatusInProgress, nil)
+}
+
+// MarkPending moves a task from in_progress → pending (cancel in-progress).
+func (s *TaskService) MarkPending(ctx context.Context, id uuid.UUID) (*model.Task, error) {
+	return s.transition(ctx, id, model.StatusPending, nil)
 }
 
 // MarkCompleted moves a task to completed. The caller may provide the

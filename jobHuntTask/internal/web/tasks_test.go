@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/model"
 	"github.com/shawn/jobhunttask/internal/repository"
 	"github.com/shawn/jobhunttask/internal/service"
@@ -169,6 +170,26 @@ func matchesFilter(t *model.Task, f repository.TaskFilter) bool {
 			return false
 		}
 	}
+	if f.CompletedAfter != nil {
+		if t.CompletedAt == nil || t.CompletedAt.Before(*f.CompletedAfter) {
+			return false
+		}
+	}
+	if f.CompletedBefore != nil {
+		if t.CompletedAt == nil || !t.CompletedAt.Before(*f.CompletedBefore) {
+			return false
+		}
+	}
+	if f.UpdatedAfter != nil {
+		if t.UpdatedAt.Before(*f.UpdatedAfter) {
+			return false
+		}
+	}
+	if f.UpdatedBefore != nil {
+		if !t.UpdatedAt.Before(*f.UpdatedBefore) {
+			return false
+		}
+	}
 	if f.CarriedOver != nil {
 		want := *f.CarriedOver
 		got := t.CarryOverCount > 0
@@ -206,16 +227,151 @@ func containsCategory(cs []model.Category, c model.Category) bool {
 
 type testClock struct{ now time.Time }
 
-func (c testClock) Now() time.Time { return c.now }
+func (c *testClock) Now() time.Time { return c.now }
+
+type tasksSessionRepo struct {
+	mu       sync.Mutex
+	sessions map[uuid.UUID]*model.TaskSession
+	now      func() time.Time
+}
+
+func newTasksSessionRepo(now func() time.Time) *tasksSessionRepo {
+	return &tasksSessionRepo{sessions: map[uuid.UUID]*model.TaskSession{}, now: now}
+}
+
+func (r *tasksSessionRepo) Create(_ context.Context, s *model.TaskSession) error {
+	if err := s.Validate(); err != nil {
+		return err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, ex := range r.sessions {
+		if ex.TaskID == s.TaskID && ex.Status.IsRunning() {
+			return model.ErrSessionAlreadyRunning
+		}
+	}
+	s.ID = uuid.New()
+	now := r.now()
+	s.CreatedAt = now
+	s.UpdatedAt = now
+	cp := *s
+	r.sessions[s.ID] = &cp
+	return nil
+}
+
+func (r *tasksSessionRepo) GetByID(_ context.Context, id uuid.UUID) (*model.TaskSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s, ok := r.sessions[id]
+	if !ok {
+		return nil, model.ErrSessionNotFound
+	}
+	cp := *s
+	return &cp, nil
+}
+
+func (r *tasksSessionRepo) Update(_ context.Context, id uuid.UUID, u repository.SessionUpdate) (*model.TaskSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s, ok := r.sessions[id]
+	if !ok {
+		return nil, model.ErrSessionNotFound
+	}
+	if u.Status != nil {
+		s.Status = *u.Status
+	}
+	switch {
+	case u.ClearEndedAt:
+		s.EndedAt = nil
+	case u.EndedAt != nil:
+		v := *u.EndedAt
+		s.EndedAt = &v
+	}
+	switch {
+	case u.ClearPausedAt:
+		s.PausedAt = nil
+	case u.PausedAt != nil:
+		v := *u.PausedAt
+		s.PausedAt = &v
+	}
+	if u.TotalPausedSeconds != nil {
+		s.TotalPausedSeconds = *u.TotalPausedSeconds
+	}
+	if u.Interruptions != nil {
+		s.Interruptions = *u.Interruptions
+	}
+	if u.CompletionQuality != nil {
+		s.CompletionQuality = *u.CompletionQuality
+	}
+	if u.Notes != nil {
+		s.Notes = *u.Notes
+	}
+	s.UpdatedAt = r.now()
+	cp := *s
+	return &cp, nil
+}
+
+func (r *tasksSessionRepo) Delete(_ context.Context, id uuid.UUID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.sessions[id]; !ok {
+		return model.ErrSessionNotFound
+	}
+	delete(r.sessions, id)
+	return nil
+}
+
+func (r *tasksSessionRepo) List(_ context.Context, _ repository.SessionFilter) ([]*model.TaskSession, error) {
+	return nil, nil
+}
+
+func (r *tasksSessionRepo) FindRunningByTask(_ context.Context, taskID uuid.UUID) (*model.TaskSession, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, s := range r.sessions {
+		if s.TaskID == taskID && s.Status.IsRunning() {
+			cp := *s
+			return &cp, nil
+		}
+	}
+	return nil, model.ErrSessionNotFound
+}
+
+func (r *tasksSessionRepo) SumEffectiveMinutesByTask(_ context.Context, taskID uuid.UUID, now time.Time) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	total := 0
+	for _, s := range r.sessions {
+		if s.TaskID == taskID {
+			total += s.EffectiveMinutes(now)
+		}
+	}
+	return total, nil
+}
+
+func (r *tasksSessionRepo) SumEffectiveMinutesInRange(_ context.Context, from, to, now time.Time) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	total := 0
+	for _, s := range r.sessions {
+		if !s.StartedAt.Before(from) && s.StartedAt.Before(to) {
+			total += s.EffectiveMinutes(now)
+		}
+	}
+	return total, nil
+}
 
 // ---------------------------------------------------------------------------
 // Harness
 // ---------------------------------------------------------------------------
 
 type tasksHarness struct {
-	router *gin.Engine
-	repo   *inMemTaskRepo
-	svc    *service.TaskService
+	router     *gin.Engine
+	repo       *inMemTaskRepo
+	sessions   *tasksSessionRepo
+	svc        *service.TaskService
+	sessionSvc *service.TaskSessionService
+	clock      *testClock
 }
 
 func newTasksHarness(t *testing.T) *tasksHarness {
@@ -223,6 +379,10 @@ func newTasksHarness(t *testing.T) *tasksHarness {
 }
 
 func newTasksHarnessAt(t *testing.T, now time.Time) *tasksHarness {
+	return newTasksHarnessAtWithCal(t, now, calendar.UTC())
+}
+
+func newTasksHarnessAtWithCal(t *testing.T, now time.Time, cal *calendar.Calendar) *tasksHarness {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -231,9 +391,11 @@ func newTasksHarnessAt(t *testing.T, now time.Time) *tasksHarness {
 		t.Fatalf("web.New: %v", err)
 	}
 	repo := newInMemTaskRepo()
-	clk := testClock{now: now}
-	svc := service.NewTaskService(repo, clk)
-	h := web.NewTasksHandler(rd, svc, clk,
+	clk := &testClock{now: now}
+	svc := service.NewTaskService(repo, clk, cal)
+	sessions := newTasksSessionRepo(func() time.Time { return clk.now })
+	sessionSvc := service.NewTaskSessionService(sessions, svc, clk)
+	h := web.NewTasksHandler(rd, svc, sessionSvc, clk, cal,
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	r := gin.New()
@@ -242,7 +404,7 @@ func newTasksHarnessAt(t *testing.T, now time.Time) *tasksHarness {
 	}
 	web.RegisterRoutes(r, rd)
 	h.Register(r)
-	return &tasksHarness{router: r, repo: repo, svc: svc}
+	return &tasksHarness{router: r, repo: repo, sessions: sessions, svc: svc, sessionSvc: sessionSvc, clock: clk}
 }
 
 // seedTask creates a task with sane defaults plus any overrides applied.
@@ -312,8 +474,135 @@ func TestTasksPage_EmptyView(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "Today is clear") {
+	body := w.Body.String()
+	if !strings.Contains(body, `id="tasks-list"`) {
+		t.Error("list fragment must include #tasks-list for HTMX tab targets")
+	}
+	if !strings.Contains(body, "Today is clear") {
 		t.Error("expected today empty-state copy")
+	}
+}
+
+func TestTasksTabs_AllViewCount(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+
+	todayDue := time.Date(2026, 5, 26, 0, 0, 0, 0, time.UTC)
+	tomorrowDue := time.Date(2026, 5, 27, 0, 0, 0, 0, time.UTC)
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Today A"; tk.DueDate = &todayDue })
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Today B"; tk.DueDate = &todayDue })
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Done"; tk.DueDate = &todayDue
+		tk.Status = model.StatusCompleted
+	})
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Future"; tk.DueDate = &tomorrowDue })
+
+	w := doGet(t, h.router, "/tasks", false)
+	body := w.Body.String()
+	if !strings.Contains(body, `data-view="all"`) {
+		t.Fatalf("missing all tab: %s", body)
+	}
+	// 4 tasks total in repo.
+	if !strings.Contains(body, `data-view="all"`) || !strings.Contains(body, ">4<") {
+		// tab-count is inside span after All label
+		if strings.Count(body, `tab-count">4<`) != 1 {
+			t.Errorf("expected All tab count 4, body snippet: %.800s", body)
+		}
+	}
+
+	w2 := doGet(t, h.router, "/tasks/list?view=all", true)
+	if !strings.Contains(w2.Body.String(), "Today A") || !strings.Contains(w2.Body.String(), "Done") {
+		t.Fatalf("all view should list every task: %s", w2.Body.String())
+	}
+}
+
+func TestTasksTabsFragment_RefreshesCounts(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+	due := time.Date(2026, 5, 26, 0, 0, 0, 0, time.UTC)
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "One"; tk.DueDate = &due })
+
+	w := doGet(t, h.router, "/tasks/tabs?view=today", true)
+	body := w.Body.String()
+	if !strings.Contains(body, `class="tasks-tabs"`) {
+		t.Fatalf("tabs fragment missing nav: %s", body)
+	}
+	if !strings.Contains(body, `tab-count">1<`) {
+		t.Errorf("expected today count 1 in tabs fragment: %s", body)
+	}
+}
+
+func TestTasksList_TodayViewRespectsAppTimezone(t *testing.T) {
+	t.Parallel()
+	cal, err := calendar.Load("Asia/Taipei")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Local May 26 06:00 Taipei; UTC still May 25 22:00.
+	now := time.Date(2026, 5, 25, 22, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAtWithCal(t, now, cal)
+
+	dueToday, ok := cal.ParseDate("2026-05-26")
+	if !ok {
+		t.Fatal("parse due today")
+	}
+	dueTomorrow, ok := cal.ParseDate("2026-05-27")
+	if !ok {
+		t.Fatal("parse due tomorrow")
+	}
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due today Taipei"; tk.DueDate = &dueToday })
+	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due tomorrow Taipei"; tk.DueDate = &dueTomorrow })
+
+	w := doGet(t, h.router, "/tasks/list?view=today", true)
+	body := w.Body.String()
+	if !strings.Contains(body, "Due today Taipei") {
+		t.Fatalf("expected today task in today view, got: %s", body)
+	}
+	if strings.Contains(body, "Due tomorrow Taipei") {
+		t.Fatalf("tomorrow task should not appear in today view: %s", body)
+	}
+
+	w2 := doGet(t, h.router, "/tasks/list?view=upcoming", true)
+	body2 := w2.Body.String()
+	if !strings.Contains(body2, "Due tomorrow Taipei") {
+		t.Fatalf("expected tomorrow task in upcoming view, got: %s", body2)
+	}
+	if strings.Contains(body2, "Due today Taipei") {
+		t.Fatalf("today task should not appear in upcoming view: %s", body2)
+	}
+}
+
+func TestTasksList_TodayViewKeepsCompletedDueToday(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 26, 15, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+
+	todayDue := time.Date(2026, 5, 26, 0, 0, 0, 0, time.UTC)
+	completedAt := now.Add(-1 * time.Hour)
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Still visible"
+		tk.DueDate = &todayDue
+		tk.Status = model.StatusCompleted
+		tk.CompletedAt = &completedAt
+	})
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Old done"
+		oldDue := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
+		oldDone := time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)
+		tk.DueDate = &oldDue
+		tk.Status = model.StatusCompleted
+		tk.CompletedAt = &oldDone
+	})
+
+	w := doGet(t, h.router, "/tasks/list?view=today", true)
+	body := w.Body.String()
+	if !strings.Contains(body, "Still visible") {
+		t.Fatalf("completed task due today should remain on today view: %s", body)
+	}
+	if strings.Contains(body, "Old done") {
+		t.Fatalf("old completed task should not appear on today view: %s", body)
 	}
 }
 
@@ -362,8 +651,9 @@ func TestTasksList_TodayEmptyShowsUpcomingHint(t *testing.T) {
 
 func TestTasksList_FiltersByCategoryAndPriority(t *testing.T) {
 	t.Parallel()
-	h := newTasksHarness(t)
-	due := time.Now().Add(2 * time.Hour)
+	now := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+	due := time.Date(2026, 5, 24, 14, 0, 0, 0, time.UTC)
 	h.seedTask(t, func(tk *model.Task) {
 		tk.Title = "Apply to Google"
 		tk.Category = model.CategoryJobApply
@@ -486,8 +776,66 @@ func TestTasks_EditFormPrefillsExistingValues(t *testing.T) {
 	if !strings.Contains(body, `value="Refresh GitHub profile"`) {
 		t.Error("title not pre-filled")
 	}
-	if !strings.Contains(body, `hx-patch="/tasks/`+tk.ID.String()+`"`) {
-		t.Error("form should target PATCH on the existing task")
+	if !strings.Contains(body, `data-method="patch"`) || !strings.Contains(body, `data-action="/tasks/`+tk.ID.String()+`"`) {
+		t.Error("form should PATCH the existing task")
+	}
+	if !strings.Contains(body, `name="status"`) {
+		t.Error("edit form should include status select")
+	}
+	for _, label := range []string{"Pending", "In progress", "Completed", "Missed"} {
+		if !strings.Contains(body, ">"+label+"<") {
+			t.Errorf("edit form missing status option %q", label)
+		}
+	}
+}
+
+func TestTasks_PatchUpdatesStatus(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	tk := h.seedTask(t, func(x *model.Task) { x.Status = model.StatusPending })
+
+	form := url.Values{}
+	form.Set("title", tk.Title)
+	form.Set("priority", string(tk.Priority))
+	form.Set("category", string(tk.Category))
+	form.Set("estimated_minutes", "0")
+	form.Set("status", "in_progress")
+
+	w := doForm(t, h.router, http.MethodPatch, "/tasks/"+tk.ID.String(), form)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	got, _ := h.repo.GetByID(context.Background(), tk.ID)
+	if got.Status != model.StatusInProgress {
+		t.Errorf("status = %s, want in_progress", got.Status)
+	}
+	if !strings.Contains(w.Body.String(), `task-row--status-in_progress`) {
+		t.Error("response row should reflect new status")
+	}
+}
+
+func TestTasks_PatchReopensCompletedTask(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	tk := h.seedTask(t, func(x *model.Task) { x.Status = model.StatusCompleted })
+
+	form := url.Values{}
+	form.Set("title", tk.Title)
+	form.Set("priority", string(tk.Priority))
+	form.Set("category", string(tk.Category))
+	form.Set("estimated_minutes", "0")
+	form.Set("status", "pending")
+
+	w := doForm(t, h.router, http.MethodPatch, "/tasks/"+tk.ID.String(), form)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	if strings.Contains(w.Body.String(), "status change isn't allowed") {
+		t.Fatal("edit form should allow reopening completed tasks")
+	}
+	got, _ := h.repo.GetByID(context.Background(), tk.ID)
+	if got.Status != model.StatusPending {
+		t.Errorf("status = %s, want pending", got.Status)
 	}
 }
 
@@ -514,6 +862,9 @@ func TestTasks_PatchUpdatesFields(t *testing.T) {
 	got, _ := h.repo.GetByID(context.Background(), tk.ID)
 	if got.Title != "Renamed" || got.Priority != model.PriorityUrgent {
 		t.Errorf("repo not updated: %+v", got)
+	}
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
+		t.Error("patch should trigger list refresh")
 	}
 }
 
@@ -546,10 +897,20 @@ func TestTasks_MarkComplete(t *testing.T) {
 	h := newTasksHarness(t)
 	tk := h.seedTask(t)
 
-	w := doForm(t, h.router, http.MethodPost, "/tasks/"+tk.ID.String()+"/complete",
-		url.Values{"actual_minutes": {"25"}})
+	req := httptest.NewRequest(http.MethodPost, "/tasks/"+tk.ID.String()+"/complete", strings.NewReader("actual_minutes=25"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.router.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `hx-swap-oob="outerHTML"`) {
+		t.Errorf("expected OOB swap bundle, got: %.500s", body)
+	}
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
+		t.Error("complete should trigger list refresh")
 	}
 	got, _ := h.repo.GetByID(context.Background(), tk.ID)
 	if got.Status != model.StatusCompleted {
@@ -560,18 +921,90 @@ func TestTasks_MarkComplete(t *testing.T) {
 	}
 }
 
+func TestTasks_MarkPending(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	tk := h.seedTask(t, func(x *model.Task) { x.Status = model.StatusInProgress })
+
+	req := httptest.NewRequest(http.MethodPost, "/tasks/"+tk.ID.String()+"/pending", nil)
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	got, _ := h.repo.GetByID(context.Background(), tk.ID)
+	if got.Status != model.StatusPending {
+		t.Errorf("status = %s, want pending", got.Status)
+	}
+	if !strings.Contains(w.Body.String(), `task-row--status-pending`) {
+		t.Error("expected pending status in swapped row")
+	}
+}
+
 func TestTasks_MarkInProgress(t *testing.T) {
 	t.Parallel()
 	h := newTasksHarness(t)
 	tk := h.seedTask(t)
 
-	w := doForm(t, h.router, http.MethodPost, "/tasks/"+tk.ID.String()+"/in_progress", nil)
+	req := httptest.NewRequest(http.MethodPost, "/tasks/"+tk.ID.String()+"/in_progress", nil)
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.router.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
-		t.Fatalf("status = %d", w.Code)
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `hx-swap-oob="outerHTML"`) {
+		t.Errorf("expected OOB swap bundle, got: %.500s", body)
+	}
+	if !strings.Contains(body, `id="task-row-`) || !strings.Contains(body, `id="task-card-`) {
+		t.Error("expected both row and card in swap response")
+	}
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
+		t.Error("in progress should trigger list refresh")
+	}
+	if !strings.Contains(body, `data-task-timer`) {
+		t.Error("expected live timer after starting in progress")
 	}
 	got, _ := h.repo.GetByID(context.Background(), tk.ID)
 	if got.Status != model.StatusInProgress {
 		t.Errorf("status = %s, want in_progress", got.Status)
+	}
+}
+
+func TestTasks_CompleteSavesTrackedMinutes(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 26, 10, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+	tk := h.seedTask(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/tasks/"+tk.ID.String()+"/in_progress", nil)
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("start in_progress status = %d", w.Code)
+	}
+
+	h.clock.now = now.Add(32 * time.Minute)
+
+	req2 := httptest.NewRequest(http.MethodPost, "/tasks/"+tk.ID.String()+"/complete", nil)
+	req2.Header.Set("HX-Request", "true")
+	w2 := httptest.NewRecorder()
+	h.router.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("complete status = %d body=%s", w2.Code, w2.Body.String())
+	}
+	got, _ := h.repo.GetByID(context.Background(), tk.ID)
+	if got.Status != model.StatusCompleted {
+		t.Errorf("status = %s, want completed", got.Status)
+	}
+	if got.ActualMinutes != 32 {
+		t.Errorf("actual_minutes = %d, want 32", got.ActualMinutes)
+	}
+	if !strings.Contains(w2.Header().Get("HX-Trigger"), "Completed in 32 min") {
+		t.Errorf("expected minutes in toast trigger, got %q", w2.Header().Get("HX-Trigger"))
 	}
 }
 

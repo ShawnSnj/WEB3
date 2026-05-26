@@ -1,17 +1,17 @@
 {{- /*
-  tasks_list — the main hx-swap target. Renders desktop table + mobile
-  card list inside ONE form so bulk actions include all checkboxes from
-  either layout (the hidden one still posts its checked items, which is
-  fine — we render the same id set in both).
+  tasks_list — the main hx-swap target. Checkboxes associate with the
+  hidden #tasks-form via the form="" attribute so action buttons are NOT
+  inside a <form> (which breaks HTMX POST in some browsers).
   Data: web.TasksListVM
 */ -}}
 {{define "tasks_list"}}
-<form id="tasks-form" class="tasks-list-shell" data-empty="{{if .Empty}}true{{else}}false{{end}}">
+<div id="tasks-list">
     {{if .Empty}}
         {{template "tasks_empty" .}}
     {{else}}
         {{template "tasks_table" .}}
         {{template "tasks_cards" .}}
     {{end}}
-</form>
+    <form id="tasks-form" hidden aria-hidden="true"></form>
+</div>
 {{end}}

@@ -190,7 +190,7 @@ func TestSuggestion_Refresh_FiresAndPersists(t *testing.T) {
 		avg:             80, large: 6, total: 10, // high-effort signal
 	}
 	seedAlarmingMetrics(metricsRepo.fakeMetricsRepo, clk)
-	metricsSvc := service.NewMetricsService(metricsRepo, clk)
+	metricsSvc := service.NewMetricsService(metricsRepo, clk, nil)
 
 	sugRepo := newFakeSuggestionRepo()
 	svc := service.NewSuggestionService(
@@ -228,7 +228,7 @@ func TestSuggestion_Refresh_ExpiresStaleKinds(t *testing.T) {
 		avg:             80, large: 6, total: 10,
 	}
 	seedAlarmingMetrics(metricsRepo.fakeMetricsRepo, clk)
-	metricsSvc := service.NewMetricsService(metricsRepo, clk)
+	metricsSvc := service.NewMetricsService(metricsRepo, clk, nil)
 
 	sugRepo := newFakeSuggestionRepo()
 	svc := service.NewSuggestionService(
@@ -285,7 +285,7 @@ func TestSuggestion_Dismiss(t *testing.T) {
 		avg:             80, large: 6, total: 10,
 	}
 	seedAlarmingMetrics(metricsRepo.fakeMetricsRepo, clk)
-	metricsSvc := service.NewMetricsService(metricsRepo, clk)
+	metricsSvc := service.NewMetricsService(metricsRepo, clk, nil)
 
 	sugRepo := newFakeSuggestionRepo()
 	svc := service.NewSuggestionService(
@@ -323,7 +323,7 @@ func TestSuggestion_DismissedStaysSuppressedWithinWeek(t *testing.T) {
 		avg:             80, large: 6, total: 10,
 	}
 	seedAlarmingMetrics(metricsRepo.fakeMetricsRepo, clk)
-	metricsSvc := service.NewMetricsService(metricsRepo, clk)
+	metricsSvc := service.NewMetricsService(metricsRepo, clk, nil)
 
 	sugRepo := newFakeSuggestionRepo()
 	svc := service.NewSuggestionService(

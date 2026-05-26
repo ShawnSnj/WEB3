@@ -16,9 +16,7 @@
         </button>
         <button type="button" class="btn btn-primary"
                 data-shortcut="new-task"
-                hx-get="/tasks/form"
-                hx-target="#task-modal"
-                hx-swap="innerHTML"
+                data-load-task-form="/tasks/form"
                 aria-haspopup="dialog">
             {{template "htmx_spinner" .}}
             {{template "icon" (dict "name" "plus")}}
@@ -27,15 +25,23 @@
     </div>
 </div>
 
-{{template "tasks_tabs" .Data}}
+<div id="tasks-tabs-host"
+     hx-get="/tasks/tabs"
+     hx-trigger="tasks-changed from:body"
+     hx-target="#tasks-tabs-host"
+     hx-swap="innerHTML"
+     hx-vals='js:{view: new URLSearchParams(window.location.search).get("view") || "today"}'>
+    {{template "tasks_tabs" .Data}}
+</div>
 {{template "tasks_filter_bar" .Data}}
 {{template "tasks_bulk_bar" .Data}}
 
 <div id="tasks-list-host"
-     hx-get="{{.Data.Query.ListPath}}"
+     hx-get="/tasks/list"
      hx-trigger="tasks-changed from:body"
      hx-target="#tasks-list"
-     hx-swap="outerHTML">
+     hx-swap="outerHTML"
+     hx-vals="js:tasksQueryParams()">
     {{template "tasks_list" .Data.List}}
 </div>
 

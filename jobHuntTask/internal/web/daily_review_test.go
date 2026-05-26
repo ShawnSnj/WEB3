@@ -136,7 +136,7 @@ func newReviewHarness(t *testing.T) *reviewHarness {
 	sessions := &memSessionRepo{}
 
 	reviewSvc := service.NewDailyReviewService(reviews, clk)
-	taskSvc := service.NewTaskService(tasks, clk)
+	taskSvc := service.NewTaskService(tasks, clk, nil)
 	sessionSvc := service.NewTaskSessionService(sessions, taskSvc, clk)
 
 	h := web.NewDailyReviewHandler(rd, reviewSvc, taskSvc, sessionSvc, clk,

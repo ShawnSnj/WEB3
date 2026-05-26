@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/model"
 	"github.com/shawn/jobhunttask/internal/repository"
 	"github.com/shawn/jobhunttask/internal/service"
@@ -29,6 +30,7 @@ type DashboardHandler struct {
 	metrics   *service.MetricsService
 	suggests  *service.SuggestionService
 	clock     service.Clock
+	cal       *calendar.Calendar
 	log       *slog.Logger
 }
 
@@ -44,17 +46,21 @@ func NewDashboardHandler(
 	metrics *service.MetricsService,
 	suggests *service.SuggestionService,
 	clock service.Clock,
+	cal *calendar.Calendar,
 	log *slog.Logger,
 ) *DashboardHandler {
 	if clock == nil {
 		clock = service.SystemClock
+	}
+	if cal == nil {
+		cal = calendar.UTC()
 	}
 	if log == nil {
 		log = slog.Default()
 	}
 	return &DashboardHandler{
 		rd: rd, tasks: tasks, reviews: reviews, reminders: reminders,
-		metrics: metrics, suggests: suggests, clock: clock, log: log,
+		metrics: metrics, suggests: suggests, clock: clock, cal: cal, log: log,
 	}
 }
 
@@ -333,7 +339,7 @@ func (h *DashboardHandler) buildTrend(ctx context.Context) TrendCardVM {
 		vm.Total += d.Count
 	}
 	vm.MaxDay = max
-	today := startOfDay(h.clock.Now())
+	today := h.cal.StartOfDay(h.clock.Now())
 	for _, d := range weekly.DailyCompletions {
 		bucket := 0
 		if max > 0 {
@@ -386,11 +392,6 @@ func (h *DashboardHandler) logErr(op string, err error) {
 		return
 	}
 	h.log.Warn("dashboard render", slog.String("op", op), slog.String("error", err.Error()))
-}
-
-func startOfDay(t time.Time) time.Time {
-	t = t.UTC()
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 func relativeTime(t, now time.Time) string {

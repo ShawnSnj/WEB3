@@ -35,12 +35,18 @@ func (r *fakeMetricsRepo) StatusBreakdown(_ context.Context, from, to time.Time)
 	r.statusCalls++
 	return r.statusBreakdown[key(from, to)], nil
 }
+func (r *fakeMetricsRepo) StatusBreakdownDueBefore(_ context.Context, before time.Time) (model.StatusBreakdown, error) {
+	return r.statusBreakdown[key(before.Add(-24*time.Hour), before)], nil
+}
 func (r *fakeMetricsRepo) CompletionCounts(_ context.Context, from, to time.Time) (model.Counts, error) {
 	r.completionCalls++
 	return r.completionCounts[key(from, to)], nil
 }
 func (r *fakeMetricsRepo) CarryOverCounts(_ context.Context, from, to time.Time) (model.Counts, error) {
 	return r.carryOverCounts[key(from, to)], nil
+}
+func (r *fakeMetricsRepo) CarryOverCountsDueBefore(_ context.Context, before time.Time) (model.Counts, error) {
+	return r.carryOverCounts[key(before.Add(-24*time.Hour), before)], nil
 }
 func (r *fakeMetricsRepo) OverdueLive(_ context.Context, _ time.Time) (int, error) {
 	return r.overdueLive, nil
@@ -108,7 +114,7 @@ func TestMetrics_Today(t *testing.T) {
 	repo.avgActualMinutes[key(today, tomorrow)] = 27.5
 	repo.overdueLive = 4
 
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	out, err := svc.Today(context.Background())
 	if err != nil {
 		t.Fatalf("Today: %v", err)
@@ -148,7 +154,7 @@ func TestMetrics_WeeklyFillsGaps(t *testing.T) {
 		{Date: weekFrom.AddDate(0, 0, 5), Count: 3},
 	}
 
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	w, err := svc.Weekly(context.Background())
 	if err != nil {
 		t.Fatalf("Weekly: %v", err)
@@ -185,7 +191,7 @@ func TestMetrics_Trend(t *testing.T) {
 	repo.completionCounts[key(weekFrom, weekTo)] = model.Counts{N: 8, Total: 10}
 	repo.completionCounts[key(prevFrom, prevTo)] = model.Counts{N: 4, Total: 10}
 
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	tr, err := svc.TrendComparison(context.Background())
 	if err != nil {
 		t.Fatalf("Trend: %v", err)
@@ -223,7 +229,7 @@ func TestMetrics_Streak_TodayCounted(t *testing.T) {
 		{Date: today, Count: 1},
 	}
 
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	s, err := svc.Streak(context.Background())
 	if err != nil {
 		t.Fatalf("Streak: %v", err)
@@ -262,7 +268,7 @@ func TestMetrics_Streak_LongestExceedsCurrent(t *testing.T) {
 		{Date: today.AddDate(0, 0, -1), Count: 1},
 		{Date: today, Count: 1},
 	}
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	s, _ := svc.Streak(context.Background())
 	if s.CurrentStreak != 2 {
 		t.Errorf("current = %d, want 2", s.CurrentStreak)
@@ -287,7 +293,7 @@ func TestMetrics_Streak_TodayEmptyGraceDay(t *testing.T) {
 		{Date: today.AddDate(0, 0, -1), Count: 2},
 	}
 
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	s, err := svc.Streak(context.Background())
 	if err != nil {
 		t.Fatalf("Streak: %v", err)
@@ -311,7 +317,7 @@ func TestMetrics_Streak_Broken(t *testing.T) {
 	repo.dailyCompletions[key(from, to)] = []model.DailyCompletion{
 		{Date: today.AddDate(0, 0, -3), Count: 1},
 	}
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	s, _ := svc.Streak(context.Background())
 	if s.CurrentStreak != 0 {
 		t.Errorf("streak = %d, want 0", s.CurrentStreak)
@@ -342,7 +348,7 @@ func TestMetrics_Dashboard(t *testing.T) {
 		{Date: today, Count: 2},
 	}
 
-	svc := service.NewMetricsService(repo, clk)
+	svc := service.NewMetricsService(repo, clk, nil)
 	d, err := svc.Dashboard(context.Background())
 	if err != nil {
 		t.Fatalf("Dashboard: %v", err)

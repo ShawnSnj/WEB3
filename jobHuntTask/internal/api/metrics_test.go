@@ -48,10 +48,16 @@ func (r *stubMetricsRepo) StatusBreakdown(_ context.Context, _, _ time.Time) (mo
 	}
 	return r.breakdown.Then, nil
 }
+func (r *stubMetricsRepo) StatusBreakdownDueBefore(_ context.Context, _ time.Time) (model.StatusBreakdown, error) {
+	return r.breakdown.First, nil
+}
 func (r *stubMetricsRepo) CompletionCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
 	return r.completion, nil
 }
 func (r *stubMetricsRepo) CarryOverCounts(_ context.Context, _, _ time.Time) (model.Counts, error) {
+	return r.carry, nil
+}
+func (r *stubMetricsRepo) CarryOverCountsDueBefore(_ context.Context, _ time.Time) (model.Counts, error) {
 	return r.carry, nil
 }
 func (r *stubMetricsRepo) OverdueLive(_ context.Context, _ time.Time) (int, error) {
@@ -76,7 +82,7 @@ func (r *stubMetricsRepo) EffortDistribution(_ context.Context, _, _ time.Time, 
 func newMetricsRouter(t *testing.T, repo *stubMetricsRepo) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	svc := service.NewMetricsService(repo, service.SystemClock)
+	svc := service.NewMetricsService(repo, service.SystemClock, nil)
 	return api.NewRouter(api.Deps{
 		Config:         config.Config{},
 		Logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),

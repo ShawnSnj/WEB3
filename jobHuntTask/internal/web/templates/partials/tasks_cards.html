@@ -26,7 +26,7 @@
 {{define "task_card_body"}}
     <header class="task-card-head">
         <label class="task-card-check">
-            <input type="checkbox" name="ids" value="{{.ID}}" aria-label="Select task {{.Title}}">
+            <input type="checkbox" name="ids" value="{{.ID}}" form="tasks-form" aria-label="Select task {{.Title}}">
         </label>
         <div class="task-card-title-block">
             <div class="task-title">{{.Title}}</div>
@@ -38,6 +38,7 @@
         <span class="badge badge--priority-{{.Priority}}">{{.PriorityLabel}}</span>
         <span class="chip chip--category">{{.CategoryLabel}}</span>
         <span class="badge badge--status-{{.Status}}">{{.StatusLabel}}</span>
+        {{template "task_timer" .}}
         <span class="due-line{{if .IsOverdue}} due-line--overdue{{end}}">{{.DueDateLabel}}</span>
         {{if gt .CarryOverCount 0}}<span class="chip chip--soft">↻ {{.CarryOverCount}}</span>{{end}}
     </div>

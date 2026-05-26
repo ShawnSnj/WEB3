@@ -51,7 +51,7 @@ func (r AnalyticsRange) Label() string {
 
 // RangeWindow returns [from, to) for the given analytics range ending today.
 func (s *MetricsService) RangeWindow(r AnalyticsRange) (time.Time, time.Time) {
-	today := startOfDayUTC(s.clock.Now())
+	today := s.startOfDay(s.clock.Now())
 	to := today.Add(24 * time.Hour)
 	from := today.AddDate(0, 0, -(r.Days() - 1))
 	return from, to
@@ -59,16 +59,16 @@ func (s *MetricsService) RangeWindow(r AnalyticsRange) (time.Time, time.Time) {
 
 // PeriodStats returns aggregated stats for an arbitrary [from, to) window.
 func (s *MetricsService) PeriodStats(ctx context.Context, from, to time.Time) (model.WeeklyStats, error) {
-	from = startOfDayUTC(from)
-	to = startOfDayUTC(to)
+	from = s.startOfDay(from)
+	to = s.startOfDay(to)
 	return s.weeklyForRange(ctx, from, to)
 }
 
 // TrendComparisonFor compares [from, to) against the immediately preceding
 // period of equal length.
 func (s *MetricsService) TrendComparisonFor(ctx context.Context, from, to time.Time) (model.Trend, error) {
-	from = startOfDayUTC(from)
-	to = startOfDayUTC(to)
+	from = s.startOfDay(from)
+	to = s.startOfDay(to)
 	duration := to.Sub(from)
 	prevFrom := from.Add(-duration)
 	prevTo := from
@@ -110,8 +110,8 @@ type WeeklyBucket struct {
 // WeeklyBuckets splits [from, to) into consecutive 7-day windows and
 // aggregates metrics for each bucket.
 func (s *MetricsService) WeeklyBuckets(ctx context.Context, from, to time.Time) ([]WeeklyBucket, error) {
-	from = startOfDayUTC(from)
-	to = startOfDayUTC(to)
+	from = s.startOfDay(from)
+	to = s.startOfDay(to)
 	var out []WeeklyBucket
 	for cur := from; cur.Before(to); cur = cur.AddDate(0, 0, 7) {
 		end := cur.AddDate(0, 0, 7)
@@ -142,11 +142,11 @@ func (s *MetricsService) WeeklyBuckets(ctx context.Context, from, to time.Time) 
 // StreakHistory returns daily completion counts for [from, to) with gaps
 // filled — used by the analytics streak heatmap / bar chart.
 func (s *MetricsService) StreakHistory(ctx context.Context, from, to time.Time) ([]model.DailyCompletion, error) {
-	from = startOfDayUTC(from)
-	to = startOfDayUTC(to)
+	from = s.startOfDay(from)
+	to = s.startOfDay(to)
 	sparse, err := s.repo.DailyCompletionCounts(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
-	return fillDailyGaps(sparse, from, to), nil
+	return s.fillDailyGaps(sparse, from, to), nil
 }

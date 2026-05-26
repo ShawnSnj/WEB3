@@ -42,7 +42,7 @@ func (r *importTaskRepo) ListOverdue(context.Context, time.Time) ([]*model.Task,
 func TestImportFromCSV_WithHeader(t *testing.T) {
 	t.Parallel()
 	repo := &importTaskRepo{}
-	svc := service.NewTaskService(repo, service.SystemClock)
+	svc := service.NewTaskService(repo, service.SystemClock, nil)
 	today := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
 
 	csv := `title,description,category,priority,estimated_minutes,due_date
@@ -76,7 +76,7 @@ Task C,,misc,not_a_priority,10,
 func TestImportFromCSV_TaskIDHeaderAndFloatMinutes(t *testing.T) {
 	t.Parallel()
 	repo := &importTaskRepo{}
-	svc := service.NewTaskService(repo, service.SystemClock)
+	svc := service.NewTaskService(repo, service.SystemClock, nil)
 	today := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
 
 	csv := `task_id,title,description,category,priority,estimated_minutes,due_date
@@ -105,7 +105,7 @@ W1D1-03,Study caching,,learning,low,60 min,
 func TestImportFromCSV_CategoryAliases(t *testing.T) {
 	t.Parallel()
 	repo := &importTaskRepo{}
-	svc := service.NewTaskService(repo, service.SystemClock)
+	svc := service.NewTaskService(repo, service.SystemClock, nil)
 	today := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
 
 	csv := `task_id,title,category,priority,status,due_date,estimated_minutes,notes

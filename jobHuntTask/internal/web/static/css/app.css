@@ -482,6 +482,13 @@ img, svg { display: block; max-width: 100%; }
     border-color: var(--accent);
     background: var(--accent-soft);
 }
+.task-timer {
+    display: inline-flex;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+    vertical-align: middle;
+}
+.task-card-meta .task-timer { margin-left: 0; }
 
 .badge {
     display: inline-flex;
@@ -1564,6 +1571,9 @@ body.modal-open { overflow: hidden; }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
+}
+.task-form .field-row {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 .form-error {
     background: var(--danger-soft);

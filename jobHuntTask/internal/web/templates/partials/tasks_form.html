@@ -23,16 +23,9 @@
         {{end}}
 
         <form class="task-form"
-              {{if eq .Method "patch"}}
-                hx-patch="{{.Action}}"
-                hx-target="#task-row-{{.ID}}"
-                hx-swap="outerHTML"
-              {{else}}
-                hx-post="{{.Action}}"
-                hx-target="#tasks-list"
-                hx-swap="none"
-              {{end}}
-              hx-on::after-request="if(event.detail.successful){document.getElementById('task-modal').innerHTML='';document.body.classList.remove('modal-open')}">
+              data-task-form="{{.Mode}}"
+              data-action="{{.Action}}"
+              data-method="{{.Method}}">
 
             <label class="field">
                 <span class="field-label">Title</span>
@@ -62,6 +55,16 @@
                         {{- end}}
                     </select>
                 </label>
+                {{if eq .Mode "edit"}}
+                <label class="field">
+                    <span class="field-label">Status</span>
+                    <select name="status">
+                        {{range .Statuses -}}
+                        <option value="{{.}}"{{if eq $.Status .}} selected{{end}}>{{statusLabel .}}</option>
+                        {{- end}}
+                    </select>
+                </label>
+                {{end}}
             </div>
 
             <div class="field-row">

@@ -22,6 +22,10 @@ type TaskFilter struct {
 	Priorities   []model.Priority
 	DueBefore    *time.Time
 	DueAfter     *time.Time
+	CompletedAfter  *time.Time
+	CompletedBefore *time.Time
+	UpdatedAfter    *time.Time
+	UpdatedBefore   *time.Time
 	OnlyOverdue  bool
 	CarriedOver  *bool
 

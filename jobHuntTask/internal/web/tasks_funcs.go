@@ -38,6 +38,8 @@ func tasksFuncMap() template.FuncMap {
 				return c.Completed
 			case viewCarried:
 				return c.CarriedOver
+			case viewAll:
+				return c.All
 			}
 			return 0
 		},

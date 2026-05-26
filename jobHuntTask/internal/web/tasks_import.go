@@ -29,9 +29,8 @@ type TasksImportResultVM struct {
 }
 
 func (h *TasksHandler) importForm(c *gin.Context) {
-	today := h.clock.Now().UTC()
 	h.rd.RenderPartial(c, "tasks_import_form", TasksImportFormVM{
-		DefaultDue: today.Format("2006-01-02"),
+		DefaultDue: h.cal.FormatDate(h.clock.Now()),
 	})
 }
 
@@ -52,8 +51,8 @@ func (h *TasksHandler) importCSV(c *gin.Context) {
 		return
 	}
 
-	defaultDue := h.clock.Now().UTC()
-	if d, ok := parseDateInput(c.PostForm("default_due")); ok {
+	defaultDue := h.clock.Now()
+	if d, ok := h.cal.ParseDate(c.PostForm("default_due")); ok {
 		defaultDue = d
 	}
 

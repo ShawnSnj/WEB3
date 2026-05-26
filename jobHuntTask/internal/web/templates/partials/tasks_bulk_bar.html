@@ -8,7 +8,7 @@
     <div class="bulk-actions">
         <button type="button" class="btn btn-ghost"
                 hx-post="/tasks/bulk/complete"
-                hx-include="#tasks-form"
+                hx-include="input[name=ids][form='tasks-form']"
                 hx-swap="none">
             {{template "htmx_spinner" .}}
             {{template "icon" (dict "name" "check")}}
@@ -17,7 +17,7 @@
         <button type="button" class="btn btn-danger-ghost"
                 data-confirm-danger="true"
                 hx-post="/tasks/bulk/delete"
-                hx-include="#tasks-form"
+                hx-include="input[name=ids][form='tasks-form']"
                 hx-swap="none"
                 hx-confirm="Delete the selected tasks? This cannot be undone.">
             {{template "htmx_spinner" .}}
