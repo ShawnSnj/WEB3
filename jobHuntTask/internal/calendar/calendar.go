@@ -79,6 +79,11 @@ func (c *Calendar) FormatDate(t time.Time) string {
 	return t.In(c.loc).Format("2006-01-02")
 }
 
+// FormatDueDate formats a due date for display (e.g. "May 26, 2026").
+func (c *Calendar) FormatDueDate(t time.Time) string {
+	return t.In(c.loc).Format("Jan 2, 2006")
+}
+
 // SameDay reports whether a and b fall on the same calendar day in c's timezone.
 func (c *Calendar) SameDay(a, b time.Time) bool {
 	ay, am, ad := a.In(c.loc).Date()

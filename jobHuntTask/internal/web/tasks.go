@@ -192,7 +192,16 @@ func (q tasksQuery) WithSort(field string) tasksQuery {
 	return out
 }
 
-func (q tasksQuery) WithView(v tasksView) tasksQuery   { out := q; out.View = v; return out }
+func (q tasksQuery) WithView(v tasksView) tasksQuery {
+	out := q
+	out.View = v
+	// Completed tab is most useful sorted by when work was due.
+	if v == viewCompleted && q.View != viewCompleted {
+		out.Sort = "due_date"
+		out.SortDir = "desc"
+	}
+	return out
+}
 func (q tasksQuery) ListPath() string                  { return "/tasks/list?" + q.asValues().Encode() }
 func (q tasksQuery) PagePath() string                  { return "/tasks?" + q.asValues().Encode() }
 func (q tasksQuery) SortIcon(field string) string {
@@ -483,11 +492,7 @@ func (h *TasksHandler) buildList(ctx context.Context, q tasksQuery) TasksListVM 
 		}
 		vm.Tasks = append(vm.Tasks, h.toRowVM(ctx, t, now))
 	}
-	// Apply sort direction (the repo already ordered ASC; flip if needed).
-	if q.SortDir == "desc" {
-		sort.SliceStable(vm.Tasks, func(i, j int) bool { return false }) // no-op stable
-		reverse(vm.Tasks)
-	}
+	sortTaskRows(vm.Tasks, q)
 	vm.Empty = len(vm.Tasks) == 0
 	if vm.Empty {
 		h.applyEmptyStateHint(ctx, q, now, &vm)
@@ -1033,8 +1038,12 @@ func (h *TasksHandler) toRowVM(ctx context.Context, t *model.Task, now time.Time
 		CreatedAt:        t.CreatedAt,
 	}
 	if t.DueDate != nil {
-		v.DueDateLabel = h.cal.RelativeDue(*t.DueDate, now)
 		v.DueDateInput = h.cal.FormatDate(*t.DueDate)
+		if t.Status.IsTerminal() {
+			v.DueDateLabel = h.cal.FormatDueDate(*t.DueDate)
+		} else {
+			v.DueDateLabel = h.cal.RelativeDue(*t.DueDate, now)
+		}
 		v.IsOverdue = t.DueDate.Before(now) && !t.Status.IsTerminal()
 	} else {
 		v.DueDateLabel = "—"
@@ -1165,8 +1174,62 @@ func atoiOr(s string, def int) int {
 	return n
 }
 
-func reverse[T any](xs []T) {
-	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
-		xs[i], xs[j] = xs[j], xs[i]
+func sortTaskRows(rows []TaskRowVM, q tasksQuery) {
+	sort.SliceStable(rows, func(i, j int) bool {
+		cmp := compareTaskRows(rows[i], rows[j], q.Sort)
+		if cmp == 0 {
+			return rows[i].CreatedAt.After(rows[j].CreatedAt)
+		}
+		if q.SortDir == "desc" {
+			return cmp > 0
+		}
+		return cmp < 0
+	})
+}
+
+func compareTaskRows(a, b TaskRowVM, field string) int {
+	switch field {
+	case "due_date":
+		return compareDueDates(a.DueDate, b.DueDate)
+	case "priority":
+		pa, pb := prioritySortRank(a.Priority), prioritySortRank(b.Priority)
+		if pa != pb {
+			return pa - pb
+		}
+		return compareDueDates(a.DueDate, b.DueDate)
+	default:
+		if a.CreatedAt.Equal(b.CreatedAt) {
+			return 0
+		}
+		if a.CreatedAt.Before(b.CreatedAt) {
+			return -1
+		}
+		return 1
+	}
+}
+
+func compareDueDates(a, b *time.Time) int {
+	if a == nil && b == nil {
+		return 0
+	}
+	if a == nil {
+		return 1 // nulls last in ascending due order
+	}
+	if b == nil {
+		return -1
+	}
+	return a.Compare(*b)
+}
+
+func prioritySortRank(p string) int {
+	switch model.Priority(p) {
+	case model.PriorityUrgent:
+		return 0
+	case model.PriorityHigh:
+		return 1
+	case model.PriorityMedium:
+		return 2
+	default:
+		return 3
 	}
 }

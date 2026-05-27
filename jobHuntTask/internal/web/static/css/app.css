@@ -1348,12 +1348,24 @@ body.modal-open { overflow: hidden; }
 .th-actions, .td-actions { width: 200px; text-align: right; }
 .td-actions .action-row { justify-content: flex-end; }
 
+.th-sortable { padding: 0; }
+.th-sortable .sort-link {
+    padding: 8px 10px;
+    min-height: 100%;
+}
 .sort-link {
     color: inherit;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    text-decoration: none;
+    cursor: pointer;
 }
+.th-sortable .sort-link {
+    display: flex;
+    width: 100%;
+}
+.sort-link:hover { color: var(--text); }
 .sort-link--active { color: var(--text); }
 .sort-glyph {
     font-size: 10px;

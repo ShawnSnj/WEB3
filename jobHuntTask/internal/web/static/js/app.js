@@ -549,12 +549,16 @@
         if (e.detail.target) e.detail.target.classList.add('htmx-swapping');
     });
 
-    function syncTasksFilterView() {
-        const view = new URLSearchParams(window.location.search).get('view') || 'today';
-        const input = document.querySelector('.filter-bar input[name="view"]');
-        if (input && input.value !== view) {
-            input.value = view;
-        }
+    function syncTasksFilterFromURL() {
+        const p = new URLSearchParams(window.location.search);
+        const form = document.querySelector('.filter-bar');
+        if (!form) return;
+        const viewInput = form.querySelector('input[name="view"]');
+        const sortInput = form.querySelector('input[name="sort"]');
+        const dirInput = form.querySelector('input[name="dir"]');
+        if (viewInput) viewInput.value = p.get('view') || 'today';
+        if (sortInput) sortInput.value = p.get('sort') || 'due_date';
+        if (dirInput) dirInput.value = p.get('dir') || 'asc';
     }
 
     function syncTasksTabActive() {
@@ -566,7 +570,66 @@
             if (active) tab.setAttribute('aria-current', 'page');
             else tab.removeAttribute('aria-current');
         });
-        syncTasksFilterView();
+        syncTasksFilterFromURL();
+    }
+
+    function finishTasksListSwap(html, pageUrl) {
+        const list = document.getElementById('tasks-list');
+        if (!list) return false;
+        list.outerHTML = html;
+        if (pageUrl && window.history && history.pushState) {
+            history.pushState({}, '', pageUrl);
+        }
+        syncTasksTabActive();
+        const newList = document.getElementById('tasks-list');
+        if (newList && window.htmx) htmx.process(newList);
+        syncTaskTimerInterval();
+        return true;
+    }
+
+    function loadTasksListNav(link) {
+        const listUrl = link.getAttribute('hx-get');
+        if (!listUrl || link.getAttribute('hx-target') !== '#tasks-list') return;
+        if (link.classList.contains('htmx-request')) return;
+
+        const pageUrl = link.getAttribute('hx-push-url') || link.getAttribute('href') || listUrl;
+        link.classList.add('htmx-request');
+        pendingRequests++;
+        setGlobalLoading(true);
+        const list = document.getElementById('tasks-list');
+        if (list) list.classList.add('htmx-loading');
+
+        fetch(listUrl, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return { ok: resp.ok, html: html, status: resp.status };
+            });
+        }).then(function (result) {
+            if (!result.ok) {
+                showToast({
+                    tone: 'danger',
+                    message: result.status >= 500
+                        ? 'Something went wrong on the server.'
+                        : 'Could not load tasks.',
+                });
+                return;
+            }
+            finishTasksListSwap(result.html, pageUrl);
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            link.classList.remove('htmx-request');
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+            const newList = document.getElementById('tasks-list');
+            if (newList) newList.classList.remove('htmx-loading');
+        });
     }
 
     document.body.addEventListener('htmx:afterSettle', function (e) {
@@ -683,6 +746,18 @@
             syncTaskTimerInterval();
         });
     }
+
+    // Tab and column sort links use fetch (same reliability as task actions).
+    document.body.addEventListener('click', function (e) {
+        const listLink = e.target.closest('a[hx-get][hx-target="#tasks-list"]');
+        if (listLink && !listLink.hasAttribute('hx-confirm')) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            loadTasksListNav(listLink);
+            return;
+        }
+    }, true);
 
     // Instant task transitions (complete / in progress / pending) use fetch
     // so they work even when HTMX CDN is blocked or not yet loaded.

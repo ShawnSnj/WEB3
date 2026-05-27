@@ -711,6 +711,78 @@ func TestTasksList_SearchAndSortFlip(t *testing.T) {
 	}
 }
 
+func TestTasksList_CompletedShowsDueDateAndSortsByDue(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+
+	dueEarly := now.Add(-72 * time.Hour)
+	dueLate := now.Add(-24 * time.Hour)
+	completedAt := now.Add(-2 * time.Hour)
+
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Earlier due"
+		tk.Status = model.StatusCompleted
+		tk.DueDate = &dueEarly
+		tk.CompletedAt = &completedAt
+	})
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Later due"
+		tk.Status = model.StatusCompleted
+		tk.DueDate = &dueLate
+		tk.CompletedAt = &completedAt
+	})
+
+	w := doGet(t, h.router, "/tasks/list?view=completed&sort=due_date&dir=asc", true)
+	body := w.Body.String()
+	if strings.Contains(body, ">overdue<") || strings.Contains(body, "due-overdue") {
+		t.Errorf("completed tab should show actual due dates, not overdue styling: %.500s", body)
+	}
+	if !strings.Contains(body, "May 23, 2026") || !strings.Contains(body, "May 25, 2026") {
+		t.Errorf("expected formatted due dates in completed list: %.500s", body)
+	}
+	idxEarly := strings.Index(body, "Earlier due")
+	idxLate := strings.Index(body, "Later due")
+	if idxEarly < 0 || idxLate < 0 {
+		t.Fatal("expected both completed tasks in list")
+	}
+	if idxEarly > idxLate {
+		t.Error("asc due sort: Earlier due should appear before Later due")
+	}
+
+	w = doGet(t, h.router, "/tasks/list?view=completed&sort=due_date&dir=desc", true)
+	body = w.Body.String()
+	idxEarly = strings.Index(body, "Earlier due")
+	idxLate = strings.Index(body, "Later due")
+	if idxEarly < idxLate {
+		t.Error("desc due sort: Later due should appear before Earlier due")
+	}
+	if !strings.Contains(body, `sort-link--active`) || !strings.Contains(body, "Due") {
+		t.Error("expected active Due sort link on completed tab")
+	}
+}
+
+func TestTasksList_SortLinkURLsToggleDueDirection(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	h.seedTask(t, func(tk *model.Task) { tk.Status = model.StatusCompleted })
+
+	w := doGet(t, h.router, "/tasks/list?view=completed&sort=due_date&dir=asc", true)
+	body := w.Body.String()
+	if !strings.Contains(body, `hx-get="/tasks/list?`) {
+		t.Fatal("expected sort link with hx-get list URL")
+	}
+	if !strings.Contains(body, "sort=due_date") || !strings.Contains(body, "dir=desc") {
+		t.Errorf("asc due sort link should flip to desc on click: %.800s", body)
+	}
+
+	w = doGet(t, h.router, "/tasks/list?view=completed&sort=due_date&dir=desc", true)
+	body = w.Body.String()
+	if !strings.Contains(body, "dir=asc") {
+		t.Errorf("desc due sort link should flip to asc on click: %.800s", body)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Tests — create / edit / delete
 // ---------------------------------------------------------------------------

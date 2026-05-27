@@ -66,6 +66,19 @@ func TestCalendar_RelativeDueUsesCalendarDay(t *testing.T) {
 	}
 }
 
+func TestCalendar_FormatDueDate(t *testing.T) {
+	t.Parallel()
+
+	cal, err := calendar.Load("Asia/Taipei")
+	if err != nil {
+		t.Fatal(err)
+	}
+	due, _ := cal.ParseDate("2026-05-26")
+	if got := cal.FormatDueDate(due); got != "May 26, 2026" {
+		t.Errorf("FormatDueDate = %q, want May 26, 2026", got)
+	}
+}
+
 func TestCalendar_ParseDateMidnightInZone(t *testing.T) {
 	t.Parallel()
 

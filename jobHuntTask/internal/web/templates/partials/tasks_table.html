@@ -13,15 +13,15 @@
                     <input type="checkbox" aria-label="Select all"
                            onclick="document.querySelectorAll('input[name=ids][form=tasks-form]').forEach(c=>c.checked=this.checked)">
                 </th>
-                <th class="th-title">
+                <th class="th-title th-sortable">
                     {{template "tasks_sort_link" (dict "Q" $q "Field" "created_at" "Label" "Task")}}
                 </th>
-                <th>
+                <th class="th-sortable">
                     {{template "tasks_sort_link" (dict "Q" $q "Field" "priority" "Label" "Priority")}}
                 </th>
                 <th>Category</th>
                 <th>Status</th>
-                <th>
+                <th class="th-sortable">
                     {{template "tasks_sort_link" (dict "Q" $q "Field" "due_date" "Label" "Due")}}
                 </th>
                 <th class="th-actions" aria-label="Actions"></th>
