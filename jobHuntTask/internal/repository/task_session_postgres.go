@@ -239,7 +239,7 @@ func (r *PostgresTaskSessionRepository) SumEffectiveMinutesByTask(ctx context.Co
 	//   - extra subtraction when currently paused (paused_at -> $now)
 	// Summed and floored to minutes.
 	const q = `
-        SELECT COALESCE(SUM(
+        SELECT COALESCE((SUM(
             GREATEST(
                 EXTRACT(EPOCH FROM (COALESCE(ended_at, $2) - started_at))::bigint
                 - total_paused_seconds
@@ -250,7 +250,7 @@ func (r *PostgresTaskSessionRepository) SumEffectiveMinutesByTask(ctx context.Co
                   END,
                 0
             )
-        ), 0) / 60
+        ) / 60)::bigint, 0)
         FROM task_execution_sessions
         WHERE task_id = $1
     `
@@ -265,7 +265,7 @@ func (r *PostgresTaskSessionRepository) SumEffectiveMinutesByTask(ctx context.Co
 // session started within [from, to).
 func (r *PostgresTaskSessionRepository) SumEffectiveMinutesInRange(ctx context.Context, from, to, now time.Time) (int, error) {
 	const q = `
-        SELECT COALESCE(SUM(
+        SELECT COALESCE((SUM(
             GREATEST(
                 EXTRACT(EPOCH FROM (COALESCE(ended_at, $3) - started_at))::bigint
                 - total_paused_seconds
@@ -276,7 +276,7 @@ func (r *PostgresTaskSessionRepository) SumEffectiveMinutesInRange(ctx context.C
                   END,
                 0
             )
-        ), 0) / 60
+        ) / 60)::bigint, 0)
         FROM task_execution_sessions
         WHERE started_at >= $1 AND started_at < $2
     `

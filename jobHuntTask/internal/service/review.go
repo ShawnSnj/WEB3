@@ -54,7 +54,12 @@ func (s *DailyReviewService) Upsert(ctx context.Context, in UpsertReviewInput) (
 		return nil, err
 	}
 
-	rv := &model.DailyReview{ReviewDate: date}
+	rv := &model.DailyReview{
+		ReviewDate:   date,
+		Blockers:     []string{},
+		Wins:         []string{},
+		Distractions: []string{},
+	}
 	if existing != nil {
 		rv = existing
 		rv.ReviewDate = date // normalised

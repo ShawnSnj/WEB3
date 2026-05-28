@@ -116,6 +116,11 @@ CREATE TRIGGER trg_daily_reviews_set_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION daily_reviews_set_updated_at();
 
+-- Backfill columns added after initial deploy (0005_review_distractions_notes).
+ALTER TABLE daily_reviews
+    ADD COLUMN IF NOT EXISTS distractions TEXT[] NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS notes         TEXT    NOT NULL DEFAULT '';
+
 -- ---------------------------------------------------------------------------
 -- task_execution_sessions
 -- ---------------------------------------------------------------------------
