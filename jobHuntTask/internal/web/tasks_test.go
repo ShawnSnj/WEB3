@@ -131,20 +131,11 @@ func (r *inMemTaskRepo) List(_ context.Context, f repository.TaskFilter) ([]*mod
 	return out, nil
 }
 
-func (r *inMemTaskRepo) ListOverdue(_ context.Context, now time.Time) ([]*model.Task, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	out := []*model.Task{}
-	for _, t := range r.items {
-		if t.Status.IsTerminal() || t.DueDate == nil {
-			continue
-		}
-		if t.DueDate.Before(now) {
-			cp := *t
-			out = append(out, &cp)
-		}
-	}
-	return out, nil
+func (r *inMemTaskRepo) ListOverdue(_ context.Context, before time.Time) ([]*model.Task, error) {
+	return r.List(context.Background(), repository.TaskFilter{
+		Statuses:  []model.Status{model.StatusPending, model.StatusInProgress},
+		DueBefore: &before,
+	})
 }
 
 func matchesFilter(t *model.Task, f repository.TaskFilter) bool {
@@ -169,6 +160,9 @@ func matchesFilter(t *model.Task, f repository.TaskFilter) bool {
 		if t.DueDate == nil || t.DueDate.Before(*f.DueAfter) {
 			return false
 		}
+	}
+	if f.Title != nil && !strings.EqualFold(strings.TrimSpace(t.Title), strings.TrimSpace(*f.Title)) {
+		return false
 	}
 	if f.CompletedAfter != nil {
 		if t.CompletedAt == nil || t.CompletedAt.Before(*f.CompletedAfter) {
@@ -534,6 +528,54 @@ func TestTasksTabsFragment_RefreshesCounts(t *testing.T) {
 	}
 }
 
+func TestTasksList_TodayAndOverdueUseCalendarDays(t *testing.T) {
+	t.Parallel()
+	cal, err := calendar.Load("Asia/Taipei")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 6, 2, 10, 0, 0, 0, time.FixedZone("CST", 8*3600))
+	h := newTasksHarnessAtWithCal(t, now, cal)
+
+	dueToday, ok := cal.ParseDate("2026-06-02")
+	if !ok {
+		t.Fatal("parse due today")
+	}
+	dueYesterday, ok := cal.ParseDate("2026-06-01")
+	if !ok {
+		t.Fatal("parse due yesterday")
+	}
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Due today"; tk.DueDate = &dueToday; tk.Status = model.StatusPending
+	})
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Due yesterday pending"; tk.DueDate = &dueYesterday; tk.Status = model.StatusPending
+	})
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Missed yesterday"; tk.DueDate = &dueYesterday; tk.Status = model.StatusMissed
+		tk.UpdatedAt = now
+	})
+
+	todayBody := doGet(t, h.router, "/tasks/list?view=today", true).Body.String()
+	if !strings.Contains(todayBody, "Due today") {
+		t.Fatalf("expected pending task due today on today tab: %s", todayBody)
+	}
+	if strings.Contains(todayBody, "Due yesterday") || strings.Contains(todayBody, "Missed yesterday") {
+		t.Fatalf("yesterday backlog should not be on today tab: %s", todayBody)
+	}
+
+	overdueBody := doGet(t, h.router, "/tasks/list?view=overdue", true).Body.String()
+	if !strings.Contains(overdueBody, "Due yesterday pending") {
+		t.Fatalf("expected yesterday pending on overdue tab: %s", overdueBody)
+	}
+	if !strings.Contains(overdueBody, "Missed yesterday") {
+		t.Fatalf("expected missed yesterday on overdue tab: %s", overdueBody)
+	}
+	if strings.Contains(overdueBody, "Due today") {
+		t.Fatalf("today's task should not be on overdue tab: %s", overdueBody)
+	}
+}
+
 func TestTasksList_TodayViewRespectsAppTimezone(t *testing.T) {
 	t.Parallel()
 	cal, err := calendar.Load("Asia/Taipei")
@@ -571,6 +613,31 @@ func TestTasksList_TodayViewRespectsAppTimezone(t *testing.T) {
 	}
 	if strings.Contains(body2, "Due today Taipei") {
 		t.Fatalf("today task should not appear in upcoming view: %s", body2)
+	}
+}
+
+func TestTasksList_TodayExcludesMissed(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 6, 2, 12, 0, 0, 0, time.UTC)
+	h := newTasksHarnessAt(t, now)
+	todayDue := time.Date(2026, 6, 2, 0, 0, 0, 0, time.UTC)
+
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Do today"; tk.DueDate = &todayDue; tk.Status = model.StatusPending
+	})
+	h.seedTask(t, func(tk *model.Task) {
+		tk.Title = "Missed but due today"; tk.DueDate = &todayDue; tk.Status = model.StatusMissed
+	})
+
+	body := doGet(t, h.router, "/tasks/list?view=today", true).Body.String()
+	if !strings.Contains(body, "Do today") {
+		t.Fatalf("expected pending task on today: %s", body)
+	}
+	if strings.Contains(body, "Missed but due today") {
+		t.Fatal("missed tasks should not appear on today tab")
+	}
+	if strings.Contains(body, "badge--status-missed") {
+		t.Fatal("today tab should not show missed status badges")
 	}
 }
 
@@ -935,8 +1002,11 @@ func TestTasks_PatchUpdatesFields(t *testing.T) {
 	if got.Title != "Renamed" || got.Priority != model.PriorityUrgent {
 		t.Errorf("repo not updated: %+v", got)
 	}
-	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
-		t.Error("patch should trigger list refresh")
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-counts-changed") {
+		t.Error("patch should refresh tab counts only")
+	}
+	if strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
+		t.Error("patch should not reload the full list (OOB swap handles the row)")
 	}
 }
 
@@ -955,8 +1025,8 @@ func TestTasks_Delete(t *testing.T) {
 	if _, err := h.repo.GetByID(context.Background(), tk.ID); err == nil {
 		t.Error("task should be gone after delete")
 	}
-	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
-		t.Error("delete should fire tasks-changed")
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-counts-changed") {
+		t.Error("delete should refresh tab counts only")
 	}
 }
 
@@ -981,8 +1051,11 @@ func TestTasks_MarkComplete(t *testing.T) {
 	if !strings.Contains(body, `hx-swap-oob="outerHTML"`) {
 		t.Errorf("expected OOB swap bundle, got: %.500s", body)
 	}
-	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
-		t.Error("complete should trigger list refresh")
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-counts-changed") {
+		t.Error("complete should refresh tab counts only")
+	}
+	if strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
+		t.Error("complete should not reload the full list")
 	}
 	got, _ := h.repo.GetByID(context.Background(), tk.ID)
 	if got.Status != model.StatusCompleted {
@@ -990,6 +1063,24 @@ func TestTasks_MarkComplete(t *testing.T) {
 	}
 	if got.ActualMinutes != 25 {
 		t.Errorf("actual minutes = %d, want 25", got.ActualMinutes)
+	}
+}
+
+func TestTasks_CompleteMissed(t *testing.T) {
+	t.Parallel()
+	h := newTasksHarness(t)
+	tk := h.seedTask(t, func(x *model.Task) { x.Status = model.StatusMissed })
+
+	req := httptest.NewRequest(http.MethodPost, "/tasks/"+tk.ID.String()+"/complete", nil)
+	req.Header.Set("HX-Request", "true")
+	w := httptest.NewRecorder()
+	h.router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", w.Code, w.Body.String())
+	}
+	got, _ := h.repo.GetByID(context.Background(), tk.ID)
+	if got.Status != model.StatusCompleted {
+		t.Errorf("status = %s, want completed", got.Status)
 	}
 }
 
@@ -1033,8 +1124,8 @@ func TestTasks_MarkInProgress(t *testing.T) {
 	if !strings.Contains(body, `id="task-row-`) || !strings.Contains(body, `id="task-card-`) {
 		t.Error("expected both row and card in swap response")
 	}
-	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-changed") {
-		t.Error("in progress should trigger list refresh")
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "tasks-counts-changed") {
+		t.Error("in progress should refresh tab counts only")
 	}
 	if !strings.Contains(body, `data-task-timer`) {
 		t.Error("expected live timer after starting in progress")

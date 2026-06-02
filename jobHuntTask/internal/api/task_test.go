@@ -102,17 +102,11 @@ func (r *memRepo) List(_ context.Context, _ repository.TaskFilter) ([]*model.Tas
 	}
 	return out, nil
 }
-func (r *memRepo) ListOverdue(_ context.Context, now time.Time) ([]*model.Task, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	out := []*model.Task{}
-	for _, t := range r.tasks {
-		if t.IsOverdue(now) {
-			cp := *t
-			out = append(out, &cp)
-		}
-	}
-	return out, nil
+func (r *memRepo) ListOverdue(_ context.Context, before time.Time) ([]*model.Task, error) {
+	return r.List(context.Background(), repository.TaskFilter{
+		Statuses:  []model.Status{model.StatusPending, model.StatusInProgress},
+		DueBefore: &before,
+	})
 }
 
 // ---------------------------------------------------------------------------

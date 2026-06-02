@@ -13,10 +13,12 @@ import (
 // required if their corresponding spec is non-empty; nil fields disable
 // the matching job.
 type Deps struct {
-	Tasks     *service.TaskService
-	Reminders *service.ReminderService
-	Clock     service.Clock
-	Logger    *slog.Logger
+	Tasks              *service.TaskService
+	Reminders          *service.ReminderService
+	Sessions           *service.TaskSessionService
+	Clock              service.Clock
+	Logger             *slog.Logger
+	DailyRolloverOnStart bool
 }
 
 // RegisterJobs registers every scheduler-managed cron job onto s using
@@ -60,12 +62,24 @@ func RegisterJobs(s *Scheduler, d Deps) error {
 	}
 
 	if d.Tasks != nil {
+		if err := s.Register("daily_rollover", s.cfg.DailyRolloverSpec,
+			dailyRollover(d.Tasks, d.Sessions, d.Logger)); err != nil {
+			return err
+		}
 		if err := s.Register("auto_carry_over", s.cfg.AutoCarryOverSpec,
 			autoCarryOver(d.Tasks, d.Logger)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// RunStartupJobs runs one-shot automation when the process starts.
+func RunStartupJobs(ctx context.Context, d Deps) error {
+	if d.Tasks == nil || !d.DailyRolloverOnStart {
+		return nil
+	}
+	return dailyRollover(d.Tasks, d.Sessions, d.Logger)(ctx)
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +143,27 @@ func scanOverdueTasks(tasks *service.TaskService, reminders *service.ReminderSer
 		}
 		if failures > 0 {
 			return fmt.Errorf("overdue scan: %d of %d failed", failures, len(overdue))
+		}
+		return nil
+	}
+}
+
+// dailyRollover marks yesterday's unfinished tasks missed and reopens today's
+// plan as pending. Runs at midnight and optionally on service startup.
+func dailyRollover(tasks *service.TaskService, sessions *service.TaskSessionService, log *slog.Logger) JobFunc {
+	return func(ctx context.Context) error {
+		res, err := tasks.RollDailyPlan(ctx, sessions)
+		if err != nil {
+			return err
+		}
+		log.Info("daily rollover",
+			slog.Int("marked_missed", res.MarkedMissed),
+			slog.Int("set_pending", res.SetPending),
+			slog.Int("skipped", res.Skipped),
+			slog.Int("errors", len(res.Errors)),
+		)
+		if len(res.Errors) > 0 {
+			return fmt.Errorf("daily rollover: %d errors (first: %v)", len(res.Errors), res.Errors[0])
 		}
 		return nil
 	}

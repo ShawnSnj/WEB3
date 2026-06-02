@@ -29,6 +29,9 @@ type TaskFilter struct {
 	OnlyOverdue  bool
 	CarriedOver  *bool
 
+	// Title matches case-insensitively (trimmed) when set.
+	Title *string
+
 	// Pagination. Limit == 0 means "use a sensible default" (see impl).
 	Limit  int
 	Offset int
@@ -76,7 +79,7 @@ type TaskRepository interface {
 	// via the filter fields.
 	List(ctx context.Context, f TaskFilter) ([]*model.Task, error)
 
-	// ListOverdue returns all non-terminal tasks whose due_date < now.
-	// Convenience wrapper used by the dashboard and the carry-over job.
-	ListOverdue(ctx context.Context, now time.Time) ([]*model.Task, error)
+	// ListOverdue returns non-terminal tasks with due_date < before.
+	// Callers should pass start-of-today in the app timezone.
+	ListOverdue(ctx context.Context, before time.Time) ([]*model.Task, error)
 }

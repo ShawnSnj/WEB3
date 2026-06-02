@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -130,17 +131,11 @@ func (r *fakeRepo) List(_ context.Context, f repository.TaskFilter) ([]*model.Ta
 	return out, nil
 }
 
-func (r *fakeRepo) ListOverdue(_ context.Context, now time.Time) ([]*model.Task, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	out := make([]*model.Task, 0)
-	for _, t := range r.tasks {
-		if t.IsOverdue(now) {
-			cp := *t
-			out = append(out, &cp)
-		}
-	}
-	return out, nil
+func (r *fakeRepo) ListOverdue(_ context.Context, before time.Time) ([]*model.Task, error) {
+	return r.List(context.Background(), repository.TaskFilter{
+		Statuses:  []model.Status{model.StatusPending, model.StatusInProgress},
+		DueBefore: &before,
+	})
 }
 
 func matchFilter(t *model.Task, f repository.TaskFilter, now time.Time) bool {
@@ -148,6 +143,15 @@ func matchFilter(t *model.Task, f repository.TaskFilter, now time.Time) bool {
 		return false
 	}
 	if len(f.Categories) > 0 && !containsCategory(f.Categories, t.Category) {
+		return false
+	}
+	if f.DueBefore != nil && (t.DueDate == nil || !t.DueDate.Before(*f.DueBefore)) {
+		return false
+	}
+	if f.DueAfter != nil && (t.DueDate == nil || t.DueDate.Before(*f.DueAfter)) {
+		return false
+	}
+	if f.Title != nil && !strings.EqualFold(strings.TrimSpace(t.Title), strings.TrimSpace(*f.Title)) {
 		return false
 	}
 	if f.OnlyOverdue && !t.IsOverdue(now) {
@@ -353,12 +357,68 @@ func TestService_Update_RejectsBadValuesAndSkipsNil(t *testing.T) {
 	}
 }
 
+func TestService_MarkCompleted_FromMissed(t *testing.T) {
+	t.Parallel()
+	svc, _, clk := newSvc(t)
+	ctx := context.Background()
+
+	t1, err := svc.Create(ctx, service.CreateTaskInput{Title: "Catch up"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.MarkMissed(ctx, t1.ID); err != nil {
+		t.Fatal(err)
+	}
+	done, err := svc.MarkCompleted(ctx, t1.ID, 15)
+	if err != nil {
+		t.Fatalf("MarkCompleted: %v", err)
+	}
+	if done.Status != model.StatusCompleted {
+		t.Errorf("status = %q, want completed", done.Status)
+	}
+	if done.ActualMinutes != 15 {
+		t.Errorf("actual = %d, want 15", done.ActualMinutes)
+	}
+	if done.CompletedAt == nil || !done.CompletedAt.Equal(clk.Now()) {
+		t.Errorf("CompletedAt = %v", done.CompletedAt)
+	}
+}
+
+func TestService_CarryOver_ReschedulesMissed(t *testing.T) {
+	t.Parallel()
+	svc, _, clk := newSvc(t)
+	ctx := context.Background()
+
+	past := clk.Now().Add(-48 * time.Hour)
+	t1, err := svc.Create(ctx, service.CreateTaskInput{Title: "Retry me", DueDate: &past})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.MarkMissed(ctx, t1.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := svc.CarryOverTask(ctx, t1.ID)
+	if err != nil {
+		t.Fatalf("CarryOverTask: %v", err)
+	}
+	if out.ID != t1.ID {
+		t.Errorf("want same task id, got new %s", out.ID)
+	}
+	if out.Status != model.StatusPending {
+		t.Errorf("status = %q, want pending", out.Status)
+	}
+	if out.Priority != model.PriorityHigh {
+		t.Errorf("priority = %q, want bumped high", out.Priority)
+	}
+}
+
 func TestService_CarryOver_BumpsPriorityAndCount(t *testing.T) {
 	t.Parallel()
 	svc, repo, clk := newSvc(t)
 	ctx := context.Background()
 
-	due := clk.Now().Add(-1 * time.Hour) // overdue
+	due := clk.Now().Add(-25 * time.Hour) // calendar day before today
 	t1, err := svc.Create(ctx, service.CreateTaskInput{
 		Title:    "Apply to BigCo",
 		Priority: model.PriorityMedium,
@@ -381,8 +441,9 @@ func TestService_CarryOver_BumpsPriorityAndCount(t *testing.T) {
 	if nt.Status != model.StatusPending {
 		t.Errorf("new task should be pending, got %q", nt.Status)
 	}
-	if nt.DueDate == nil || !nt.DueDate.Equal(due.Add(24*time.Hour)) {
-		t.Errorf("due_date not advanced 24h: %v", nt.DueDate)
+	wantDue := time.Date(2026, 5, 24, 0, 0, 0, 0, time.UTC) // today (catch up overdue)
+	if nt.DueDate == nil || !nt.DueDate.Equal(wantDue) {
+		t.Errorf("due_date want %v, got %v", wantDue, nt.DueDate)
 	}
 
 	// Original is now missed.
@@ -391,9 +452,13 @@ func TestService_CarryOver_BumpsPriorityAndCount(t *testing.T) {
 		t.Errorf("source status want missed, got %q", src.Status)
 	}
 
-	// Calling carry-over on the now-missed source must fail (duplicate carry-over).
-	if _, err := svc.CarryOverTask(ctx, t1.ID); !errors.Is(err, model.ErrTaskNotEligibleCarry) {
-		t.Errorf("want ErrTaskNotEligibleCarry on duplicate carry, got %v", err)
+	// A missed source can be rescheduled again (reopen + roll due date).
+	rescheduled, err := svc.CarryOverTask(ctx, t1.ID)
+	if err != nil {
+		t.Fatalf("reschedule missed: %v", err)
+	}
+	if rescheduled.Status != model.StatusPending {
+		t.Errorf("rescheduled status = %q, want pending", rescheduled.Status)
 	}
 
 	// And a completed task cannot be carried over.
@@ -424,15 +489,175 @@ func TestService_CarryOver_CapsAtUrgent(t *testing.T) {
 	}
 }
 
+func TestService_CarryOver_DeeplyOverdueDueIsToday(t *testing.T) {
+	t.Parallel()
+	svc, _, clk := newSvc(t)
+	ctx := context.Background()
+
+	due := clk.Now().Add(-5 * 24 * time.Hour)
+	t1, err := svc.Create(ctx, service.CreateTaskInput{
+		Title:    "Stale apply",
+		Priority: model.PriorityMedium,
+		DueDate:  &due,
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	nt, err := svc.CarryOverTask(ctx, t1.ID)
+	if err != nil {
+		t.Fatalf("CarryOverTask: %v", err)
+	}
+	wantDue := time.Date(2026, 5, 24, 0, 0, 0, 0, time.UTC)
+	if nt.DueDate == nil || !nt.DueDate.Equal(wantDue) {
+		t.Errorf("deeply overdue carry should land today, want %v got %v", wantDue, nt.DueDate)
+	}
+}
+
+func TestService_CarryOverAllOverdue_DedupesSamePlanSlot(t *testing.T) {
+	t.Parallel()
+	svc, _, clk := newSvc(t)
+	ctx := context.Background()
+
+	due := clk.Now().Add(-48 * time.Hour)
+	_, err := svc.Create(ctx, service.CreateTaskInput{Title: "Dup plan", DueDate: &due})
+	if err != nil {
+		t.Fatalf("create A: %v", err)
+	}
+	time.Sleep(2 * time.Millisecond)
+	_, err = svc.Create(ctx, service.CreateTaskInput{Title: "Dup plan", DueDate: &due})
+	if err != nil {
+		t.Fatalf("create B: %v", err)
+	}
+
+	created, errs := svc.CarryOverAllOverdue(ctx)
+	if len(errs) != 0 {
+		t.Fatalf("carry errors: %v", errs)
+	}
+	if len(created) != 1 {
+		t.Fatalf("want 1 successor, got %d", len(created))
+	}
+
+	all, err := svc.List(ctx, service.ListTasksInput{Limit: 50})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pending, missed int
+	for _, t := range all {
+		if t.Title != "Dup plan" {
+			continue
+		}
+		switch t.Status {
+		case model.StatusPending:
+			pending++
+		case model.StatusMissed:
+			missed++
+		}
+	}
+	if pending != 1 {
+		t.Errorf("pending successors = %d, want 1", pending)
+	}
+	if missed != 2 {
+		t.Errorf("missed sources = %d, want 2", missed)
+	}
+}
+
+func TestService_CollapseDuplicatePlans(t *testing.T) {
+	t.Parallel()
+	svc, repo, clk := newSvc(t)
+	ctx := context.Background()
+	due := clk.Now()
+
+	_, _ = svc.Create(ctx, service.CreateTaskInput{Title: "Collapse me", DueDate: &due})
+	time.Sleep(2 * time.Millisecond)
+	_, _ = svc.Create(ctx, service.CreateTaskInput{Title: "Collapse me", DueDate: &due})
+
+	removed, err := svc.CollapseDuplicatePlans(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed != 1 {
+		t.Fatalf("removed = %d, want 1", removed)
+	}
+	if len(repo.tasks) != 1 {
+		t.Fatalf("tasks left = %d, want 1", len(repo.tasks))
+	}
+}
+
+func TestService_CarryOverAllOverdue_SkipsRunningSession(t *testing.T) {
+	t.Parallel()
+	svc, repo, clk := newSvc(t)
+	ctx := context.Background()
+
+	due := clk.Now().Add(-48 * time.Hour)
+	_, err := svc.Create(ctx, service.CreateTaskInput{Title: "Timed", DueDate: &due})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var taskID uuid.UUID
+	for id := range repo.tasks {
+		taskID = id
+	}
+	svc.SetSessionGuard(sessionGuardStub{running: map[uuid.UUID]bool{taskID: true}})
+
+	created, errs := svc.CarryOverAllOverdue(ctx)
+	if len(errs) != 0 {
+		t.Fatalf("errors: %v", errs)
+	}
+	if len(created) != 0 {
+		t.Fatalf("want 0 created while session runs, got %d", len(created))
+	}
+	got, _ := svc.Get(ctx, taskID)
+	if got.Status != model.StatusPending {
+		t.Errorf("status = %s, want pending (unchanged)", got.Status)
+	}
+}
+
+type sessionGuardStub struct {
+	running map[uuid.UUID]bool
+}
+
+func (s sessionGuardStub) HasRunningSession(_ context.Context, id uuid.UUID) (bool, error) {
+	return s.running[id], nil
+}
+
+func TestService_CarryOverAllOverdue_NoDuplicateChain(t *testing.T) {
+	t.Parallel()
+	svc, _, clk := newSvc(t)
+	ctx := context.Background()
+
+	due := clk.Now().Add(-5 * 24 * time.Hour)
+	_, err := svc.Create(ctx, service.CreateTaskInput{Title: "Chain me", DueDate: &due})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	first, errs := svc.CarryOverAllOverdue(ctx)
+	if len(errs) != 0 {
+		t.Fatalf("first sweep errors: %v", errs)
+	}
+	if len(first) != 1 {
+		t.Fatalf("first sweep want 1 created, got %d", len(first))
+	}
+
+	second, errs := svc.CarryOverAllOverdue(ctx)
+	if len(errs) != 0 {
+		t.Fatalf("second sweep errors: %v", errs)
+	}
+	if len(second) != 0 {
+		t.Errorf("second sweep should not re-carry the successor, got %d new tasks", len(second))
+	}
+}
+
 func TestService_CarryOverAllOverdue(t *testing.T) {
 	t.Parallel()
 	svc, _, clk := newSvc(t)
 	ctx := context.Background()
 
-	overdue := clk.Now().Add(-2 * time.Hour)
-	future := clk.Now().Add(2 * time.Hour)
+	overdue := clk.Now().Add(-48 * time.Hour)
+	future := clk.Now().Add(48 * time.Hour)
 
-	// 2 overdue, 1 not-yet-due, 1 completed past-due (should be skipped).
+	// 2 overdue (due before today), 1 not-yet-due, 1 completed past-due (skipped).
 	_, _ = svc.Create(ctx, service.CreateTaskInput{Title: "A", DueDate: &overdue})
 	_, _ = svc.Create(ctx, service.CreateTaskInput{Title: "B", DueDate: &overdue})
 	_, _ = svc.Create(ctx, service.CreateTaskInput{Title: "C", DueDate: &future})
@@ -458,7 +683,7 @@ func TestService_ListOverdue_FiltersTerminal(t *testing.T) {
 	svc, _, clk := newSvc(t)
 	ctx := context.Background()
 
-	past := clk.Now().Add(-time.Hour)
+	past := clk.Now().Add(-48 * time.Hour)
 	a, _ := svc.Create(ctx, service.CreateTaskInput{Title: "live", DueDate: &past})
 	b, _ := svc.Create(ctx, service.CreateTaskInput{Title: "done", DueDate: &past})
 	_, _ = svc.MarkCompleted(ctx, b.ID, 0)

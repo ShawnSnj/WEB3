@@ -94,6 +94,9 @@ type taskDTO struct {
 }
 
 func taskResponse(t *model.Task, now time.Time) taskDTO {
+	// Calendar-day overdue: due before start of today's UTC date.
+	// Web UI uses APP_TIMEZONE via calendar.Calendar; API uses UTC midnight.
+	startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	return taskDTO{
 		ID:               t.ID,
 		Title:            t.Title,
@@ -105,7 +108,7 @@ func taskResponse(t *model.Task, now time.Time) taskDTO {
 		ActualMinutes:    t.ActualMinutes,
 		DueDate:          t.DueDate,
 		CarryOverCount:   t.CarryOverCount,
-		IsOverdue:        t.IsOverdue(now),
+		IsOverdue:        t.IsOverdue(startOfToday),
 		CompletedAt:      t.CompletedAt,
 		CreatedAt:        t.CreatedAt,
 		UpdatedAt:        t.UpdatedAt,

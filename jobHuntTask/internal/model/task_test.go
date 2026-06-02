@@ -41,7 +41,10 @@ func TestStatus_CanTransitionTo(t *testing.T) {
 		{model.StatusInProgress, model.StatusPending, true},
 		{model.StatusCompleted, model.StatusPending, false},
 		{model.StatusCompleted, model.StatusInProgress, false},
-		{model.StatusMissed, model.StatusPending, false},
+		{model.StatusMissed, model.StatusPending, true},
+		{model.StatusMissed, model.StatusInProgress, true},
+		{model.StatusMissed, model.StatusCompleted, true},
+		{model.StatusMissed, model.StatusMissed, true},
 		{model.StatusPending, model.Status("nope"), false},
 		{model.StatusPending, model.StatusPending, true}, // idempotent
 	}
@@ -122,9 +125,9 @@ func TestTask_Validate(t *testing.T) {
 
 func TestTask_IsOverdue(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
-	past := now.Add(-time.Hour)
-	future := now.Add(time.Hour)
+	startOfToday := time.Date(2026, 5, 24, 0, 0, 0, 0, time.UTC)
+	dueYesterday := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+	dueToday := startOfToday
 
 	cases := []struct {
 		name   string
@@ -132,18 +135,18 @@ func TestTask_IsOverdue(t *testing.T) {
 		due    *time.Time
 		want   bool
 	}{
-		{"pending past due", model.StatusPending, &past, true},
-		{"in-progress past due", model.StatusInProgress, &past, true},
-		{"completed past due", model.StatusCompleted, &past, false},
-		{"missed past due", model.StatusMissed, &past, false},
-		{"pending future", model.StatusPending, &future, false},
+		{"pending due yesterday", model.StatusPending, &dueYesterday, true},
+		{"in-progress due yesterday", model.StatusInProgress, &dueYesterday, true},
+		{"completed due yesterday", model.StatusCompleted, &dueYesterday, false},
+		{"missed due yesterday", model.StatusMissed, &dueYesterday, false},
+		{"pending due today", model.StatusPending, &dueToday, false},
 		{"pending no due", model.StatusPending, nil, false},
 	}
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			task := &model.Task{Status: c.status, DueDate: c.due}
-			if got := task.IsOverdue(now); got != c.want {
+			if got := task.IsOverdue(startOfToday); got != c.want {
 				t.Errorf("got %v want %v", got, c.want)
 			}
 		})

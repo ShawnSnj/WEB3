@@ -96,3 +96,25 @@ func TestCalendar_ParseDateMidnightInZone(t *testing.T) {
 		t.Errorf("got %v want %v", got, want)
 	}
 }
+
+func TestCalendar_IsOverdueAndDueToday(t *testing.T) {
+	t.Parallel()
+
+	cal, err := calendar.Load("Asia/Taipei")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 6, 2, 15, 0, 0, 0, time.FixedZone("CST", 8*3600))
+	dueToday, _ := cal.ParseDate("2026-06-02")
+	dueYesterday, _ := cal.ParseDate("2026-06-01")
+
+	if !cal.IsDueToday(dueToday, now) {
+		t.Error("due today should be due today")
+	}
+	if cal.IsOverdue(dueToday, now) {
+		t.Error("due today should not be overdue")
+	}
+	if !cal.IsOverdue(dueYesterday, now) {
+		t.Error("due yesterday should be overdue")
+	}
+}

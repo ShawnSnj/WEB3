@@ -87,10 +87,9 @@
     <button type="button" class="icon-button"
             title="Mark missed"
             data-optimistic="missed"
-            hx-post="/tasks/{{$t.ID}}/missed"
-            hx-target="body"
-            hx-swap="none"
-            hx-confirm="Mark this task as missed?">
+            data-task-action="missed"
+            data-task-id="{{$t.ID}}"
+            data-confirm="Mark this task as missed?">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "x")}}
     </button>
@@ -98,10 +97,9 @@
     {{if $t.CanCarry}}
     <button type="button" class="icon-button"
             title="Carry over to tomorrow"
-            hx-post="/tasks/{{$t.ID}}/carry_over"
-            hx-target="body"
-            hx-swap="none"
-            hx-confirm="Carry this task to tomorrow? The current task will be marked missed.">
+            data-task-action="carry_over"
+            data-task-id="{{$t.ID}}"
+            data-confirm="{{if eq $t.Status "missed"}}Reschedule this task to tomorrow and reopen it?{{else}}Carry this task to tomorrow? The current task will be marked missed.{{end}}">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "refresh")}}
     </button>
@@ -116,10 +114,9 @@
             title="Delete"
             data-optimistic="delete"
             data-confirm-danger="true"
-            hx-delete="/tasks/{{$t.ID}}"
-            hx-target="body"
-            hx-swap="none"
-            hx-confirm="Delete this task? This cannot be undone.">
+            data-task-action="delete"
+            data-task-id="{{$t.ID}}"
+            data-confirm="Delete this task? This cannot be undone.">
         {{template "htmx_spinner" .}}
         {{template "icon" (dict "name" "trash")}}
     </button>

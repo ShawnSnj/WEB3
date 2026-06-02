@@ -78,6 +78,7 @@ func run() error {
 	taskSvc := service.NewTaskService(taskRepo, service.SystemClock, cal)
 	reviewSvc := service.NewDailyReviewService(reviewRepo, service.SystemClock)
 	sessionSvc := service.NewTaskSessionService(sessionRepo, taskSvc, service.SystemClock)
+	taskSvc.SetSessionGuard(sessionSvc)
 	metricsSvc := service.NewMetricsService(metricsRepo, service.SystemClock, cal)
 	suggestionSvc := service.NewSuggestionService(
 		suggestionRepo, metricsRepo, metricsSvc, nil, service.SystemClock,
@@ -93,29 +94,43 @@ func run() error {
 		},
 	)
 
-	// Scheduler
+	// Scheduler — use APP_TIMEZONE when SCHEDULER_TZ is unset so midnight jobs
+	// align with task calendar boundaries.
+	schedTZ := cfg.Scheduler.TimeZone
+	if schedTZ == "" {
+		schedTZ = cfg.App.Timezone
+	}
 	sched, err := scheduler.New(scheduler.Config{
 		Enabled:                cfg.Scheduler.Enabled,
-		TimeZone:               cfg.Scheduler.TimeZone,
+		TimeZone:               schedTZ,
 		JobTimeout:             cfg.Scheduler.JobTimeout,
 		MorningReminderSpec:    cfg.Scheduler.MorningReminderSpec,
 		EveningReviewSpec:      cfg.Scheduler.EveningReviewSpec,
 		WeeklyReviewSpec:       cfg.Scheduler.WeeklyReviewSpec,
 		OverdueScannerSpec:     cfg.Scheduler.OverdueScannerSpec,
 		AutoCarryOverSpec:      cfg.Scheduler.AutoCarryOverSpec,
+		DailyRolloverSpec:      cfg.Scheduler.DailyRolloverSpec,
 		ReminderDispatcherSpec: cfg.Scheduler.ReminderDispatcherSpec,
 	}, log.With(slog.String("component", "scheduler")))
 	if err != nil {
 		return err
 	}
-	if err := scheduler.RegisterJobs(sched, scheduler.Deps{
-		Tasks:     taskSvc,
-		Reminders: reminderSvc,
-		Clock:     service.SystemClock,
-		Logger:    log,
-	}); err != nil {
+	schedDeps := scheduler.Deps{
+		Tasks:                taskSvc,
+		Reminders:            reminderSvc,
+		Sessions:             sessionSvc,
+		Clock:                service.SystemClock,
+		Logger:               log,
+		DailyRolloverOnStart: cfg.Scheduler.DailyRolloverOnStart,
+	}
+	if err := scheduler.RegisterJobs(sched, schedDeps); err != nil {
 		return err
 	}
+	startupCtx, startupCancel := context.WithTimeout(rootCtx, cfg.Scheduler.JobTimeout)
+	if err := scheduler.RunStartupJobs(startupCtx, schedDeps); err != nil {
+		log.Warn("daily rollover on startup failed", slog.String("error", err.Error()))
+	}
+	startupCancel()
 	sched.Start()
 	defer func() {
 		stopCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)

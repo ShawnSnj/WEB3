@@ -27,7 +27,7 @@
 
 <div id="tasks-tabs-host"
      hx-get="/tasks/tabs"
-     hx-trigger="tasks-changed from:body"
+     hx-trigger="tasks-changed from:body, tasks-counts-changed from:body"
      hx-target="#tasks-tabs-host"
      hx-swap="innerHTML"
      hx-vals='js:{view: new URLSearchParams(window.location.search).get("view") || "today"}'>

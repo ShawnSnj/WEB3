@@ -232,6 +232,11 @@ func (r *PostgresTaskRepository) List(ctx context.Context, f TaskFilter) ([]*mod
 			where = append(where, "carry_over_count = 0")
 		}
 	}
+	if f.Title != nil {
+		where = append(where, fmt.Sprintf("lower(trim(title)) = lower(trim($%d))", idx))
+		args = append(args, strings.TrimSpace(*f.Title))
+		idx++
+	}
 
 	q := fmt.Sprintf(`SELECT %s FROM tasks`, taskColumns)
 	if len(where) > 0 {

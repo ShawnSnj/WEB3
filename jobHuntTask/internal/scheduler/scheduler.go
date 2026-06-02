@@ -23,6 +23,7 @@ type Config struct {
 	WeeklyReviewSpec          string
 	OverdueScannerSpec        string
 	AutoCarryOverSpec         string
+	DailyRolloverSpec         string
 	ReminderDispatcherSpec    string
 
 	// JobTimeout caps how long any single invocation may run.
@@ -43,6 +44,7 @@ func DefaultConfig() Config {
 		WeeklyReviewSpec:       "0 20 * * 0",
 		OverdueScannerSpec:     "*/15 * * * *",
 		AutoCarryOverSpec:      "5 0 * * *",
+		DailyRolloverSpec:      "0 0 * * *",
 		ReminderDispatcherSpec: "* * * * *",
 		JobTimeout:             2 * time.Minute,
 	}

@@ -23,6 +23,10 @@ tidy: ## go mod tidy
 run: ## Run the server locally (uses .env if present)
 	$(GO) run ./cmd/server
 
+.PHONY: dedupe-tasks
+dedupe-tasks: ## Remove duplicate tasks (same title + due day)
+	$(GO) run ./cmd/dedupe-tasks
+
 .PHONY: build
 build: ## Build a local binary into ./bin/
 	@mkdir -p $(BIN_DIR)

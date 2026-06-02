@@ -78,6 +78,21 @@ func (s *TaskService) ImportFromCSV(ctx context.Context, r io.Reader, defaultDue
 			continue
 		}
 
+		if in.DueDate != nil {
+			exists, err := s.planExists(ctx, in.Title, *in.DueDate)
+			if err != nil {
+				return out, err
+			}
+			if exists {
+				out.Skipped++
+				out.Errors = append(out.Errors, ImportRowError{
+					Line: line, Title: in.Title,
+					Message: "already exists for this due date",
+				})
+				continue
+			}
+		}
+
 		if _, err := s.Create(ctx, in); err != nil {
 			out.Skipped++
 			out.Errors = append(out.Errors, ImportRowError{

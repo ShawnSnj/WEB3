@@ -243,6 +243,18 @@ func (s *TaskSessionService) CurrentForTask(ctx context.Context, taskID uuid.UUI
 	return s.sessions.FindRunningByTask(ctx, taskID)
 }
 
+// HasRunningSession reports whether the task has an active or paused session.
+func (s *TaskSessionService) HasRunningSession(ctx context.Context, taskID uuid.UUID) (bool, error) {
+	_, err := s.CurrentForTask(ctx, taskID)
+	if errors.Is(err, model.ErrSessionNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Delete removes a session entry.
 func (s *TaskSessionService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.sessions.Delete(ctx, id)

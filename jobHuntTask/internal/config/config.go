@@ -36,6 +36,8 @@ type Scheduler struct {
 	WeeklyReviewSpec        string        `env:"CRON_WEEKLY_REVIEW"                envDefault:"0 20 * * 0"`
 	OverdueScannerSpec      string        `env:"CRON_OVERDUE_SCANNER"              envDefault:"*/15 * * * *"`
 	AutoCarryOverSpec       string        `env:"CRON_AUTO_CARRY_OVER"              envDefault:"5 0 * * *"`
+	DailyRolloverSpec       string        `env:"CRON_DAILY_ROLLOVER"               envDefault:"0 0 * * *"`
+	DailyRolloverOnStart    bool          `env:"DAILY_ROLLOVER_ON_START"           envDefault:"true"`
 	ReminderDispatcherSpec  string        `env:"CRON_REMINDER_DISPATCHER"          envDefault:"* * * * *"`
 }
 

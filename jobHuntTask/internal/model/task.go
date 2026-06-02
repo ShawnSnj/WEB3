@@ -62,8 +62,8 @@ func (s Status) IsTerminal() bool {
 //
 //	pending     -> in_progress | completed | missed
 //	in_progress -> pending     | completed | missed
-//	completed   -> (terminal)
-//	missed      -> (terminal)
+//	missed      -> pending | in_progress | completed  (catch up / reschedule)
+//	completed   -> (terminal for quick actions; edit form may still reopen)
 func (s Status) CanTransitionTo(next Status) bool {
 	if !next.IsValid() {
 		return false
@@ -76,6 +76,8 @@ func (s Status) CanTransitionTo(next Status) bool {
 		return next == StatusInProgress || next == StatusCompleted || next == StatusMissed
 	case StatusInProgress:
 		return next == StatusPending || next == StatusCompleted || next == StatusMissed
+	case StatusMissed:
+		return next == StatusPending || next == StatusInProgress || next == StatusCompleted
 	default:
 		return false
 	}
@@ -228,16 +230,16 @@ func (t *Task) Validate() error {
 	return nil
 }
 
-// IsOverdue reports whether the task has a due date in the past AND is not
-// in a terminal state. Used by the dashboard and by the carry-over job.
-func (t *Task) IsOverdue(now time.Time) bool {
+// IsOverdue reports whether due is strictly before the given calendar boundary
+// (typically start-of-today in the app timezone) and the task is still active.
+func (t *Task) IsOverdue(before time.Time) bool {
 	if t.Status.IsTerminal() {
 		return false
 	}
 	if t.DueDate == nil {
 		return false
 	}
-	return t.DueDate.Before(now)
+	return t.DueDate.Before(before)
 }
 
 // IsCarriedOver returns true when the task has been rolled over at least once.

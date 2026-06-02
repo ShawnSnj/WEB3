@@ -32,8 +32,22 @@ func (r *importTaskRepo) Update(context.Context, uuid.UUID, repository.TaskUpdat
 	return nil, model.ErrTaskNotFound
 }
 func (r *importTaskRepo) Delete(context.Context, uuid.UUID) error { return nil }
-func (r *importTaskRepo) List(context.Context, repository.TaskFilter) ([]*model.Task, error) {
-	return nil, nil
+func (r *importTaskRepo) List(_ context.Context, f repository.TaskFilter) ([]*model.Task, error) {
+	out := make([]*model.Task, 0)
+	for _, t := range r.items {
+		if f.Title != nil && !strings.EqualFold(strings.TrimSpace(t.Title), strings.TrimSpace(*f.Title)) {
+			continue
+		}
+		if f.DueAfter != nil && (t.DueDate == nil || t.DueDate.Before(*f.DueAfter)) {
+			continue
+		}
+		if f.DueBefore != nil && (t.DueDate == nil || !t.DueDate.Before(*f.DueBefore)) {
+			continue
+		}
+		cp := *t
+		out = append(out, &cp)
+	}
+	return out, nil
 }
 func (r *importTaskRepo) ListOverdue(context.Context, time.Time) ([]*model.Task, error) {
 	return nil, nil
@@ -70,6 +84,31 @@ Task C,,misc,not_a_priority,10,
 	wantDue := time.Date(2026, 5, 24, 0, 0, 0, 0, time.UTC)
 	if repo.items[1].DueDate == nil || !repo.items[1].DueDate.Equal(wantDue) {
 		t.Fatalf("blank due_date should default to today, got %v", repo.items[1].DueDate)
+	}
+}
+
+func TestImportFromCSV_SkipsDuplicateTitleDueDay(t *testing.T) {
+	t.Parallel()
+	repo := &importTaskRepo{}
+	svc := service.NewTaskService(repo, service.SystemClock, nil)
+	today := time.Date(2026, 5, 24, 12, 0, 0, 0, time.UTC)
+
+	csv := `title,category,priority,estimated_minutes,due_date
+Repeat me,misc,medium,10,2026-05-25
+Repeat me,misc,medium,10,2026-05-25
+`
+	res, err := svc.ImportFromCSV(context.Background(), strings.NewReader(csv), today)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Created != 1 {
+		t.Fatalf("created = %d, want 1", res.Created)
+	}
+	if res.Skipped != 1 {
+		t.Fatalf("skipped = %d, want 1", res.Skipped)
+	}
+	if len(repo.items) != 1 {
+		t.Fatalf("repo items = %d, want 1", len(repo.items))
 	}
 }
 

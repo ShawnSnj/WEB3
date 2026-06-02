@@ -232,10 +232,12 @@ func (q tasksQuery) toFilter(now time.Time, cal *calendar.Calendar) repository.T
 
 	switch q.View {
 	case viewToday:
-		// Due today or earlier; active tasks. Finished tasks for the day are
-		// merged in listTodayView so completed work stays visible on Today.
-		end := cal.StartOfDay(now).Add(24 * time.Hour)
-		f.DueBefore = &end
+		// Active tasks due on today's calendar day only. Finished work for the
+		// day is merged in listTodayView.
+		dayStart := cal.StartOfDay(now)
+		dayEnd := dayStart.Add(24 * time.Hour)
+		f.DueAfter = &dayStart
+		f.DueBefore = &dayEnd
 		if len(f.Statuses) == 0 {
 			f.Statuses = []model.Status{model.StatusPending, model.StatusInProgress}
 		}
@@ -250,9 +252,14 @@ func (q tasksQuery) toFilter(now time.Time, cal *calendar.Calendar) repository.T
 			f.Statuses = []model.Status{model.StatusPending, model.StatusInProgress}
 		}
 	case viewOverdue:
-		f.OnlyOverdue = true
+		// Due before today's calendar day — still-actionable backlog (including
+		// missed tasks you can finish or reschedule).
+		dayStart := cal.StartOfDay(now)
+		f.DueBefore = &dayStart
 		if len(f.Statuses) == 0 {
-			f.Statuses = []model.Status{model.StatusPending, model.StatusInProgress}
+			f.Statuses = []model.Status{
+				model.StatusPending, model.StatusInProgress, model.StatusMissed,
+			}
 		}
 	case viewCompleted:
 		if len(f.Statuses) == 0 {
@@ -274,8 +281,7 @@ func (q tasksQuery) toFilter(now time.Time, cal *calendar.Calendar) repository.T
 	return f
 }
 
-// listForView loads tasks for a tab. Today also includes finished work due
-// today or completed/missed during the current calendar day.
+// listForView loads tasks for a tab. Today also includes work completed today.
 func (h *TasksHandler) listForView(ctx context.Context, q tasksQuery, now time.Time) ([]*model.Task, error) {
 	if q.View == viewToday && q.Status == "" {
 		return h.listTodayView(ctx, q, now)
@@ -299,17 +305,6 @@ func (h *TasksHandler) listTodayView(ctx context.Context, q tasksQuery, now time
 		limit = 200
 	}
 
-	dueTodayDone, err := h.tasks.List(ctx, repository.TaskFilter{
-		Statuses:  []model.Status{model.StatusCompleted, model.StatusMissed},
-		DueAfter:  &dayStart,
-		DueBefore: &dayEnd,
-		Limit:     limit,
-		OrderBy:   orderBy,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	completedToday, err := h.tasks.List(ctx, repository.TaskFilter{
 		Statuses:        []model.Status{model.StatusCompleted},
 		CompletedAfter:  &dayStart,
@@ -321,18 +316,9 @@ func (h *TasksHandler) listTodayView(ctx context.Context, q tasksQuery, now time
 		return nil, err
 	}
 
-	missedToday, err := h.tasks.List(ctx, repository.TaskFilter{
-		Statuses:      []model.Status{model.StatusMissed},
-		UpdatedAfter:  &dayStart,
-		UpdatedBefore: &dayEnd,
-		Limit:         limit,
-		OrderBy:       orderBy,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return mergeTasksByID(active, dueTodayDone, completedToday, missedToday), nil
+	// Today is for pending/in-progress work due today plus completed today.
+	// Missed rows belong on Overdue (catch-up), not Today.
+	return mergeTasksByID(active, completedToday), nil
 }
 
 func mergeTasksByID(groups ...[]*model.Task) []*model.Task {
@@ -689,7 +675,7 @@ func (h *TasksHandler) update(c *gin.Context) {
 		return
 	}
 	setToast(c, "success", "Task updated")
-	h.triggerTasksChanged(c)
+	h.triggerTasksCountsChanged(c)
 	h.renderTaskSwap(c, t)
 }
 
@@ -747,7 +733,7 @@ func (h *TasksHandler) delete(c *gin.Context) {
 		return
 	}
 	setToast(c, "info", "Task deleted")
-	h.triggerTasksChanged(c)
+	h.triggerTasksCountsChanged(c)
 	h.renderTaskDelete(c, id)
 }
 
@@ -762,12 +748,27 @@ func (h *TasksHandler) markComplete(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 
+	cur, err := h.tasks.Get(ctx, id)
+	if err != nil {
+		h.notFoundOrErr(c, err)
+		return
+	}
+	if cur.Status == model.StatusCompleted {
+		h.stopRunningSessionQuiet(ctx, id)
+		h.respondTaskConflict(c, cur, model.ErrInvalidTransition)
+		return
+	}
+
 	var t *model.Task
-	var err error
 	if h.sessions != nil {
 		if sess, serr := h.sessions.CurrentForTask(ctx, id); serr == nil && sess != nil {
 			if _, err = h.sessions.Complete(ctx, sess.ID, service.FinishSessionInput{}); err != nil {
-				h.transitionErr(c, err)
+				h.stopRunningSessionQuiet(ctx, id)
+				if fresh, ferr := h.tasks.Get(ctx, id); ferr == nil {
+					h.respondTaskConflict(c, fresh, err)
+				} else {
+					h.transitionErr(c, err)
+				}
 				return
 			}
 			t, err = h.tasks.Get(ctx, id)
@@ -778,7 +779,11 @@ func (h *TasksHandler) markComplete(c *gin.Context) {
 		t, err = h.tasks.MarkCompleted(ctx, id, actual)
 	}
 	if err != nil {
-		h.transitionErr(c, err)
+		if fresh, ferr := h.tasks.Get(ctx, id); ferr == nil {
+			h.respondTaskConflict(c, fresh, err)
+		} else {
+			h.transitionErr(c, err)
+		}
 		return
 	}
 	msg := "Marked completed"
@@ -786,7 +791,7 @@ func (h *TasksHandler) markComplete(c *gin.Context) {
 		msg = fmt.Sprintf("Completed in %d min", t.ActualMinutes)
 	}
 	setToast(c, "success", msg)
-	h.triggerTasksChanged(c)
+	h.triggerTasksCountsChanged(c)
 	h.renderTaskSwap(c, t)
 }
 
@@ -798,7 +803,11 @@ func (h *TasksHandler) markInProgress(c *gin.Context) {
 	ctx := c.Request.Context()
 	t, err := h.tasks.MarkInProgress(ctx, id)
 	if err != nil {
-		h.transitionErr(c, err)
+		if cur, ferr := h.tasks.Get(ctx, id); ferr == nil {
+			h.respondTaskConflict(c, cur, err)
+		} else {
+			h.transitionErr(c, err)
+		}
 		return
 	}
 	if h.sessions != nil {
@@ -807,7 +816,7 @@ func (h *TasksHandler) markInProgress(c *gin.Context) {
 		}
 	}
 	setToast(c, "info", "Timer started")
-	h.triggerTasksChanged(c)
+	h.triggerTasksCountsChanged(c)
 	h.renderTaskSwap(c, t)
 }
 
@@ -826,11 +835,15 @@ func (h *TasksHandler) markPending(c *gin.Context) {
 	}
 	t, err := h.tasks.MarkPending(ctx, id)
 	if err != nil {
-		h.transitionErr(c, err)
+		if cur, ferr := h.tasks.Get(ctx, id); ferr == nil {
+			h.respondTaskConflict(c, cur, err)
+		} else {
+			h.transitionErr(c, err)
+		}
 		return
 	}
 	setToast(c, "info", "Returned to pending")
-	h.triggerTasksChanged(c)
+	h.triggerTasksCountsChanged(c)
 	h.renderTaskSwap(c, t)
 }
 
@@ -845,7 +858,7 @@ func (h *TasksHandler) markMissed(c *gin.Context) {
 		return
 	}
 	setToast(c, "warning", "Marked missed")
-	h.triggerTasksChanged(c)
+	h.triggerTasksCountsChanged(c)
 	h.renderTaskSwap(c, t)
 }
 
@@ -961,7 +974,7 @@ func (h *TasksHandler) transitionErr(c *gin.Context, err error) {
 	case errors.Is(err, model.ErrTaskNotFound):
 		c.String(http.StatusNotFound, "task not found")
 	case errors.Is(err, model.ErrInvalidTransition):
-		setToast(c, "warning", "Invalid status change")
+		setToast(c, "warning", transitionToastMessage(nil, err))
 		c.Status(http.StatusConflict)
 	case errors.Is(err, model.ErrTaskNotEligibleCarry):
 		setToast(c, "warning", "Task can't be carried over")
@@ -972,6 +985,43 @@ func (h *TasksHandler) transitionErr(c *gin.Context, err error) {
 	}
 }
 
+// respondTaskConflict refreshes the row/card and shows a toast when a
+// transition fails (often because the list is stale after auto carry-over).
+func (h *TasksHandler) respondTaskConflict(c *gin.Context, t *model.Task, err error) {
+	c.Status(http.StatusConflict)
+	setToast(c, "warning", transitionToastMessage(t, err))
+	h.triggerTasksCountsChanged(c)
+	h.renderTaskSwap(c, t)
+}
+
+func (h *TasksHandler) stopRunningSessionQuiet(ctx context.Context, taskID uuid.UUID) {
+	if h.sessions == nil {
+		return
+	}
+	sess, err := h.sessions.CurrentForTask(ctx, taskID)
+	if err != nil || sess == nil {
+		return
+	}
+	if _, err := h.sessions.Stop(ctx, sess.ID, service.FinishSessionInput{}); err != nil {
+		h.log.Warn("tasks.session.stop", slog.String("task_id", taskID.String()), slog.String("err", err.Error()))
+	}
+}
+
+func transitionToastMessage(t *model.Task, err error) string {
+	if t != nil {
+		switch t.Status {
+		case model.StatusMissed:
+			return "This task was rolled over or marked missed — refresh the list or use the new copy for today."
+		case model.StatusCompleted:
+			return "This task is already completed."
+		}
+	}
+	if errors.Is(err, model.ErrInvalidTransition) {
+		return "That status change isn't allowed anymore."
+	}
+	return "Could not update the task."
+}
+
 func (h *TasksHandler) renderFormError(c *gin.Context, mode, action, method string, t *model.Task, err error) {
 	vm := h.newFormVM(mode, action, method, t)
 	vm.Error = humanError(err)
@@ -980,18 +1030,28 @@ func (h *TasksHandler) renderFormError(c *gin.Context, mode, action, method stri
 }
 
 func (h *TasksHandler) triggerTasksChanged(c *gin.Context) {
-	// Compose with any toast trigger already set.
+	h.mergeHXTrigger(c, "tasks-changed")
+}
+
+// triggerTasksCountsChanged refreshes tab badges only. Row updates already
+// return OOB swap bundles — a full list reload on top caused duplicate rows
+// and brief status mismatches against optimistic UI.
+func (h *TasksHandler) triggerTasksCountsChanged(c *gin.Context) {
+	h.mergeHXTrigger(c, "tasks-counts-changed")
+}
+
+func (h *TasksHandler) mergeHXTrigger(c *gin.Context, name string) {
+	needle := `"` + name + `"`
 	existing := c.Writer.Header().Get("HX-Trigger")
 	if existing == "" {
-		c.Header("HX-Trigger", `{"tasks-changed":{}}`)
+		c.Header("HX-Trigger", `{"`+name+`":{}}`)
 		return
 	}
-	// existing is JSON; merge by string-splice. Keeps deps zero.
-	if strings.Contains(existing, `"tasks-changed"`) {
+	if strings.Contains(existing, needle) {
 		return
 	}
 	if strings.HasSuffix(existing, "}") {
-		c.Header("HX-Trigger", existing[:len(existing)-1]+`,"tasks-changed":{}}`)
+		c.Header("HX-Trigger", existing[:len(existing)-1]+`,"`+name+`":{}}`)
 	}
 }
 
@@ -1044,17 +1104,20 @@ func (h *TasksHandler) toRowVM(ctx context.Context, t *model.Task, now time.Time
 		} else {
 			v.DueDateLabel = h.cal.RelativeDue(*t.DueDate, now)
 		}
-		v.IsOverdue = t.DueDate.Before(now) && !t.Status.IsTerminal()
+		v.IsOverdue = h.cal.IsOverdue(*t.DueDate, now) && !t.Status.IsTerminal()
 	} else {
 		v.DueDateLabel = "—"
 	}
-	v.CanComplete = t.Status == model.StatusPending || t.Status == model.StatusInProgress
-	v.CanInProgress = t.Status == model.StatusPending
+	actionable := t.Status == model.StatusPending ||
+		t.Status == model.StatusInProgress ||
+		t.Status == model.StatusMissed
+	v.CanComplete = actionable
+	v.CanInProgress = t.Status == model.StatusPending || t.Status == model.StatusMissed
 	v.CanPending = t.Status == model.StatusInProgress
 	v.CanMiss = t.Status.CanTransitionTo(model.StatusMissed)
-	v.CanCarry = !t.Status.IsTerminal()
+	v.CanCarry = actionable
 
-	if h.sessions != nil && t.Status == model.StatusInProgress {
+	if h.sessions != nil && (t.Status == model.StatusInProgress || t.Status == model.StatusMissed) {
 		sess, err := h.sessions.CurrentForTask(ctx, t.ID)
 		if err == nil && sess != nil && sess.Status.IsRunning() {
 			v.TimerActive = true

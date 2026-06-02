@@ -91,6 +91,16 @@ func (c *Calendar) SameDay(a, b time.Time) bool {
 	return ay == by && am == bm && ad == bd
 }
 
+// IsDueToday reports whether due falls on the same calendar day as now.
+func (c *Calendar) IsDueToday(due, now time.Time) bool {
+	return c.SameDay(due, now)
+}
+
+// IsOverdue reports whether due is on a calendar day strictly before today.
+func (c *Calendar) IsOverdue(due, now time.Time) bool {
+	return c.StartOfDay(due).Before(c.StartOfDay(now))
+}
+
 // RelativeDue returns a short label for a due date relative to now using
 // calendar days in c's timezone (not a rolling 24-hour window).
 func (c *Calendar) RelativeDue(due, now time.Time) string {

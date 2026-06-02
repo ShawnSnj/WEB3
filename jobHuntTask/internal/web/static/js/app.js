@@ -402,6 +402,30 @@
     // ------------------------------------------------------------------
 
     const optimisticSnapshots = new WeakMap();
+    const taskStatusLabels = {
+        completed: 'Completed',
+        in_progress: 'In progress',
+        pending: 'Pending',
+        missed: 'Missed',
+    };
+
+    function setTaskStatusAppearance(el, status) {
+        if (!el) return;
+        var isCard = el.classList.contains('task-card');
+        var prefix = isCard ? 'task-card--status-' : 'task-row--status-';
+        ['pending', 'in_progress', 'completed', 'missed'].forEach(function (s) {
+            el.classList.remove(prefix + s);
+        });
+        el.classList.add(prefix + status);
+        var badge = el.querySelector(
+            '.badge--status-pending, .badge--status-in_progress, ' +
+            '.badge--status-completed, .badge--status-missed'
+        );
+        if (badge) {
+            badge.className = 'badge badge--status-' + status;
+            badge.textContent = taskStatusLabels[status] || status;
+        }
+    }
 
     function applyOptimistic(elt) {
         const kind = elt && elt.dataset.optimistic;
@@ -425,25 +449,37 @@
         if (kind === 'delete') {
             target.classList.add('htmx-optimistic--removing');
             if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--delete', 'htmx-optimistic--removing');
+            return;
         }
         if (kind === 'complete') {
-            target.classList.add('task-row--status-completed', 'task-card--status-completed');
-            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--complete', 'task-row--status-completed', 'task-card--status-completed');
+            setTaskStatusAppearance(target, 'completed');
+            if (peer) {
+                peer.classList.add('htmx-optimistic', 'htmx-optimistic--complete');
+                setTaskStatusAppearance(peer, 'completed');
+            }
+            return;
         }
         if (kind === 'in_progress') {
-            target.classList.add('task-row--status-in_progress', 'task-card--status-in_progress');
-            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--in_progress', 'task-row--status-in_progress', 'task-card--status-in_progress');
+            setTaskStatusAppearance(target, 'in_progress');
+            if (peer) {
+                peer.classList.add('htmx-optimistic', 'htmx-optimistic--in_progress');
+                setTaskStatusAppearance(peer, 'in_progress');
+            }
+            return;
         }
         if (kind === 'missed') {
-            target.classList.add('task-row--status-missed', 'task-card--status-missed');
-            if (peer) peer.classList.add('htmx-optimistic', 'htmx-optimistic--missed', 'task-row--status-missed', 'task-card--status-missed');
+            setTaskStatusAppearance(target, 'missed');
+            if (peer) {
+                peer.classList.add('htmx-optimistic', 'htmx-optimistic--missed');
+                setTaskStatusAppearance(peer, 'missed');
+            }
+            return;
         }
         if (kind === 'pending') {
-            target.classList.remove('task-row--status-in_progress', 'task-card--status-in_progress');
-            target.classList.add('task-row--status-pending', 'task-card--status-pending');
+            setTaskStatusAppearance(target, 'pending');
             if (peer) {
-                peer.classList.remove('task-row--status-in_progress', 'task-card--status-in_progress');
-                peer.classList.add('htmx-optimistic', 'htmx-optimistic--pending', 'task-row--status-pending', 'task-card--status-pending');
+                peer.classList.add('htmx-optimistic', 'htmx-optimistic--pending');
+                setTaskStatusAppearance(peer, 'pending');
             }
         }
     }
@@ -698,13 +734,20 @@
         var action = btn.dataset.taskAction;
         if (!id || !action) return;
 
+        var url = action === 'delete'
+            ? '/tasks/' + encodeURIComponent(id)
+            : '/tasks/' + encodeURIComponent(id) + '/' + action;
+        var method = action === 'delete' ? 'DELETE' : 'POST';
+
         btn.classList.add('htmx-request');
-        applyOptimistic(btn);
+        if (action !== 'carry_over') {
+            applyOptimistic(btn);
+        }
         pendingRequests++;
         setGlobalLoading(true);
 
-        fetch('/tasks/' + encodeURIComponent(id) + '/' + action, {
-            method: 'POST',
+        fetch(url, {
+            method: method,
             credentials: 'same-origin',
             headers: {
                 'HX-Request': 'true',
@@ -721,21 +764,28 @@
             });
         }).then(function (result) {
             if (!result.ok) {
-                revertOptimistic(btn);
                 dispatchHXTrigger(result.trigger);
-                if (!result.trigger) {
-                    showToast({
-                        tone: 'danger',
-                        message: result.status >= 500
-                            ? 'Something went wrong on the server.'
-                            : 'Could not update the task.',
-                    });
+                if (result.html && result.html.trim()) {
+                    optimisticSnapshots.delete(btn);
+                    applyOOBSwaps(result.html);
+                } else {
+                    revertOptimistic(btn);
+                    if (!result.trigger) {
+                        showToast({
+                            tone: 'danger',
+                            message: result.status >= 500
+                                ? 'Something went wrong on the server.'
+                                : 'Could not update the task.',
+                        });
+                    }
                 }
                 return;
             }
             optimisticSnapshots.delete(btn);
             dispatchHXTrigger(result.trigger);
-            applyOOBSwaps(result.html);
+            if (result.html && result.html.trim()) {
+                applyOOBSwaps(result.html);
+            }
         }).catch(function () {
             revertOptimistic(btn);
             showToast({ tone: 'danger', message: 'Network error — check your connection.' });
@@ -780,6 +830,20 @@
 
         e.preventDefault();
         e.stopPropagation();
+
+        var confirmMsg = btn.dataset.confirm;
+        if (confirmMsg) {
+            var isDanger = btn.dataset.confirmDanger === 'true' ||
+                btn.classList.contains('icon-button--danger') ||
+                btn.classList.contains('btn-danger-ghost');
+            openConfirm({
+                message: confirmMsg,
+                danger: isDanger,
+                confirmLabel: isDanger ? 'Delete' : 'Confirm',
+                onConfirm: function () { runTaskAction(btn); },
+            });
+            return;
+        }
         runTaskAction(btn);
     });
 

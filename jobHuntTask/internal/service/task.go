@@ -71,11 +71,17 @@ type ListTasksInput = repository.TaskFilter
 // Service
 // ---------------------------------------------------------------------------
 
+// SessionGuard lets the task service respect in-flight work timers.
+type SessionGuard interface {
+	HasRunningSession(ctx context.Context, taskID uuid.UUID) (bool, error)
+}
+
 // TaskService implements all business rules for tasks.
 type TaskService struct {
-	repo  repository.TaskRepository
-	clock Clock
-	cal   *calendar.Calendar
+	repo     repository.TaskRepository
+	clock    Clock
+	cal      *calendar.Calendar
+	sessions SessionGuard // optional: skips carry-over while a timer runs
 }
 
 // NewTaskService constructs a service. Pass SystemClock for production.
@@ -88,6 +94,11 @@ func NewTaskService(repo repository.TaskRepository, clock Clock, cal *calendar.C
 		cal = calendar.UTC()
 	}
 	return &TaskService{repo: repo, clock: clock, cal: cal}
+}
+
+// SetSessionGuard attaches session awareness (e.g. auto carry-over skips timed tasks).
+func (s *TaskService) SetSessionGuard(g SessionGuard) {
+	s.sessions = g
 }
 
 // ---------------------------------------------------------------------------
@@ -279,9 +290,16 @@ func (s *TaskService) List(ctx context.Context, f ListTasksInput) ([]*model.Task
 	return s.repo.List(ctx, f)
 }
 
-// ListOverdue returns all non-terminal tasks whose due date is in the past.
+// ListOverdue returns non-terminal tasks whose due date is before today's
+// calendar day. Used by the auto carry-over cron (active work only).
 func (s *TaskService) ListOverdue(ctx context.Context) ([]*model.Task, error) {
-	return s.repo.ListOverdue(ctx, s.clock.Now())
+	before := s.cal.StartOfDay(s.clock.Now())
+	return s.repo.List(ctx, repository.TaskFilter{
+		Statuses:  []model.Status{model.StatusPending, model.StatusInProgress},
+		DueBefore: &before,
+		Limit:     500,
+		OrderBy:   "due_date",
+	})
 }
 
 // ---------------------------------------------------------------------------
@@ -296,27 +314,29 @@ func (s *TaskService) ListOverdue(ctx context.Context) ([]*model.Task, error) {
 //   - new task inherits title/description/category/estimate
 //   - priority is bumped one level (capped at urgent)
 //   - carry_over_count = source.carry_over_count + 1
-//   - due_date defaults to source.due_date + 24h, or now + 24h if absent
+//   - due_date is the next calendar day after now when the source is overdue
+//     (prevents the auto carry-over cron from spawning duplicate copies while
+//     "catching up" an old due date); otherwise one day after the source due
 func (s *TaskService) CarryOverTask(ctx context.Context, id uuid.UUID) (*model.Task, error) {
 	src, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	// A task in a terminal state (completed/missed) cannot be carried over.
-	// Because CarryOverTask flips the source to `missed` as its last step,
-	// this single check also enforces the "no duplicate carry-over" rule:
-	// the second call on the same source ID returns ErrTaskNotEligibleCarry.
+	now := s.clock.Now()
+
+	// Already missed: roll the due date forward and reopen for another attempt.
+	if src.Status == model.StatusMissed {
+		return s.rescheduleMissed(ctx, src, now)
+	}
+
+	// Completed tasks cannot be carried over. Because CarryOverTask flips the
+	// source to `missed` as its last step, this also enforces the "no duplicate
+	// carry-over" rule on pending/in_progress sources.
 	if src.Status.IsTerminal() {
 		return nil, model.ErrTaskNotEligibleCarry
 	}
 
-	now := s.clock.Now()
-	var newDue time.Time
-	if src.DueDate != nil {
-		newDue = src.DueDate.Add(24 * time.Hour)
-	} else {
-		newDue = now.Add(24 * time.Hour)
-	}
+	newDue := s.carryOverDueDate(src, now)
 
 	newTask := &model.Task{
 		Title:            src.Title,
@@ -348,11 +368,29 @@ func (s *TaskService) CarryOverTask(ctx context.Context, id uuid.UUID) (*model.T
 // The function is best-effort: a failure on one task does not stop the
 // loop; the per-task error is returned alongside the successes.
 func (s *TaskService) CarryOverAllOverdue(ctx context.Context) (created []*model.Task, errs []error) {
-	overdue, err := s.repo.ListOverdue(ctx, s.clock.Now())
+	overdue, err := s.ListOverdue(ctx)
 	if err != nil {
 		return nil, []error{err}
 	}
-	for _, t := range overdue {
+	toCarry, dupes := selectPrimaryOverdue(overdue, s.cal)
+	for _, t := range dupes {
+		if _, err := s.repo.Update(ctx, t.ID, repository.TaskUpdate{
+			Status: statusPtr(model.StatusMissed),
+		}); err != nil {
+			errs = append(errs, fmt.Errorf("dedupe missed %s: %w", t.ID, err))
+		}
+	}
+	for _, t := range toCarry {
+		if s.sessions != nil {
+			running, err := s.sessions.HasRunningSession(ctx, t.ID)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("task %s: session check: %w", t.ID, err))
+				continue
+			}
+			if running {
+				continue
+			}
+		}
 		nt, err := s.CarryOverTask(ctx, t.ID)
 		if err != nil {
 			// Skip already-handled tasks silently — they're not real failures.
@@ -367,9 +405,84 @@ func (s *TaskService) CarryOverAllOverdue(ctx context.Context) (created []*model
 	return created, errs
 }
 
+// CollapseDuplicatePlans removes extra tasks that share the same title and
+// calendar due day, keeping the oldest row in each group. Returns the number
+// of tasks deleted.
+func (s *TaskService) CollapseDuplicatePlans(ctx context.Context) (int, error) {
+	tasks, err := s.repo.List(ctx, repository.TaskFilter{Limit: 500, OrderBy: "created_at"})
+	if err != nil {
+		return 0, err
+	}
+	type group struct {
+		keep *model.Task
+		rest []*model.Task
+	}
+	groups := make(map[planKey]*group)
+	for _, t := range tasks {
+		key, ok := s.planKeyForTask(t)
+		if !ok {
+			continue
+		}
+		g, exists := groups[key]
+		if !exists {
+			groups[key] = &group{keep: t}
+			continue
+		}
+		if t.CreatedAt.Before(g.keep.CreatedAt) {
+			g.rest = append(g.rest, g.keep)
+			g.keep = t
+		} else {
+			g.rest = append(g.rest, t)
+		}
+	}
+	removed := 0
+	for _, g := range groups {
+		if len(g.rest) == 0 {
+			continue
+		}
+		for _, t := range g.rest {
+			if err := s.repo.Delete(ctx, t.ID); err != nil {
+				return removed, fmt.Errorf("delete %s: %w", t.ID, err)
+			}
+			removed++
+		}
+	}
+	return removed, nil
+}
+
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
+
+// carryOverDueDate picks the successor task's due date. Overdue sources land
+// on today's calendar day so they show up on the Today tab, not Upcoming.
+// rescheduleMissed moves a missed task back to pending on the next due day.
+func (s *TaskService) rescheduleMissed(ctx context.Context, src *model.Task, now time.Time) (*model.Task, error) {
+	newDue := s.carryOverDueDate(src, now)
+	pending := model.StatusPending
+	bumped := src.Priority.Bump()
+	return s.repo.Update(ctx, src.ID, repository.TaskUpdate{
+		Status:   &pending,
+		DueDate:  &newDue,
+		Priority: &bumped,
+	})
+}
+
+func (s *TaskService) carryOverDueDate(src *model.Task, now time.Time) time.Time {
+	today := s.cal.StartOfDay(now)
+	tomorrow := today.Add(24 * time.Hour)
+	if src.DueDate == nil {
+		return today
+	}
+	if s.cal.IsOverdue(*src.DueDate, now) {
+		return today
+	}
+	next := s.cal.StartOfDay(*src.DueDate).Add(24 * time.Hour)
+	if next.Before(tomorrow) {
+		return next
+	}
+	return tomorrow
+}
 
 func trimmedPtr(s *string) *string {
 	if s == nil {
