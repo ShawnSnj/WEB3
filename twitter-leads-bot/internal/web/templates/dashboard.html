@@ -1,0 +1,100 @@
+{{define "leads"}}
+<div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+  {{if not .ReplyViaWebhook}}
+    <span><span class="text-amber-400/90">Posting:</span> demo (logs only). Set <code class="text-slate-400">TWITTER_REPLY_WEBHOOK_URL</code> for real X posts.</span>
+  {{else}}
+    <span><span class="text-emerald-400/90">Posting:</span> webhook — “Yes” POSTs <code class="text-slate-400">tweet_id</code> + <code class="text-slate-400">text</code>.</span>
+  {{end}}
+</div>
+{{if not .Leads}}
+  <div class="text-slate-500 text-sm py-8 text-center space-y-2">
+    <p>No leads match the current filters.</p>
+    {{if .SelectedKeyword}}
+      <p class="text-xs text-slate-600">This topic has <strong class="text-slate-400">{{.SelectedKeyword.TweetCount}}</strong> tweet(s) in the database.
+        Try <strong class="text-slate-400">Status: All</strong> and <strong class="text-slate-400">Min score: 0+</strong> above.</p>
+    {{end}}
+    <p class="text-xs">Run a search from <a href="/keywords" class="text-sky-400 hover:underline">Keywords</a> (button <strong class="text-slate-400">Run search</strong>).</p>
+  </div>
+{{else}}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    {{range .Leads}}{{template "lead_card" .}}{{end}}
+  </div>
+{{end}}
+{{end}}
+
+{{define "lead_card"}}
+<article id="lead-{{.Tweet.TweetID}}"
+         class="rounded-lg border border-slate-800 bg-slate-900/60 p-4 flex flex-col gap-3">
+  <header class="flex items-start justify-between gap-3">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="shrink-0 w-12 h-12 rounded-full grid place-items-center font-bold text-lg
+                  {{if gt .Analysis.Score 0}}
+                  {{if ge .Analysis.Score 8}}bg-emerald-500/20 text-emerald-300
+                  {{else if ge .Analysis.Score 5}}bg-sky-500/20 text-sky-300
+                  {{else}}bg-slate-700/40 text-slate-300{{end}}
+                  {{else}}bg-slate-800/60 text-slate-500{{end}}">
+        {{if gt .Analysis.Score 0}}{{.Analysis.Score}}{{else}}–{{end}}
+      </div>
+      <div class="min-w-0">
+        <a href="{{.URL}}" target="_blank" rel="noopener"
+           class="font-medium text-slate-100 hover:text-sky-300 truncate block">@{{.Tweet.Username}}</a>
+        <div class="text-xs text-slate-500 flex flex-wrap gap-x-2">
+          <span>♥ {{.Tweet.Likes}}</span>
+          <span>· kw: <em class="not-italic text-slate-400">{{.Tweet.Keyword}}</em></span>
+          <span>· {{fmtLocal .Tweet.CreatedAt}}</span>
+        </div>
+      </div>
+    </div>
+    <span class="shrink-0 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded
+                 {{if eq .Analysis.Status "pending"}}bg-amber-500/20  text-amber-300
+                 {{else if eq .Analysis.Status "approved"}}bg-sky-500/20    text-sky-300
+                 {{else if eq .Analysis.Status "sent"}}bg-emerald-500/20 text-emerald-300
+                 {{else}}                                bg-slate-700/40  text-slate-400{{end}}">
+      {{.Analysis.Status}}
+    </span>
+  </header>
+
+  <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{{.Tweet.Text}}</p>
+
+  {{if .Analysis.Reason}}
+    <p class="text-xs text-slate-500 italic">{{.Analysis.Reason}}</p>
+  {{end}}
+
+  {{if .Analysis.ReplySuggestion}}
+    <div class="rounded border-l-2 border-sky-500/60 bg-slate-950/60 p-3">
+      <div class="flex items-start justify-between gap-3">
+        <p class="text-sm text-slate-200 whitespace-pre-wrap">{{.Analysis.ReplySuggestion}}</p>
+        <button type="button"
+                class="shrink-0 text-xs px-2 py-1 rounded border border-slate-700 hover:bg-slate-800"
+                onclick="copyToClipboard(this.previousElementSibling.textContent, this)">
+          Copy
+        </button>
+      </div>
+    </div>
+  {{end}}
+
+  <footer class="flex flex-wrap gap-2 pt-1">
+    <button hx-post="/leads/{{.Tweet.TweetID}}/approve"
+            hx-target="#lead-{{.Tweet.TweetID}}" hx-swap="outerHTML"
+            hx-confirm="Post this reply and mark as sent?"
+            class="text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-500 font-medium">
+      Yes — post reply
+    </button>
+    <button hx-post="/leads/{{.Tweet.TweetID}}/regenerate"
+            hx-target="#lead-{{.Tweet.TweetID}}" hx-swap="outerHTML"
+            hx-indicator="this"
+            class="text-xs px-3 py-1.5 rounded bg-sky-500/20 text-sky-300 hover:bg-sky-500/30">
+      New suggestion
+    </button>
+    <button hx-post="/leads/{{.Tweet.TweetID}}/skip"
+            hx-target="#lead-{{.Tweet.TweetID}}" hx-swap="outerHTML"
+            class="text-xs px-3 py-1.5 rounded border border-slate-700 text-slate-300 hover:bg-slate-800">
+      No — skip
+    </button>
+    <a href="{{.URL}}" target="_blank" rel="noopener"
+       class="text-xs px-3 py-1.5 rounded border border-slate-700 text-slate-300 hover:bg-slate-800 ml-auto">
+      Open on X →
+    </a>
+  </footer>
+</article>
+{{end}}

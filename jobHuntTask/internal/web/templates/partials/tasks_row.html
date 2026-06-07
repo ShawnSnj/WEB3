@@ -105,6 +105,12 @@
     </button>
     {{end}}
     <button type="button" class="icon-button"
+            title="Notes"
+            data-load-task-notes="/tasks/{{$t.ID}}/notes"
+            aria-haspopup="dialog">
+        {{template "icon" (dict "name" "note")}}
+    </button>
+    <button type="button" class="icon-button"
             title="Edit"
             data-load-task-form="/tasks/{{$t.ID}}/form"
             aria-haspopup="dialog">

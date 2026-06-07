@@ -1,0 +1,146 @@
+{{- /*
+  task_notes_modal — notes browser for a single task. Opens in #task-modal.
+  Data: web.TaskNotesModalVM
+*/ -}}
+{{define "task_notes_modal"}}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="task-notes-title" tabindex="-1">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel modal-panel--wide task-notes-modal">
+        <header class="modal-head">
+            <div>
+                <h2 id="task-notes-title" class="modal-title">Task notes</h2>
+                <p class="muted task-notes-subtitle">{{.TaskTitle}}</p>
+            </div>
+            <button type="button" class="icon-button"
+                    aria-label="Close"
+                    data-action="close-modal">
+                {{template "icon" (dict "name" "x")}}
+            </button>
+        </header>
+
+        {{template "task_notes_panel" .}}
+    </div>
+</div>
+{{end}}
+
+{{define "task_notes_panel"}}
+<div id="task-notes-panel" class="task-notes-panel">
+    <div class="task-notes-layout">
+        <section class="task-notes-list-pane" aria-label="Notes list">
+            <div class="task-notes-list-head">
+                <h3 class="task-notes-list-title">All notes</h3>
+                <button type="button" class="btn btn-sm btn-primary"
+                        data-task-note-new
+                        data-task-id="{{.TaskID}}"
+                        hx-get="/tasks/{{.TaskID}}/notes/new"
+                        hx-target="#task-note-detail-pane"
+                        hx-swap="innerHTML">
+                    {{template "icon" (dict "name" "plus")}}
+                    <span>New note</span>
+                </button>
+            </div>
+            {{template "task_notes_table" (dict "TaskID" .TaskID "TaskTitle" .TaskTitle "Notes" .Notes "SelectedID" (noteSelectedID .Selected) "Empty" .Empty)}}
+        </section>
+
+        <section id="task-note-detail-pane" class="task-note-detail-pane" aria-label="Note detail">
+            {{if .Selected}}
+                {{template "task_note_detail" .Selected}}
+            {{else}}
+                {{template "task_note_detail_empty" .TaskID}}
+            {{end}}
+        </section>
+    </div>
+</div>
+{{end}}
+
+{{define "task_notes_table"}}
+<div id="task-notes-table-wrap" class="task-notes-table-wrap">
+    {{if .Empty}}
+    <div class="task-notes-empty muted">
+        <p>No notes yet. Create one to capture context, links, or follow-ups.</p>
+    </div>
+    {{else}}
+    <table class="task-notes-table">
+        <thead>
+            <tr>
+                <th class="th-title">Title</th>
+                <th>Content</th>
+                <th class="th-updated">Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Notes}}
+            <tr class="task-notes-row task-notes-row--clickable{{if eq $.SelectedID .ID}} task-notes-row--selected{{end}}"
+                data-task-note-row
+                data-task-id="{{.TaskID}}"
+                data-note-id="{{.ID}}"
+                tabindex="0"
+                role="button"
+                aria-label="Open note {{.Title}}"
+                hx-get="/tasks/{{.TaskID}}/notes/{{.ID}}"
+                hx-target="#task-note-detail-pane"
+                hx-swap="innerHTML">
+                <td class="td-title">
+                    <span class="task-note-title-link">{{.Title}}</span>
+                    <div class="task-note-task-title muted">{{.TaskTitle}}</div>
+                </td>
+                <td class="td-content muted">{{.ContentPreview}}</td>
+                <td class="td-updated muted">{{.UpdatedLabel}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{end}}
+</div>
+{{end}}
+
+{{define "task_note_detail_empty"}}
+<div class="task-note-detail task-note-detail--empty">
+    <p class="muted">Select a note title to view and edit its content, or create a new note.</p>
+</div>
+{{end}}
+
+{{define "task_note_detail"}}
+<div class="task-note-detail" id="task-note-detail">
+    {{if .Error}}
+    {{template "inline_error" (dict "message" .Error)}}
+    {{end}}
+
+    <form class="task-note-form"
+          data-task-note-form
+          data-task-id="{{.TaskID}}"
+          {{if .ID}}data-note-id="{{.ID}}" data-mode="edit"{{else}}data-mode="create"{{end}}>
+
+        <label class="field">
+            <span class="field-label">Title</span>
+            <input type="text" name="title" required maxlength="200"
+                   value="{{.Title}}" placeholder="Short label for this note">
+        </label>
+
+        <label class="field">
+            <span class="field-label">Content</span>
+            <textarea name="content" rows="12" maxlength="8000"
+                      placeholder="Write details, links, or follow-up items…">{{.Content}}</textarea>
+        </label>
+
+        <footer class="task-note-detail-foot">
+            {{if .ID}}
+            <button type="button" class="btn btn-danger-ghost btn-sm"
+                    data-task-note-delete
+                    data-task-id="{{.TaskID}}"
+                    data-note-id="{{.ID}}"
+                    data-confirm="Delete this note? This cannot be undone.">
+                {{template "icon" (dict "name" "trash")}}
+                <span>Delete</span>
+            </button>
+            {{end}}
+            <div class="task-note-detail-actions">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    {{template "htmx_spinner" .}}
+                    <span>{{if .ID}}Save changes{{else}}Create note{{end}}</span>
+                </button>
+            </div>
+        </footer>
+    </form>
+</div>
+{{end}}

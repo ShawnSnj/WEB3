@@ -28,6 +28,7 @@ type TasksHandler struct {
 	rd       *Renderer
 	tasks    *service.TaskService
 	sessions *service.TaskSessionService
+	notes    *service.TaskNoteService
 	clock    service.Clock
 	cal      *calendar.Calendar
 	log      *slog.Logger
@@ -37,6 +38,7 @@ func NewTasksHandler(
 	rd *Renderer,
 	tasks *service.TaskService,
 	sessions *service.TaskSessionService,
+	notes *service.TaskNoteService,
 	clock service.Clock,
 	cal *calendar.Calendar,
 	log *slog.Logger,
@@ -50,7 +52,7 @@ func NewTasksHandler(
 	if log == nil {
 		log = slog.Default()
 	}
-	return &TasksHandler{rd: rd, tasks: tasks, sessions: sessions, clock: clock, cal: cal, log: log}
+	return &TasksHandler{rd: rd, tasks: tasks, sessions: sessions, notes: notes, clock: clock, cal: cal, log: log}
 }
 
 // Register installs all routes. The full page lives at /tasks; everything
@@ -76,6 +78,7 @@ func (h *TasksHandler) Register(r *gin.Engine) {
 	g.POST("/:id/carry_over", h.carryOver)
 	g.POST("/bulk/complete", h.bulkComplete)
 	g.POST("/bulk/delete", h.bulkDelete)
+	h.registerNotesRoutes(g)
 }
 
 // ---------------------------------------------------------------------------

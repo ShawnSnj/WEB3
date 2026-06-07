@@ -389,7 +389,7 @@ func newTasksHarnessAtWithCal(t *testing.T, now time.Time, cal *calendar.Calenda
 	svc := service.NewTaskService(repo, clk, cal)
 	sessions := newTasksSessionRepo(func() time.Time { return clk.now })
 	sessionSvc := service.NewTaskSessionService(sessions, svc, clk)
-	h := web.NewTasksHandler(rd, svc, sessionSvc, clk, cal,
+	h := web.NewTasksHandler(rd, svc, sessionSvc, nil, clk, cal,
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	r := gin.New()

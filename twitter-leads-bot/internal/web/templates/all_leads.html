@@ -1,0 +1,47 @@
+{{define "all_content"}}
+<section class="mb-6 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+  <form id="filters"
+        class="flex flex-wrap items-end gap-3"
+        hx-get="/leads"
+        hx-target="#leads-grid"
+        hx-trigger="change, keyup delay:300ms from:input[type=search]"
+        hx-include="this">
+    <label class="flex flex-col text-xs">
+      <span class="text-slate-400 mb-1">Status</span>
+      <select name="status" class="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+        <option value="all" selected>All</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="sent">Sent</option>
+        <option value="skipped">Skipped</option>
+      </select>
+    </label>
+    <label class="flex flex-col text-xs">
+      <span class="text-slate-400 mb-1">Min score</span>
+      <select name="min_score" class="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+        <option value="0" selected>0+</option>
+        <option value="3">3+</option>
+        <option value="5">5+</option>
+        <option value="7">7+</option>
+        <option value="9">9+</option>
+      </select>
+    </label>
+    <label class="flex flex-col text-xs">
+      <span class="text-slate-400 mb-1">Time order</span>
+      <select name="sort" class="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+        <option value="score">By score</option>
+        <option value="newest" selected>Newest tweets</option>
+        <option value="oldest">Oldest tweets</option>
+      </select>
+    </label>
+    <span class="ml-auto text-xs text-slate-500 htmx-indicator">refreshing…</span>
+  </form>
+</section>
+
+<section id="leads-grid"
+         hx-get="/leads"
+         hx-trigger="load, every 30s"
+         hx-include="#filters">
+  {{template "leads" .}}
+</section>
+{{end}}

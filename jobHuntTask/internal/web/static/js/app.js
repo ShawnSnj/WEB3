@@ -398,6 +398,233 @@
     }
 
     // ------------------------------------------------------------------
+    // 6b. Task notes modal
+    // ------------------------------------------------------------------
+
+    function openTaskNotes(url) {
+        const slot = document.getElementById('task-modal');
+        if (!slot || !url) return;
+
+        pendingRequests++;
+        setGlobalLoading(true);
+
+        fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return { ok: resp.ok, html: html };
+            });
+        }).then(function (result) {
+            if (!result.ok) {
+                showToast({ tone: 'danger', message: 'Could not open task notes.' });
+                return;
+            }
+            slot.innerHTML = result.html;
+            bindModalSlot(slot);
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+        });
+    }
+
+    function swapNotesPanel(html) {
+        const panel = document.getElementById('task-notes-panel');
+        if (!panel || !html || !html.trim()) return;
+        const tpl = document.createElement('template');
+        tpl.innerHTML = html.trim();
+        const next = tpl.content.querySelector('#task-notes-panel');
+        if (next) {
+            panel.outerHTML = next.outerHTML;
+        } else {
+            panel.innerHTML = html;
+        }
+        if (window.htmx && typeof htmx.process === 'function') {
+            htmx.process(document.getElementById('task-modal') || document.body);
+        }
+    }
+
+    function swapNoteDetail(html) {
+        const pane = document.getElementById('task-note-detail-pane');
+        if (!pane || !html || !html.trim()) return;
+        pane.innerHTML = html.trim();
+        if (window.htmx && typeof htmx.process === 'function') {
+            htmx.process(pane);
+        }
+        const input = pane.querySelector('input[name="title"]');
+        if (input) input.focus();
+    }
+
+    function highlightNoteRow(noteId) {
+        document.querySelectorAll('[data-task-note-row]').forEach(function (row) {
+            var selected = !!noteId && row.dataset.noteId === noteId;
+            row.classList.toggle('task-notes-row--selected', selected);
+            if (selected) {
+                row.setAttribute('aria-current', 'true');
+            } else {
+                row.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    function loadNoteDetail(taskId, noteId) {
+        if (!taskId || !noteId) return Promise.resolve();
+        return fetchNoteFragment(
+            '/tasks/' + encodeURIComponent(taskId) + '/notes/' + encodeURIComponent(noteId)
+        ).then(function (result) {
+            if (!result.ok) {
+                showToast({ tone: 'danger', message: 'Could not load the note.' });
+                return;
+            }
+            swapNoteDetail(result.html);
+            highlightNoteRow(noteId);
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        });
+    }
+
+    function loadNoteNewForm(taskId) {
+        if (!taskId) return Promise.resolve();
+        return fetchNoteFragment('/tasks/' + encodeURIComponent(taskId) + '/notes/new')
+            .then(function (result) {
+                if (!result.ok) {
+                    showToast({ tone: 'danger', message: 'Could not open the note form.' });
+                    return;
+                }
+                swapNoteDetail(result.html);
+                highlightNoteRow(null);
+            }).catch(function () {
+                showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+            });
+    }
+
+    function fetchNoteFragment(url) {
+        pendingRequests++;
+        setGlobalLoading(true);
+        return fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return {
+                    ok: resp.ok,
+                    status: resp.status,
+                    html: html,
+                    trigger: resp.headers.get('HX-Trigger'),
+                };
+            });
+        }).finally(function () {
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+        });
+    }
+
+    function submitTaskNoteForm(form) {
+        const taskId = form.dataset.taskId;
+        const noteId = form.dataset.noteId;
+        const mode = form.dataset.mode || 'create';
+        if (!taskId) return;
+
+        const url = mode === 'edit' && noteId
+            ? '/tasks/' + encodeURIComponent(taskId) + '/notes/' + encodeURIComponent(noteId)
+            : '/tasks/' + encodeURIComponent(taskId) + '/notes';
+        const method = mode === 'edit' ? 'PATCH' : 'POST';
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.classList.add('htmx-request');
+        pendingRequests++;
+        setGlobalLoading(true);
+
+        fetch(url, {
+            method: method,
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+            body: new FormData(form),
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return {
+                    ok: resp.ok,
+                    status: resp.status,
+                    html: html,
+                    trigger: resp.headers.get('HX-Trigger'),
+                };
+            });
+        }).then(function (result) {
+            dispatchHXTrigger(result.trigger);
+            if (result.status === 422) {
+                swapNoteDetail(result.html);
+                return;
+            }
+            if (!result.ok) {
+                if (!result.trigger) {
+                    showToast({ tone: 'danger', message: 'Could not save the note.' });
+                }
+                return;
+            }
+            swapNotesPanel(result.html);
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            if (submitBtn) submitBtn.classList.remove('htmx-request');
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+        });
+    }
+
+    function runNoteDelete(btn) {
+        const taskId = btn.dataset.taskId;
+        const noteId = btn.dataset.noteId;
+        if (!taskId || !noteId) return;
+
+        btn.classList.add('htmx-request');
+        pendingRequests++;
+        setGlobalLoading(true);
+
+        fetch('/tasks/' + encodeURIComponent(taskId) + '/notes/' + encodeURIComponent(noteId), {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                'HX-Request': 'true',
+                'Accept': 'text/html',
+            },
+        }).then(function (resp) {
+            return resp.text().then(function (html) {
+                return {
+                    ok: resp.ok,
+                    html: html,
+                    trigger: resp.headers.get('HX-Trigger'),
+                };
+            });
+        }).then(function (result) {
+            dispatchHXTrigger(result.trigger);
+            if (!result.ok) {
+                showToast({ tone: 'danger', message: 'Could not delete the note.' });
+                return;
+            }
+            swapNotesPanel(result.html);
+        }).catch(function () {
+            showToast({ tone: 'danger', message: 'Network error — check your connection.' });
+        }).finally(function () {
+            btn.classList.remove('htmx-request');
+            pendingRequests = Math.max(0, pendingRequests - 1);
+            if (pendingRequests === 0) setGlobalLoading(false);
+        });
+    }
+
+    // ------------------------------------------------------------------
     // 7. Optimistic UI
     // ------------------------------------------------------------------
 
@@ -583,6 +810,22 @@
 
     document.body.addEventListener('htmx:beforeSwap', function (e) {
         if (e.detail.target) e.detail.target.classList.add('htmx-swapping');
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function (e) {
+        var target = e.detail && e.detail.target;
+        if (!target || target.id !== 'task-note-detail-pane') return;
+        var form = target.querySelector('[data-task-note-form]');
+        if (form && form.dataset.noteId) {
+            highlightNoteRow(form.dataset.noteId);
+        } else {
+            highlightNoteRow(null);
+        }
+        if (window.htmx && typeof htmx.process === 'function') {
+            htmx.process(target);
+        }
+        var titleInput = target.querySelector('input[name="title"]');
+        if (titleInput) titleInput.focus();
     });
 
     function syncTasksFilterFromURL() {
@@ -820,6 +1063,50 @@
             return;
         }
 
+        const notesOpener = e.target.closest('[data-load-task-notes]');
+        if (notesOpener) {
+            e.preventDefault();
+            e.stopPropagation();
+            openTaskNotes(notesOpener.dataset.loadTaskNotes);
+            return;
+        }
+
+        const noteRow = e.target.closest('[data-task-note-row]');
+        if (noteRow) {
+            if (noteRow.hasAttribute('hx-get') && window.htmx) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            loadNoteDetail(noteRow.dataset.taskId, noteRow.dataset.noteId);
+            return;
+        }
+
+        const noteNew = e.target.closest('[data-task-note-new]');
+        if (noteNew) {
+            if (noteNew.hasAttribute('hx-get') && window.htmx) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            loadNoteNewForm(noteNew.dataset.taskId);
+            return;
+        }
+
+        const noteDelete = e.target.closest('[data-task-note-delete]');
+        if (noteDelete) {
+            e.preventDefault();
+            e.stopPropagation();
+            var confirmMsg = noteDelete.dataset.confirm || 'Delete this note?';
+            openConfirm({
+                message: confirmMsg,
+                danger: true,
+                confirmLabel: 'Delete',
+                onConfirm: function () { runNoteDelete(noteDelete); },
+            });
+            return;
+        }
+
         const btn = e.target.closest('[data-task-action]');
         if (!btn || btn.hasAttribute('hx-confirm') || btn.disabled) return;
         if (btn.classList.contains('htmx-request')) return;
@@ -848,6 +1135,12 @@
     });
 
     document.body.addEventListener('submit', function (e) {
+        const noteForm = e.target.closest('[data-task-note-form]');
+        if (noteForm) {
+            e.preventDefault();
+            submitTaskNoteForm(noteForm);
+            return;
+        }
         const form = e.target.closest('.task-form');
         if (!form) return;
         e.preventDefault();
@@ -886,6 +1179,18 @@
         if (!isSidebarOpen()) return;
         if (e.target.closest('.sidebar-nav a')) {
             setTimeout(closeSidebar, 0);
+        }
+    });
+
+    document.body.addEventListener('keydown', function (e) {
+        var row = e.target.closest('[data-task-note-row]');
+        if (!row || isTypingTarget(e.target)) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        if (row.hasAttribute('hx-get') && window.htmx) {
+            row.click();
+        } else {
+            loadNoteDetail(row.dataset.taskId, row.dataset.noteId);
         }
     });
 

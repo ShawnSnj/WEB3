@@ -1,0 +1,87 @@
+{{define "keywords_content"}}
+<section class="mb-6 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+  <h2 class="text-sm font-semibold text-slate-300 mb-3">Add a keyword</h2>
+  <form class="flex gap-2"
+        hx-post="/keywords"
+        hx-target="#keyword-list"
+        hx-swap="outerHTML"
+        hx-on::after-request="this.reset()">
+    <input type="text" name="keyword" required
+           placeholder='e.g. "smart money" OR "polymarket"'
+           class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm">
+    <button type="submit"
+            class="px-4 py-2 rounded bg-sky-500 text-slate-950 text-sm font-medium hover:bg-sky-400">
+      Add
+    </button>
+  </form>
+</section>
+
+{{template "keyword_list" .}}
+{{end}}
+
+{{define "keyword_list"}}
+<section id="keyword-list" class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+  {{if not .Keywords}}
+    <p class="text-slate-500 text-sm py-8 text-center">No keywords yet. Add one above.</p>
+  {{else}}
+  <table class="w-full text-sm">
+    <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
+      <tr>
+        <th class="text-left  px-4 py-2.5 font-medium">Keyword</th>
+        <th class="text-center px-4 py-2.5 font-medium w-16">On</th>
+        <th class="text-right px-4 py-2.5 font-medium w-24">Tweets</th>
+        <th class="text-right px-4 py-2.5 font-medium w-40">Last search</th>
+        <th class="text-right px-4 py-2.5 font-medium w-72">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-800">
+      {{range .Keywords}}{{template "keyword_row" .}}{{end}}
+    </tbody>
+  </table>
+  {{end}}
+</section>
+{{end}}
+
+{{define "keyword_row"}}
+<tr id="kw-{{.ID}}" class="hover:bg-slate-900/60">
+  <td class="px-4 py-2.5">
+    <form class="flex items-center gap-2"
+          hx-put="/keywords/{{.ID}}"
+          hx-target="#kw-{{.ID}}"
+          hx-swap="outerHTML">
+      <input type="text" name="keyword" value="{{.Keyword}}"
+             class="bg-transparent border-b border-transparent focus:border-slate-600 focus:outline-none px-1 py-0.5 w-full">
+      <button type="submit" class="text-xs text-slate-500 hover:text-slate-200">save</button>
+    </form>
+  </td>
+  <td class="px-4 py-2.5 text-center">
+    <button hx-post="/keywords/{{.ID}}/toggle"
+            hx-target="#kw-{{.ID}}" hx-swap="outerHTML"
+            class="inline-flex items-center {{if .Enabled}}text-emerald-400{{else}}text-slate-500{{end}}">
+      {{if .Enabled}}●{{else}}○{{end}}
+    </button>
+  </td>
+  <td class="px-4 py-2.5 text-right text-slate-300">{{.TweetCount}}</td>
+  <td class="px-4 py-2.5 text-right text-xs text-slate-500">
+    {{if .LastSearchedAt}}{{fmtLocal .LastSearchedAt}}{{else}}never{{end}}
+  </td>
+  <td class="px-4 py-2.5 text-right">
+    <a href="/k/{{.ID}}/review"
+       class="text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 mr-1">
+      Review
+    </a>
+    <button hx-post="/keywords/{{.ID}}/run"
+            hx-target="#kw-{{.ID}}" hx-swap="outerHTML"
+            hx-indicator="this"
+            class="text-xs px-2.5 py-1 rounded bg-sky-500/20 text-sky-300 hover:bg-sky-500/30">
+      Run search
+    </button>
+    <button hx-delete="/keywords/{{.ID}}"
+            hx-target="#kw-{{.ID}}" hx-swap="outerHTML"
+            hx-confirm="Delete keyword '{{.Keyword}}'?"
+            class="text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-400 hover:bg-slate-800 ml-1">
+      Delete
+    </button>
+  </td>
+</tr>
+{{end}}

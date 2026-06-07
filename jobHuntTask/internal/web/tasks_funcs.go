@@ -46,5 +46,11 @@ func tasksFuncMap() template.FuncMap {
 		"statusLabel":   func(s model.Status) string { return humanStatus(s) },
 		"priorityLabel": func(p model.Priority) string { return humanPriority(p) },
 		"categoryLabel": func(c model.Category) string { return humanCategory(c) },
+		"noteSelectedID": func(d *TaskNoteDetailVM) string {
+			if d == nil {
+				return ""
+			}
+			return d.ID
+		},
 	}
 }

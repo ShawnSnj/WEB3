@@ -1,0 +1,47 @@
+{{define "layout"}}
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8">
+    <title>Twitter Leads Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+      tailwind.config = { darkMode: 'class' };
+      function copyToClipboard(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+          const original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => { btn.textContent = original; }, 1200);
+        });
+      }
+    </script>
+    <style>
+      .htmx-indicator { opacity: 0; transition: opacity .2s; }
+      .htmx-request .htmx-indicator { opacity: 1; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+<header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <h1 class="text-lg font-semibold tracking-tight">Twitter Leads Bot</h1>
+        <nav class="flex gap-4 text-sm">
+          <a href="/"          class="text-slate-300 hover:text-white {{if eq .Active "home"}}text-sky-400 font-medium{{end}}">Topics</a>
+          <a href="/all"       class="text-slate-300 hover:text-white {{if eq .Active "all"}}text-sky-400 font-medium{{end}}">All leads</a>
+          <a href="/keywords"  class="text-slate-300 hover:text-white {{if eq .Active "keywords"}}text-sky-400 font-medium{{end}}">Keywords</a>
+        </nav>
+      </div>
+      <span class="text-xs text-slate-500">{{fmtLocal .Now}}</span>
+    </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-6">
+    {{if eq .Page "hub"}}{{template "hub_content" .}}{{end}}
+    {{if eq .Page "review"}}{{template "review_content" .}}{{end}}
+    {{if eq .Page "all"}}{{template "all_content" .}}{{end}}
+    {{if eq .Page "keywords"}}{{template "keywords_content" .}}{{end}}
+</main>
+</body>
+</html>
+{{end}}

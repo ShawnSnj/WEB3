@@ -168,9 +168,12 @@ func run() error {
 	)
 	dashboard.Register(router)
 
+	taskNoteRepo := repository.NewPostgresTaskNoteRepository(pool)
+	taskNoteSvc := service.NewTaskNoteService(taskNoteRepo, taskRepo)
+
 	// Wire the data-backed tasks page (full CRUD + state transitions + bulk).
 	tasksPage := web.NewTasksHandler(
-		renderer, taskSvc, sessionSvc, service.SystemClock, cal,
+		renderer, taskSvc, sessionSvc, taskNoteSvc, service.SystemClock, cal,
 		log.With(slog.String("component", "tasks_ui")),
 	)
 	tasksPage.Register(router)
