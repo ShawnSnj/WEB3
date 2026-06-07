@@ -7,6 +7,7 @@ package web
 import (
 	"context"
 	"embed"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -77,6 +78,8 @@ func (s *Server) Routes() http.Handler {
 	r.HandleFunc("/keywords", s.handleKeywordsPage).Methods(http.MethodGet)
 	r.HandleFunc("/keywords", s.handleAddKeyword).Methods(http.MethodPost)
 	r.HandleFunc("/keywords/{id:[0-9]+}", s.handleUpdateKeyword).Methods(http.MethodPut)
+	r.HandleFunc("/keywords/batch-delete", s.handleBatchDeleteKeywords).Methods(http.MethodPost)
+	r.HandleFunc("/keywords/batch-run", s.handleBatchRunKeywords).Methods(http.MethodPost)
 	r.HandleFunc("/keywords/{id:[0-9]+}", s.handleDeleteKeyword).Methods(http.MethodDelete)
 	r.HandleFunc("/keywords/{id:[0-9]+}/toggle", s.handleToggleKeyword).Methods(http.MethodPost)
 	r.HandleFunc("/keywords/{id:[0-9]+}/run", s.handleRunKeyword).Methods(http.MethodPost)
@@ -328,6 +331,82 @@ func (s *Server) handleDeleteKeyword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleBatchDeleteKeywords(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ids, err := parseIDs(r.Form["ids"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(ids) == 0 {
+		http.Error(w, "no keywords selected", http.StatusBadRequest)
+		return
+	}
+	if err := s.repo.DeleteKeywords(r.Context(), ids); err != nil {
+		s.serverError(w, err)
+		return
+	}
+	s.renderKeywordList(w, r)
+}
+
+func (s *Server) handleBatchRunKeywords(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ids, err := parseIDs(r.Form["ids"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(ids) == 0 {
+		http.Error(w, "no keywords selected", http.StatusBadRequest)
+		return
+	}
+
+	idSet := make(map[int64]struct{}, len(ids))
+	for _, id := range ids {
+		idSet[id] = struct{}{}
+	}
+
+	kws, err := s.repo.ListKeywords(r.Context(), false)
+	if err != nil {
+		s.serverError(w, err)
+		return
+	}
+
+	var attempted, failed int
+	for _, k := range kws {
+		if _, ok := idSet[k.ID]; !ok {
+			continue
+		}
+		attempted++
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		if _, err := s.pipe.RunKeyword(ctx, k.Keyword); err != nil {
+			s.logger.Error("batch run keyword",
+				slog.Int64("id", k.ID),
+				slog.String("keyword", k.Keyword),
+				slog.Any("err", err),
+			)
+			failed++
+		}
+		cancel()
+	}
+
+	if attempted == 0 {
+		http.Error(w, "no matching keywords", http.StatusBadRequest)
+		return
+	}
+	if failed == attempted {
+		http.Error(w, "all searches failed", http.StatusBadGateway)
+		return
+	}
+	s.renderKeywordList(w, r)
+}
+
 func (s *Server) handleToggleKeyword(w http.ResponseWriter, r *http.Request) {
 	id := parseID(r)
 	k, err := s.repo.GetKeyword(r.Context(), id)
@@ -424,6 +503,18 @@ func (s *Server) serverError(w http.ResponseWriter, err error) {
 func parseID(r *http.Request) int64 {
 	id, _ := strconv.ParseInt(mux.Vars(r)["id"], 10, 64)
 	return id
+}
+
+func parseIDs(values []string) ([]int64, error) {
+	out := make([]int64, 0, len(values))
+	for _, v := range values {
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || id <= 0 {
+			return nil, fmt.Errorf("invalid id: %s", v)
+		}
+		out = append(out, id)
+	}
+	return out, nil
 }
 
 func (s *Server) logging(next http.Handler) http.Handler {

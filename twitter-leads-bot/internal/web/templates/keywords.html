@@ -24,9 +24,41 @@
   {{if not .Keywords}}
     <p class="text-slate-500 text-sm py-8 text-center">No keywords yet. Add one above.</p>
   {{else}}
+  <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-800 bg-slate-900/80">
+    <span class="text-xs text-slate-400">Select keywords for bulk actions</span>
+    <div class="flex items-center gap-2">
+      <button type="button"
+              id="batch-run-btn"
+              hx-post="/keywords/batch-run"
+              hx-include="[name='ids']:checked"
+              hx-target="#keyword-list"
+              hx-swap="outerHTML"
+              hx-indicator="this"
+              class="text-xs px-3 py-1.5 rounded bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 disabled:opacity-40 inline-flex items-center gap-1.5"
+              disabled>
+        <span class="htmx-indicator text-sky-400/80">Running…</span>
+        <span>Run selected</span>
+      </button>
+      <button type="button"
+              id="batch-delete-btn"
+              hx-post="/keywords/batch-delete"
+              hx-include="[name='ids']:checked"
+              hx-target="#keyword-list"
+              hx-swap="outerHTML"
+              hx-confirm="Delete selected keywords?"
+              class="text-xs px-3 py-1.5 rounded border border-red-800/60 text-red-300 hover:bg-red-950/40 disabled:opacity-40"
+              disabled>
+        Delete selected
+      </button>
+    </div>
+  </div>
   <table class="w-full text-sm">
     <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
       <tr>
+        <th class="text-center px-4 py-2.5 font-medium w-10">
+          <input type="checkbox" id="select-all-kw" aria-label="Select all keywords"
+                 class="rounded border-slate-600 bg-slate-900 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-900">
+        </th>
         <th class="text-left  px-4 py-2.5 font-medium">Keyword</th>
         <th class="text-center px-4 py-2.5 font-medium w-16">On</th>
         <th class="text-right px-4 py-2.5 font-medium w-24">Tweets</th>
@@ -38,12 +70,47 @@
       {{range .Keywords}}{{template "keyword_row" .}}{{end}}
     </tbody>
   </table>
+  <script>
+    (function () {
+      const root = document.getElementById('keyword-list');
+      if (!root) return;
+      const selectAll = root.querySelector('#select-all-kw');
+      const deleteBtn = root.querySelector('#batch-delete-btn');
+      const runBtn = root.querySelector('#batch-run-btn');
+      const rowChecks = () => root.querySelectorAll('[name="ids"]');
+
+      function syncBatchUI() {
+        const checks = rowChecks();
+        const checked = [...checks].filter((cb) => cb.checked);
+        const hasSelection = checked.length > 0;
+        if (deleteBtn) deleteBtn.disabled = !hasSelection;
+        if (runBtn) runBtn.disabled = !hasSelection;
+        if (selectAll) {
+          selectAll.checked = checks.length > 0 && checked.length === checks.length;
+          selectAll.indeterminate = checked.length > 0 && checked.length < checks.length;
+        }
+      }
+
+      selectAll?.addEventListener('change', () => {
+        rowChecks().forEach((cb) => { cb.checked = selectAll.checked; });
+        syncBatchUI();
+      });
+      root.addEventListener('change', (e) => {
+        if (e.target.matches('[name="ids"]')) syncBatchUI();
+      });
+      syncBatchUI();
+    })();
+  </script>
   {{end}}
 </section>
 {{end}}
 
 {{define "keyword_row"}}
 <tr id="kw-{{.ID}}" class="hover:bg-slate-900/60">
+  <td class="px-4 py-2.5 text-center">
+    <input type="checkbox" name="ids" value="{{.ID}}" aria-label="Select {{.Keyword}}"
+           class="rounded border-slate-600 bg-slate-900 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-900">
+  </td>
   <td class="px-4 py-2.5">
     <form class="flex items-center gap-2"
           hx-put="/keywords/{{.ID}}"

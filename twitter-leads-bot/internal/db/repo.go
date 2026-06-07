@@ -22,6 +22,7 @@ type Repository interface {
 	AddKeyword(ctx context.Context, kw string) (*models.Keyword, error)
 	UpdateKeyword(ctx context.Context, id int64, kw string) error
 	DeleteKeyword(ctx context.Context, id int64) error
+	DeleteKeywords(ctx context.Context, ids []int64) error
 	SetKeywordEnabled(ctx context.Context, id int64, enabled bool) error
 	TouchKeywordSearched(ctx context.Context, kw string) error
 	GetKeyword(ctx context.Context, id int64) (*models.Keyword, error)
@@ -112,6 +113,21 @@ func (r *postgresRepo) UpdateKeyword(ctx context.Context, id int64, kw string) e
 
 func (r *postgresRepo) DeleteKeyword(ctx context.Context, id int64) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM search_keywords WHERE id = $1`, id)
+	return err
+}
+
+func (r *postgresRepo) DeleteKeywords(ctx context.Context, ids []int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+	q := fmt.Sprintf(`DELETE FROM search_keywords WHERE id IN (%s)`, strings.Join(placeholders, ","))
+	_, err := r.db.ExecContext(ctx, q, args...)
 	return err
 }
 
