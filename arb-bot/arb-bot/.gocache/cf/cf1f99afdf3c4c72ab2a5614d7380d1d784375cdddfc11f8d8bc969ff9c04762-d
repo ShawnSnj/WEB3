@@ -1,0 +1,8 @@
+./bootnodes.go
+./config.go
+./dao.go
+./denomination.go
+./network_params.go
+./protocol_params.go
+./verkle_params.go
+./version.go

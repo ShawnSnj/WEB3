@@ -1,0 +1,78 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/shawn/projects/WEB3/arb-bot/arb-bot/contracts/FlashArb.sol": {
+      "lastModificationDate": 1774274410119,
+      "contentHash": "172d5089fbc66d76f8d4d8b475dfb29b",
+      "sourceName": "contracts/FlashArb.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "FlashArb",
+        "ISimpleDEX"
+      ]
+    },
+    "/Users/shawn/projects/WEB3/arb-bot/arb-bot/contracts/SimpleDEX.sol": {
+      "lastModificationDate": 1774274410119,
+      "contentHash": "bdd8fd709d9e2a75ddecf3da0e0e8393",
+      "sourceName": "contracts/SimpleDEX.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SimpleDEX"
+      ]
+    }
+  }
+}

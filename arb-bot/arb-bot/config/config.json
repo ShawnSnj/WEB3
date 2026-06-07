@@ -1,0 +1,13 @@
+{
+  "rpc_url": "https://YOUR_RPC_URL",
+  "private_key": "0xYOUR_PRIVATE_KEY",
+  "flashbots_url": "https://relay.flashbots.net",
+  "dex1_address": "0x0000000000000000000000000000000000000000",
+  "dex2_address": "0x0000000000000000000000000000000000000000",
+  "arb_contract": "0x0000000000000000000000000000000000000000",
+  "gas_limit": 350000,
+  "loop_seconds": 5,
+  "fee_bps": 30,
+  "min_profit_bps": 0
+}
+

@@ -1,0 +1,11 @@
+{
+  "name": "arb-bot",
+  "private": true,
+  "type": "commonjs",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "ethers": "^6.13.4",
+    "hardhat": "^2.22.17"
+  }
+}
+
