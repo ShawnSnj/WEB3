@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -89,5 +90,32 @@ func Init() error {
 		DB = nil
 		return fmt.Errorf("database ping failed (check DB_URL, host, port, db name, user/password): %w", err)
 	}
+	log.Printf("database: connected to %s", dbTarget(dsn))
 	return nil
+}
+
+// dbTarget returns host:port/db from a Postgres URL for startup logs (no password).
+func dbTarget(dsn string) string {
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return "(invalid DB_URL)"
+	}
+	hostname := u.Hostname()
+	port := u.Port()
+	if port == "" {
+		port = "5432"
+	}
+	db := strings.TrimPrefix(u.Path, "/")
+	if db == "" {
+		db = "?"
+	}
+	target := hostname + ":" + port + "/" + db
+	switch hostname {
+	case "postgres":
+		return target + " (Docker Compose — not your host localhost:5432)"
+	case "localhost", "127.0.0.1":
+		return target + " (host machine)"
+	default:
+		return target
+	}
 }

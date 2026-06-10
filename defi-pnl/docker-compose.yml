@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: defi_pnl
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/migrations:ro
+      - ./migrations/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d defi_pnl"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  server:
+    build: .
+    ports:
+      - "${HOST_PORT:-8081}:8080"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: render
+      DB_URL: postgresql://postgres:postgres@postgres:5432/defi_pnl?sslmode=disable
+      PORT: "8080"
+      SQL_LOG: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

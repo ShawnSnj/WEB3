@@ -216,7 +216,6 @@
         if (!confirmModal || !confirmModal.classList.contains('is-open')) return false;
         const cb = confirmCallback;
         confirmCallback = null;
-        pendingConfirmRequest = null;
         confirmModal.classList.remove('is-open');
         confirmModal.hidden = true;
         confirmModal.setAttribute('aria-hidden', 'true');
@@ -227,6 +226,7 @@
             if (confirmed && cb.onConfirm) cb.onConfirm();
             else if (!confirmed && cb.onCancel) cb.onCancel();
         }
+        pendingConfirmRequest = null;
         return true;
     }
 
