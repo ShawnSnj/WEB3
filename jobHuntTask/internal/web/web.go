@@ -26,6 +26,22 @@ import (
 //go:embed templates/*/*.html static/css/*.css static/js/*.js
 var assets embed.FS
 
+// crmPath is the in-app CRM UI route (embedded static export on the Go server).
+var crmPath = "/crm/"
+
+// SetCRMPath configures the sidebar CRM link (default /crm/).
+func SetCRMPath(path string) {
+	if path != "" {
+		crmPath = path
+		if !strings.HasPrefix(crmPath, "/") {
+			crmPath = "/" + crmPath
+		}
+		if !strings.HasSuffix(crmPath, "/") {
+			crmPath += "/"
+		}
+	}
+}
+
 // PageData is the canonical context every page receives. Pages may extend
 // it with their own structs, but Title/Active/Now are always present so
 // the layout can render uniformly.
@@ -156,6 +172,7 @@ func funcMap() template.FuncMap {
 		"safeURL": func(s string) template.URL { return template.URL(s) },
 		"year":    func() int { return time.Now().Year() },
 		"hasKey":  hasKey,
+		"crmURL":  func() string { return crmPath },
 	}
 	for k, v := range tasksFuncMap() {
 		m[k] = v

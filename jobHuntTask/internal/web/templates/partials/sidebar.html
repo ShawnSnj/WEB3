@@ -74,6 +74,14 @@
                     <span>Analytics</span>
                 </a>
             </li>
+            <li class="sidebar-nav-divider" aria-hidden="true"></li>
+            <li>
+                <a href="{{crmURL}}"
+                   {{if eq .Active "crm"}}aria-current="page" class="active"{{end}}>
+                    {{template "icon" (dict "name" "briefcase")}}
+                    <span>Job CRM</span>
+                </a>
+            </li>
         </ul>
     </nav>
 

@@ -5,12 +5,14 @@ package api
 
 import (
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/shawn/jobhunttask/internal/config"
+	crmsvc "github.com/shawn/jobhunttask/internal/crm/service"
 	"github.com/shawn/jobhunttask/internal/service"
 )
 
@@ -26,6 +28,7 @@ type Deps struct {
 	TaskSessionService *service.TaskSessionService
 	MetricsService     *service.MetricsService
 	SuggestionService  *service.SuggestionService
+	CRMService         *crmsvc.CRM
 }
 
 // NewRouter builds the Gin engine with global middleware and registers
@@ -59,8 +62,38 @@ func NewRouter(d Deps) *gin.Engine {
 	if d.SuggestionService != nil {
 		newSuggestionHandler(d.SuggestionService).register(v1)
 	}
+	if d.CRMService != nil {
+		newCRMHandler(d.CRMService).register(v1)
+		registerJobsAlias(v1, d.CRMService)
+	}
+
+	// CORS for Next.js CRM frontend
+	r.Use(crmCORS(d.Config))
 
 	return r
+}
+
+func crmCORS(cfg config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		origin := cfg.CRM.FrontendOrigin
+		if origin == "" {
+			// CRM is embedded at /crm on the same origin — no CORS header needed.
+			if c.Request.Method == http.MethodOptions {
+				c.AbortWithStatus(http.StatusNoContent)
+				return
+			}
+			c.Next()
+			return
+		}
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
 }
 
 // requestLogger is a minimal structured access log middleware.

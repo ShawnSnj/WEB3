@@ -1,5 +1,7 @@
-// Command dedupe-tasks removes duplicate tasks that share the same title and
-// calendar due day, keeping the oldest row in each group.
+// Command dedupe-tasks removes duplicate tasks:
+//   - same title on the same calendar due day (keeps oldest)
+//   - same title across different days while still pending/in-progress
+//     (keeps the non-carried copy with the earliest due date)
 //
 // Usage: go run ./cmd/dedupe-tasks
 package main
@@ -46,10 +48,28 @@ func run() error {
 	taskRepo := repository.NewPostgresTaskRepository(pool)
 	taskSvc := service.NewTaskService(taskRepo, service.SystemClock, cal)
 
-	removed, err := taskSvc.CollapseDuplicatePlans(ctx)
+	groups, err := taskSvc.FindDuplicatePendingByTitle(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("removed %d duplicate task(s)\n", removed)
+	if len(groups) > 0 {
+		fmt.Printf("Found %d duplicate title group(s):\n", len(groups))
+		for _, g := range groups {
+			fmt.Printf("  • %q (%d copies)\n", g.Title, len(g.Tasks))
+		}
+		fmt.Println()
+	}
+
+	sameDay, err := taskSvc.CollapseDuplicatePlans(ctx)
+	if err != nil {
+		return err
+	}
+	crossDay, err := taskSvc.CollapseDuplicatePendingByTitle(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Removed %d duplicate(s) — %d same-day, %d cross-day pending\n",
+		sameDay+crossDay, sameDay, crossDay)
 	return nil
 }

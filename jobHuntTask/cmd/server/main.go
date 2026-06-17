@@ -21,6 +21,10 @@ import (
 	"github.com/shawn/jobhunttask/internal/api"
 	"github.com/shawn/jobhunttask/internal/calendar"
 	"github.com/shawn/jobhunttask/internal/config"
+	"github.com/shawn/jobhunttask/internal/crm/ai"
+	crmkafka "github.com/shawn/jobhunttask/internal/crm/kafka"
+	crmrepo "github.com/shawn/jobhunttask/internal/crm/repository"
+	crmsvc "github.com/shawn/jobhunttask/internal/crm/service"
 	"github.com/shawn/jobhunttask/internal/database"
 	"github.com/shawn/jobhunttask/internal/logger"
 	"github.com/shawn/jobhunttask/internal/repository"
@@ -54,7 +58,11 @@ func run() error {
 		slog.String("version", cfg.App.Version),
 		slog.String("env", cfg.App.Environment),
 		slog.String("timezone", cfg.App.Timezone),
+		slog.Bool("crm_enabled", cfg.CRM.Enabled),
 	)
+	if cfg.CRM.BasePath != "" {
+		web.SetCRMPath(cfg.CRM.BasePath)
+	}
 
 	// Root context cancelled on SIGINT/SIGTERM.
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -126,6 +134,28 @@ func run() error {
 	if err := scheduler.RegisterJobs(sched, schedDeps); err != nil {
 		return err
 	}
+
+	// CRM — AI job hunt pipeline
+	var crmService *crmsvc.CRM
+	if cfg.CRM.Enabled {
+		crmStore := crmrepo.New(pool)
+		aiClient := ai.NewClient(cfg.OpenAI.APIKey, cfg.OpenAI.Model, cfg.OpenAI.BaseURL)
+		var publisher crmsvc.EventPublisher
+		if pub, err := crmkafka.NewPublisher(crmkafka.Config{
+			Brokers: crmkafka.ParseBrokers(cfg.Kafka.Brokers),
+		}, log.With(slog.String("component", "kafka"))); err == nil && pub != nil {
+			publisher = pub
+			defer pub.Close()
+		}
+		crmService = crmsvc.New(crmStore, log.With(slog.String("component", "crm")), aiClient, publisher)
+		if spec := cfg.CRM.DailyPipelineSpec; spec != "" {
+			if err := sched.Register("crm_daily_pipeline", spec, func(ctx context.Context) error {
+				return crmService.RunDailyPipeline(ctx)
+			}); err != nil {
+				return err
+			}
+		}
+	}
 	startupCtx, startupCancel := context.WithTimeout(rootCtx, cfg.Scheduler.JobTimeout)
 	if err := scheduler.RunStartupJobs(startupCtx, schedDeps); err != nil {
 		log.Warn("daily rollover on startup failed", slog.String("error", err.Error()))
@@ -148,6 +178,7 @@ func run() error {
 		TaskSessionService: sessionSvc,
 		MetricsService:     metricsSvc,
 		SuggestionService:  suggestionSvc,
+		CRMService:         crmService,
 	})
 
 	// Server-rendered web UI (HTML pages + static assets).
@@ -157,6 +188,11 @@ func run() error {
 	}
 	if err := web.MountStatic(router); err != nil {
 		return fmt.Errorf("mount static: %w", err)
+	}
+	if cfg.CRM.Enabled {
+		if err := web.MountCRM(router); err != nil {
+			return fmt.Errorf("mount crm ui: %w", err)
+		}
 	}
 	web.RegisterRoutes(router, renderer)
 

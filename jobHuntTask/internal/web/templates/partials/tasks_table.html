@@ -24,6 +24,9 @@
                 <th class="th-sortable">
                     {{template "tasks_sort_link" (dict "Q" $q "Field" "due_date" "Label" "Due")}}
                 </th>
+                <th class="th-sortable th-est">
+                    {{template "tasks_sort_link" (dict "Q" $q "Field" "estimated_minutes" "Label" "Est.")}}
+                </th>
                 <th class="th-actions" aria-label="Actions"></th>
             </tr>
         </thead>

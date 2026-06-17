@@ -1207,9 +1207,37 @@ body.modal-open { overflow: hidden; }
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 4px;
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
     overflow-x: auto;
     scrollbar-width: none;
+}
+.tasks-tabs-hint {
+    margin: 0 0 var(--space-4);
+    font-size: 12.5px;
+}
+.tasks-duplicates {
+    margin-bottom: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--warning);
+    border-radius: var(--radius);
+    background: var(--warning-soft);
+}
+.tasks-duplicates-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--warning);
+}
+.tasks-duplicates-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 13px;
+}
+.tasks-duplicates-list li + li {
+    margin-top: var(--space-1);
 }
 .tasks-tabs::-webkit-scrollbar { display: none; }
 .tab {
@@ -1345,6 +1373,7 @@ body.modal-open { overflow: hidden; }
 .tasks-table tbody tr:hover { background: var(--surface-hover); }
 
 .th-check, .td-check { width: 32px; }
+.th-est, .td-est { width: 64px; text-align: right; white-space: nowrap; }
 .th-actions, .td-actions { width: 200px; text-align: right; }
 .td-actions .action-row { justify-content: flex-end; }
 

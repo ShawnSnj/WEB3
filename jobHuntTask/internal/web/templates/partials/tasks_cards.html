@@ -40,6 +40,7 @@
         <span class="badge badge--status-{{.Status}}">{{.StatusLabel}}</span>
         {{template "task_timer" .}}
         <span class="due-line{{if .IsOverdue}} due-line--overdue{{end}}">{{.DueDateLabel}}</span>
+        {{if gt .EstimatedMinutes 0}}<span class="chip chip--soft" title="Estimated time">{{.EstimatedLabel}}</span>{{end}}
         {{if gt .CarryOverCount 0}}<span class="chip chip--soft">↻ {{.CarryOverCount}}</span>{{end}}
     </div>
 

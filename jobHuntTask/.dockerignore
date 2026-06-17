@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.example
+bin/
+frontend/node_modules
+frontend/.next
+frontend/out
+**/*_test.go
+**/.DS_Store

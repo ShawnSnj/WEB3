@@ -22,6 +22,9 @@ type Config struct {
 	Log       Log
 	Scheduler Scheduler
 	Reminder  Reminder
+	CRM       CRM
+	OpenAI    OpenAI
+	Kafka     Kafka
 }
 
 // Scheduler holds cron specs for the background automation jobs. Each spec
@@ -45,6 +48,27 @@ type Scheduler struct {
 type Reminder struct {
 	MaxAttempts int `env:"REMINDER_MAX_ATTEMPTS" envDefault:"5"`
 	BatchSize   int `env:"REMINDER_BATCH_SIZE"   envDefault:"100"`
+}
+
+// CRM holds AI Job Hunt CRM settings.
+type CRM struct {
+	Enabled           bool   `env:"CRM_ENABLED"             envDefault:"true"`
+	BasePath          string `env:"CRM_BASE_PATH"           envDefault:"/crm"`
+	FrontendOrigin    string `env:"CRM_FRONTEND_ORIGIN"     envDefault:""` // legacy; CORS only if set
+	DailyPipelineSpec string `env:"CRON_CRM_DAILY_PIPELINE" envDefault:"0 7 * * *"`
+}
+
+// OpenAI configures the LLM client for matching, resume, and outreach.
+type OpenAI struct {
+	APIKey  string `env:"OPENAI_API_KEY"`
+	Model   string `env:"OPENAI_MODEL"   envDefault:"gpt-4o-mini"`
+	BaseURL string `env:"OPENAI_BASE_URL" envDefault:"https://api.openai.com/v1"`
+}
+
+// Kafka configures async job scoring pipeline.
+type Kafka struct {
+	Brokers string `env:"KAFKA_BROKERS" envDefault:""`
+	GroupID string `env:"KAFKA_GROUP_ID" envDefault:"crm-scorer"`
 }
 
 // App holds high-level application metadata.

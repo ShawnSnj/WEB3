@@ -5,7 +5,30 @@ daily job-hunt routine. It combines a REST API, background scheduler, rule-based
 coaching suggestions, and a server-rendered HTMX web UI — all backed by
 PostgreSQL.
 
-**Default URL:** [http://localhost:8082](http://localhost:8082)
+**Default URL:** [http://localhost:8082](http://localhost:8082) (task tracker + CRM at [/crm/](http://localhost:8082/crm/))
+
+---
+
+## AI Job Hunt CRM
+
+A personal recruiter layer on top of the task tracker: automatic job collection,
+AI/heuristic fit scoring, daily brief (1 apply + 2 outreach + 1 skill), application
+pipeline, resume analysis, skill gaps, weekly review, and career coach.
+
+See **[docs/CRM.md](docs/CRM.md)** for full architecture and API.
+
+```bash
+make integrate       # ONE command: postgres + kafka + migrate + unified server
+make integrate-up    # full docker stack (API + worker + CRM UI)
+make migrate-all     # apply tasks + CRM tables to existing postgres
+make crm-collect     # fetch & score jobs
+make frontend-dev    # Next.js CRM UI (API already on :8082)
+```
+
+Both systems share **one PostgreSQL database** (`jobhunt`) with separate table groups.
+One Go process (`cmd/server`) serves the task tracker UI, REST API, and CRM API.
+
+Set `OPENAI_API_KEY` for GPT-powered matching and outreach (heuristics work without it).
 
 ---
 
@@ -20,6 +43,9 @@ PostgreSQL.
 | Logging        | `log/slog` (structured JSON)                |
 | Scheduler      | cron (morning/evening reminders, carry-over) |
 | Web UI         | `html/template` + HTMX + Chart.js (embedded) |
+| CRM UI         | Next.js 15 + TypeScript + Tailwind (`frontend/`) |
+| Queue          | Kafka (Redpanda in docker-compose)          |
+| AI             | OpenAI API (optional)                         |
 | Container      | Multi-stage → `distroless/static`           |
 
 ---

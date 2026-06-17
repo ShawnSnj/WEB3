@@ -97,7 +97,7 @@ const (
 	viewAll        tasksView = "all"
 )
 
-const upcomingWindowDays = 7
+const upcomingWindowDays = 30
 
 func (v tasksView) Valid() bool {
 	switch v {
@@ -114,7 +114,7 @@ type tasksQuery struct {
 	Status     model.Status   // empty == any
 	Priority   model.Priority // empty == any
 	Category   model.Category // empty == any
-	Sort       string         // "due_date" | "priority" | "created_at"
+	Sort       string         // "due_date" | "priority" | "created_at" | "estimated_minutes"
 	SortDir    string         // "asc" | "desc"
 	Search     string         // case-insensitive substring on title (client-side filter)
 }
@@ -142,7 +142,7 @@ func parseQuery(c *gin.Context) tasksQuery {
 		q.Category = ""
 	}
 	switch q.Sort {
-	case "due_date", "priority", "created_at":
+	case "due_date", "priority", "created_at", "estimated_minutes":
 	default:
 		q.Sort = "due_date"
 	}
@@ -344,12 +344,20 @@ func mergeTasksByID(groups ...[]*model.Task) []*model.Task {
 // ---------------------------------------------------------------------------
 
 type TasksPageVM struct {
-	Query      tasksQuery
-	List       TasksListVM
-	Counts     TasksCountsVM
-	Categories []model.Category
-	Priorities []model.Priority
-	Statuses   []model.Status
+	Query       tasksQuery
+	List        TasksListVM
+	Counts      TasksCountsVM
+	Duplicates  []DuplicateTaskVM
+	Categories  []model.Category
+	Priorities  []model.Priority
+	Statuses    []model.Status
+}
+
+type DuplicateTaskVM struct {
+	Title   string
+	Count   int
+	Keeper  string // due date label of the row we suggest keeping
+	Message string
 }
 
 type TasksListVM struct {
@@ -382,6 +390,7 @@ type TaskRowVM struct {
 	Category         string
 	CategoryLabel    string
 	EstimatedMinutes int
+	EstimatedLabel   string
 	ActualMinutes    int
 	DueDate          *time.Time
 	DueDateLabel     string
@@ -441,9 +450,11 @@ func (h *TasksHandler) list(c *gin.Context) {
 
 func (h *TasksHandler) tabs(c *gin.Context) {
 	q := parseQuery(c)
+	ctx := c.Request.Context()
 	h.rd.RenderPartial(c, "tasks_tabs", TasksPageVM{
-		Query:  q,
-		Counts: h.buildCounts(c.Request.Context()),
+		Query:      q,
+		Counts:     h.buildCounts(ctx),
+		Duplicates: h.buildDuplicateWarnings(ctx),
 	})
 }
 
@@ -452,6 +463,7 @@ func (h *TasksHandler) buildPage(ctx context.Context, q tasksQuery) TasksPageVM 
 		Query:      q,
 		List:       h.buildList(ctx, q),
 		Counts:     h.buildCounts(ctx),
+		Duplicates: h.buildDuplicateWarnings(ctx),
 		Categories: model.AllCategories(),
 		Priorities: model.AllPriorities(),
 		Statuses: []model.Status{
@@ -459,6 +471,32 @@ func (h *TasksHandler) buildPage(ctx context.Context, q tasksQuery) TasksPageVM 
 			model.StatusCompleted, model.StatusMissed,
 		},
 	}
+}
+
+func (h *TasksHandler) buildDuplicateWarnings(ctx context.Context) []DuplicateTaskVM {
+	if h.tasks == nil {
+		return nil
+	}
+	groups, err := h.tasks.FindDuplicatePendingByTitle(ctx)
+	if err != nil {
+		h.log.Warn("tasks.duplicates", slog.String("err", err.Error()))
+		return nil
+	}
+	out := make([]DuplicateTaskVM, 0, len(groups))
+	for _, g := range groups {
+		keeper := g.Keeper()
+		label := "no due date"
+		if keeper.DueDate != nil {
+			label = h.cal.FormatDueDate(*keeper.DueDate)
+		}
+		out = append(out, DuplicateTaskVM{
+			Title:   g.Title,
+			Count:   len(g.Tasks),
+			Keeper:  label,
+			Message: fmt.Sprintf("%q has %d pending copies — keeping the one due %s. Run make dedupe-tasks to clean up.", g.Title, len(g.Tasks), label),
+		})
+	}
+	return out
 }
 
 func (h *TasksHandler) buildList(ctx context.Context, q tasksQuery) TasksListVM {
@@ -1094,6 +1132,7 @@ func (h *TasksHandler) toRowVM(ctx context.Context, t *model.Task, now time.Time
 		Category:         string(t.Category),
 		CategoryLabel:    humanCategory(t.Category),
 		EstimatedMinutes: t.EstimatedMinutes,
+		EstimatedLabel:   formatEstimatedMinutes(t.EstimatedMinutes),
 		ActualMinutes:    t.ActualMinutes,
 		DueDate:          t.DueDate,
 		CarryOverCount:   t.CarryOverCount,
@@ -1152,6 +1191,13 @@ func formatElapsedSeconds(sec int) string {
 		return fmt.Sprintf("%dm %02ds", m, s)
 	}
 	return fmt.Sprintf("%ds", s)
+}
+
+func formatEstimatedMinutes(m int) string {
+	if m <= 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%d min", m)
 }
 
 func (h *TasksHandler) newFormVM(mode, action, method string, t *model.Task) TaskFormVM {
@@ -1261,6 +1307,11 @@ func compareTaskRows(a, b TaskRowVM, field string) int {
 		pa, pb := prioritySortRank(a.Priority), prioritySortRank(b.Priority)
 		if pa != pb {
 			return pa - pb
+		}
+		return compareDueDates(a.DueDate, b.DueDate)
+	case "estimated_minutes":
+		if a.EstimatedMinutes != b.EstimatedMinutes {
+			return a.EstimatedMinutes - b.EstimatedMinutes
 		}
 		return compareDueDates(a.DueDate, b.DueDate)
 	default:

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -88,4 +89,98 @@ func planKeyForTaskWithCal(t *model.Task, cal *calendar.Calendar) (planKey, bool
 		title:  strings.ToLower(title),
 		dueDay: cal.FormatDate(*t.DueDate),
 	}, true
+}
+
+// DuplicatePendingGroup is a set of active tasks sharing the same title on
+// different due days — usually from carry-over plus bulk reschedule.
+type DuplicatePendingGroup struct {
+	Title string
+	Tasks []*model.Task
+}
+
+// FindDuplicatePendingByTitle returns groups of pending/in-progress tasks that
+// share a title but occupy different calendar days.
+func (s *TaskService) FindDuplicatePendingByTitle(ctx context.Context) ([]DuplicatePendingGroup, error) {
+	tasks, err := s.repo.List(ctx, repository.TaskFilter{
+		Statuses: []model.Status{model.StatusPending, model.StatusInProgress},
+		Limit:    500,
+		OrderBy:  "created_at",
+	})
+	if err != nil {
+		return nil, err
+	}
+	byTitle := make(map[string][]*model.Task)
+	for _, t := range tasks {
+		title := strings.TrimSpace(t.Title)
+		if title == "" {
+			continue
+		}
+		key := strings.ToLower(title)
+		byTitle[key] = append(byTitle[key], t)
+	}
+	out := make([]DuplicatePendingGroup, 0)
+	for _, group := range byTitle {
+		if len(group) < 2 {
+			continue
+		}
+		out = append(out, DuplicatePendingGroup{
+			Title: group[0].Title,
+			Tasks: append([]*model.Task(nil), group...),
+		})
+	}
+	return out, nil
+}
+
+// CollapseDuplicatePendingByTitle removes extra pending/in-progress rows that
+// share a title on different due days. The keeper prefers carry_over_count=0,
+// then the earliest due date, then the oldest row.
+func (s *TaskService) CollapseDuplicatePendingByTitle(ctx context.Context) (int, error) {
+	groups, err := s.FindDuplicatePendingByTitle(ctx)
+	if err != nil {
+		return 0, err
+	}
+	removed := 0
+	for _, g := range groups {
+		keep := pickDuplicateKeeper(g.Tasks)
+		for _, t := range g.Tasks {
+			if t.ID == keep.ID {
+				continue
+			}
+			if err := s.repo.Delete(ctx, t.ID); err != nil {
+				return removed, fmt.Errorf("delete %s (%q): %w", t.ID, t.Title, err)
+			}
+			removed++
+		}
+	}
+	return removed, nil
+}
+
+// Keeper returns the task row that should survive deduplication.
+func (g DuplicatePendingGroup) Keeper() *model.Task {
+	return pickDuplicateKeeper(g.Tasks)
+}
+
+func pickDuplicateKeeper(tasks []*model.Task) *model.Task {
+	best := tasks[0]
+	for _, t := range tasks[1:] {
+		if duplicateKeeperBetter(t, best) {
+			best = t
+		}
+	}
+	return best
+}
+
+func duplicateKeeperBetter(a, b *model.Task) bool {
+	if a.CarryOverCount != b.CarryOverCount {
+		return a.CarryOverCount < b.CarryOverCount
+	}
+	switch {
+	case a.DueDate != nil && b.DueDate != nil && !a.DueDate.Equal(*b.DueDate):
+		return a.DueDate.Before(*b.DueDate)
+	case a.DueDate != nil && b.DueDate == nil:
+		return true
+	case a.DueDate == nil && b.DueDate != nil:
+		return false
+	}
+	return a.CreatedAt.Before(b.CreatedAt)
 }

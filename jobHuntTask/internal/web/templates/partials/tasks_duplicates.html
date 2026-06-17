@@ -1,0 +1,19 @@
+{{- /*
+  tasks_duplicates — warning when the same title has multiple pending copies.
+  Data: web.TasksPageVM (uses .Duplicates).
+*/ -}}
+{{define "tasks_duplicates"}}
+{{- if .Duplicates -}}
+<div class="tasks-duplicates" role="status">
+    <p class="tasks-duplicates-title">
+        {{template "icon" (dict "name" "alert")}}
+        <span>Duplicate pending tasks</span>
+    </p>
+    <ul class="tasks-duplicates-list">
+        {{- range .Duplicates -}}
+        <li class="muted">{{.Message}}</li>
+        {{- end -}}
+    </ul>
+</div>
+{{- end -}}
+{{end}}

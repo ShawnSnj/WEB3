@@ -1,11 +1,14 @@
--- deploy.sql — full PostgreSQL schema for jobhunt-task
+-- deploy.sql — unified PostgreSQL schema (jobhunt-task + AI Job Hunt CRM)
 --
 -- Idempotent: safe to re-run on an existing database (uses IF NOT EXISTS).
 -- Fresh installs: mounted by docker-compose into initdb, or applied via
---   make migrate
+--   make migrate / make migrate-all / make integrate
 --
--- Tables: tasks, daily_reviews, task_execution_sessions, reminders,
---         suggestions, weekly_reviews
+-- Task tracker tables: tasks, daily_reviews, task_execution_sessions,
+--   reminders, suggestions, weekly_reviews, task_notes
+-- CRM tables: user_profile, companies, job_postings, job_matches,
+--   applications, contacts, outreach_messages, skill_analyses,
+--   daily_briefs, weekly_crm_reports, daily_automation_log, resume_analyses
 
 BEGIN;
 
@@ -351,5 +354,214 @@ CREATE TRIGGER trg_task_notes_set_updated_at
     BEFORE UPDATE ON task_notes
     FOR EACH ROW
     EXECUTE FUNCTION task_notes_set_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- CRM — AI Job Hunt (same database, separate tables)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS user_profile (
+    id                    UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    display_name          TEXT         NOT NULL DEFAULT 'Engineer',
+    headline              TEXT         NOT NULL DEFAULT '',
+    skills                TEXT[]       NOT NULL DEFAULT '{}',
+    target_titles         TEXT[]       NOT NULL DEFAULT '{}',
+    target_industries     TEXT[]       NOT NULL DEFAULT '{}',
+    resume_text           TEXT         NOT NULL DEFAULT '',
+    min_salary_usd        INTEGER      NOT NULL DEFAULT 0,
+    remote_only           BOOLEAN      NOT NULL DEFAULT TRUE,
+    web3_preferred        BOOLEAN      NOT NULL DEFAULT TRUE,
+    daily_applications    INTEGER      NOT NULL DEFAULT 1,
+    daily_outreach        INTEGER      NOT NULL DEFAULT 2,
+    created_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO user_profile (display_name, headline, skills, target_titles, target_industries, resume_text)
+SELECT
+    'Senior Backend Engineer',
+    'Backend / Platform Engineer — Go, Java, Kafka, Distributed Systems',
+    ARRAY['Go','Java','Kafka','SQL','PostgreSQL','Distributed Systems','Cloud','AWS','Docker','Kubernetes','gRPC','Redis','Web3','Blockchain'],
+    ARRAY['Backend Engineer','Staff Backend Engineer','Platform Engineer','Infrastructure Engineer','Web3 Backend Engineer'],
+    ARRAY['Web3','Crypto','Fintech','Infrastructure','Developer Tools'],
+    ''
+WHERE NOT EXISTS (SELECT 1 FROM user_profile LIMIT 1);
+
+CREATE TABLE IF NOT EXISTS companies (
+    id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        TEXT         NOT NULL,
+    website     TEXT         NOT NULL DEFAULT '',
+    industry    TEXT         NOT NULL DEFAULT '',
+    size_band   TEXT         NOT NULL DEFAULT '',
+    web3        BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT companies_name_unique UNIQUE (name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_companies_web3 ON companies (web3);
+
+CREATE TABLE IF NOT EXISTS job_postings (
+    id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    external_id      TEXT         NOT NULL,
+    source           TEXT         NOT NULL,
+    title            TEXT         NOT NULL,
+    company_id       UUID         REFERENCES companies(id) ON DELETE SET NULL,
+    company_name     TEXT         NOT NULL,
+    salary_min_usd   INTEGER,
+    salary_max_usd   INTEGER,
+    salary_raw       TEXT         NOT NULL DEFAULT '',
+    location         TEXT         NOT NULL DEFAULT '',
+    remote           BOOLEAN      NOT NULL DEFAULT FALSE,
+    description      TEXT         NOT NULL DEFAULT '',
+    required_skills  TEXT[]       NOT NULL DEFAULT '{}',
+    application_url  TEXT         NOT NULL DEFAULT '',
+    posted_at        TIMESTAMPTZ,
+    seniority        TEXT         NOT NULL DEFAULT '',
+    web3             BOOLEAN      NOT NULL DEFAULT FALSE,
+    raw_payload      JSONB        NOT NULL DEFAULT '{}'::jsonb,
+    is_active        BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT job_postings_source_external_unique UNIQUE (source, external_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_postings_active_posted
+    ON job_postings (is_active, posted_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_job_postings_remote ON job_postings (remote) WHERE is_active;
+CREATE INDEX IF NOT EXISTS idx_job_postings_web3 ON job_postings (web3) WHERE is_active;
+
+CREATE TABLE IF NOT EXISTS job_matches (
+    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id        UUID         NOT NULL REFERENCES job_postings(id) ON DELETE CASCADE,
+    fit_score     SMALLINT     NOT NULL DEFAULT 0,
+    skill_score   SMALLINT     NOT NULL DEFAULT 0,
+    remote_score  SMALLINT     NOT NULL DEFAULT 0,
+    salary_score  SMALLINT     NOT NULL DEFAULT 0,
+    seniority_score SMALLINT   NOT NULL DEFAULT 0,
+    web3_score    SMALLINT     NOT NULL DEFAULT 0,
+    pros          TEXT[]       NOT NULL DEFAULT '{}',
+    risks         TEXT[]       NOT NULL DEFAULT '{}',
+    summary       TEXT         NOT NULL DEFAULT '',
+    model         TEXT         NOT NULL DEFAULT 'heuristic',
+    scored_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT job_matches_job_unique UNIQUE (job_id),
+    CONSTRAINT job_matches_fit_range CHECK (fit_score >= 0 AND fit_score <= 100)
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_matches_fit ON job_matches (fit_score DESC);
+
+CREATE TABLE IF NOT EXISTS applications (
+    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id        UUID         REFERENCES job_postings(id) ON DELETE SET NULL,
+    company_name  TEXT         NOT NULL DEFAULT '',
+    role_title    TEXT         NOT NULL,
+    status        TEXT         NOT NULL DEFAULT 'saved',
+    applied_at    TIMESTAMPTZ,
+    notes         TEXT         NOT NULL DEFAULT '',
+    resume_score  SMALLINT,
+    match_score   SMALLINT,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT applications_status_valid CHECK (status IN (
+        'saved','applied','interview','technical','final_round','offer','rejected'
+    ))
+);
+
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications (status, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS contacts (
+    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id    UUID         REFERENCES companies(id) ON DELETE SET NULL,
+    company_name  TEXT         NOT NULL DEFAULT '',
+    full_name     TEXT         NOT NULL,
+    title         TEXT         NOT NULL DEFAULT '',
+    role_type     TEXT         NOT NULL DEFAULT 'recruiter',
+    linkedin_url  TEXT         NOT NULL DEFAULT '',
+    email         TEXT         NOT NULL DEFAULT '',
+    notes         TEXT         NOT NULL DEFAULT '',
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT contacts_role_type_valid CHECK (role_type IN (
+        'recruiter','engineering_manager','hiring_manager','founder','other'
+    ))
+);
+
+CREATE INDEX IF NOT EXISTS idx_contacts_company ON contacts (company_name);
+
+CREATE TABLE IF NOT EXISTS outreach_messages (
+    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    contact_id    UUID         REFERENCES contacts(id) ON DELETE CASCADE,
+    job_id        UUID         REFERENCES job_postings(id) ON DELETE SET NULL,
+    subject       TEXT         NOT NULL DEFAULT '',
+    body          TEXT         NOT NULL,
+    status        TEXT         NOT NULL DEFAULT 'draft',
+    sent_at       TIMESTAMPTZ,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT outreach_status_valid CHECK (status IN ('draft','sent','replied','ignored'))
+);
+
+CREATE TABLE IF NOT EXISTS skill_analyses (
+    id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    analysis_date     DATE         NOT NULL DEFAULT CURRENT_DATE,
+    top_demanded      JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    missing_skills    JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    learning_priority JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    jobs_analyzed     INTEGER      NOT NULL DEFAULT 0,
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT skill_analyses_date_unique UNIQUE (analysis_date)
+);
+
+CREATE TABLE IF NOT EXISTS daily_briefs (
+    id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    brief_date          DATE         NOT NULL UNIQUE,
+    apply_job_id        UUID         REFERENCES job_postings(id) ON DELETE SET NULL,
+    apply_summary       JSONB        NOT NULL DEFAULT '{}'::jsonb,
+    outreach_targets    JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    learning_skill      TEXT         NOT NULL DEFAULT '',
+    learning_reason     TEXT         NOT NULL DEFAULT '',
+    automation_tasks    JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    generated_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS weekly_crm_reports (
+    id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    week_start          DATE         NOT NULL UNIQUE,
+    jobs_found          INTEGER      NOT NULL DEFAULT 0,
+    applications_sent   INTEGER      NOT NULL DEFAULT 0,
+    response_rate       NUMERIC(5,2) NOT NULL DEFAULT 0,
+    interview_rate      NUMERIC(5,2) NOT NULL DEFAULT 0,
+    skill_gap_changes   JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    coach_summary       TEXT         NOT NULL DEFAULT '',
+    payload             JSONB        NOT NULL DEFAULT '{}'::jsonb,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS daily_automation_log (
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    log_date        DATE         NOT NULL,
+    kind            TEXT         NOT NULL,
+    target_count    INTEGER      NOT NULL DEFAULT 1,
+    completed_count INTEGER      NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT daily_automation_kind_valid CHECK (kind IN ('application','outreach')),
+    CONSTRAINT daily_automation_date_kind_unique UNIQUE (log_date, kind)
+);
+
+CREATE TABLE IF NOT EXISTS resume_analyses (
+    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id        UUID         REFERENCES job_postings(id) ON DELETE CASCADE,
+    match_score   SMALLINT     NOT NULL DEFAULT 0,
+    missing_keywords TEXT[]    NOT NULL DEFAULT '{}',
+    suggestions   TEXT[]       NOT NULL DEFAULT '{}',
+    model         TEXT         NOT NULL DEFAULT 'heuristic',
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_resume_analyses_job ON resume_analyses (job_id, created_at DESC);
 
 COMMIT;

@@ -21,6 +21,24 @@ services:
       timeout: 3s
       retries: 10
 
+  redpanda:
+    image: redpandadata/redpanda:v24.2.4
+    container_name: jobhunt-kafka
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+
   app:
     build:
       context: .
@@ -30,6 +48,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redpanda:
+        condition: service_started
     environment:
       APP_ENV: ${APP_ENV:-development}
       HTTP_HOST: 0.0.0.0
@@ -42,8 +62,40 @@ services:
       DB_SSLMODE: disable
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-json}
+      CRM_ENABLED: ${CRM_ENABLED:-true}
+      CRM_BASE_PATH: ${CRM_BASE_PATH:-/crm}
+      KAFKA_BROKERS: redpanda:9092
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      CRON_CRM_DAILY_PIPELINE: ${CRON_CRM_DAILY_PIPELINE:-0 7 * * *}
     ports:
       - "8082:8082"
+
+  crm-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.crm-worker
+    container_name: jobhunt-crm-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+      app:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-jobhunt}
+      DB_PASSWORD: ${DB_PASSWORD:-jobhunt}
+      DB_NAME: ${DB_NAME:-jobhunt}
+      DB_SSLMODE: disable
+      KAFKA_BROKERS: redpanda:9092
+      KAFKA_GROUP_ID: crm-scorer
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
 
 volumes:
   jobhunt_pgdata:

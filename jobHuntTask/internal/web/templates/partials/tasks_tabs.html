@@ -6,6 +6,7 @@
 {{define "tasks_tabs"}}
 {{- $q := .Query -}}
 {{- $counts := .Counts -}}
+{{template "tasks_duplicates" .}}
 <nav class="tasks-tabs" aria-label="Task views" data-list-nav="true">
     {{range $v := views -}}
     {{- $q2 := $q.WithView $v.Key -}}
@@ -22,4 +23,5 @@
     </a>
     {{- end}}
 </nav>
+<p class="tasks-tabs-hint muted">Each tab is a filter — counts overlap and won’t add up to All.</p>
 {{end}}

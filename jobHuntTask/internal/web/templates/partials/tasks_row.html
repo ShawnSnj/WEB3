@@ -38,6 +38,7 @@
         {{.DueDateLabel}}
         {{end}}
     </td>
+    <td class="td-est muted" title="Estimated minutes">{{.EstimatedLabel}}</td>
     <td class="td-actions">
         {{template "task_actions" (dict "vm" . "target" (printf "#task-row-%s" .ID))}}
     </td>

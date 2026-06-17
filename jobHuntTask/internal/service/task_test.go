@@ -562,6 +562,37 @@ func TestService_CarryOverAllOverdue_DedupesSamePlanSlot(t *testing.T) {
 	}
 }
 
+func TestService_CollapseDuplicatePendingByTitle(t *testing.T) {
+	t.Parallel()
+	svc, repo, clk := newSvc(t)
+	ctx := context.Background()
+
+	jun20 := clk.Now().Add(6 * 24 * time.Hour)
+	jun24 := clk.Now().Add(10 * 24 * time.Hour)
+
+	_, _ = svc.Create(ctx, service.CreateTaskInput{Title: "Weekly review", DueDate: &jun20})
+	time.Sleep(2 * time.Millisecond)
+	dup, _ := svc.Create(ctx, service.CreateTaskInput{Title: "Weekly review", DueDate: &jun24})
+	dup.CarryOverCount = 1
+	_, _ = repo.Update(ctx, dup.ID, repository.TaskUpdate{CarryOverCount: &dup.CarryOverCount})
+
+	removed, err := svc.CollapseDuplicatePendingByTitle(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed != 1 {
+		t.Fatalf("removed = %d, want 1", removed)
+	}
+	if len(repo.tasks) != 1 {
+		t.Fatalf("tasks left = %d, want 1", len(repo.tasks))
+	}
+	for _, tk := range repo.tasks {
+		if tk.CarryOverCount != 0 {
+			t.Fatalf("keeper should have carry_over_count 0, got %d", tk.CarryOverCount)
+		}
+	}
+}
+
 func TestService_CollapseDuplicatePlans(t *testing.T) {
 	t.Parallel()
 	svc, repo, clk := newSvc(t)

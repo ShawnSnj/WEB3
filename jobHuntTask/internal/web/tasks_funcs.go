@@ -19,7 +19,7 @@ func tasksFuncMap() template.FuncMap {
 		"views": func() []ViewItem {
 		return []ViewItem{
 				{viewToday, "Today"},
-				{viewUpcoming, "Upcoming"},
+				{viewUpcoming, "Next 30 days"},
 				{viewOverdue, "Overdue"},
 				{viewCompleted, "Completed"},
 				{viewCarried, "Carried over"},

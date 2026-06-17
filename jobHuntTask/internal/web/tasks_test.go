@@ -450,7 +450,7 @@ func TestTasksPage_RendersAllTabsAndFilterBar(t *testing.T) {
 		`class="bulk-bar"`,
 		`id="tasks-list-host"`,
 		`id="task-modal"`,
-		`Today`, `Upcoming`, `Overdue`, `Completed`, `Carried over`, `All`,
+		`Today`, `Next 30 days`, `Overdue`, `Completed`, `Carried over`, `All`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %q in page body", want)
@@ -681,7 +681,7 @@ func TestTasksList_UpcomingView(t *testing.T) {
 	todayDue := time.Date(2026, 5, 24, 0, 0, 0, 0, time.UTC)
 	tomorrowDue := time.Date(2026, 5, 25, 0, 0, 0, 0, time.UTC)
 	soonDue := time.Date(2026, 5, 28, 0, 0, 0, 0, time.UTC)
-	farDue := time.Date(2026, 6, 10, 0, 0, 0, 0, time.UTC)
+	farDue := time.Date(2026, 7, 10, 0, 0, 0, 0, time.UTC)
 
 	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due today"; tk.DueDate = &todayDue })
 	h.seedTask(t, func(tk *model.Task) { tk.Title = "Due tomorrow"; tk.DueDate = &tomorrowDue })
