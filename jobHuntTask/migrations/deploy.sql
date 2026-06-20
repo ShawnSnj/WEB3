@@ -327,19 +327,51 @@ CREATE TRIGGER trg_weekly_reviews_set_updated_at
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS task_notes (
-    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id    UUID         NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
-    title      TEXT         NOT NULL DEFAULT '',
-    content    TEXT         NOT NULL DEFAULT '',
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT task_notes_title_not_blank
-        CHECK (length(btrim(title)) > 0)
+    id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id           UUID         NOT NULL REFERENCES tasks (id) ON DELETE CASCADE,
+    note_type         TEXT         NOT NULL DEFAULT 'GENERAL_NOTE',
+    title             TEXT         NOT NULL DEFAULT '',
+    content           TEXT         NOT NULL DEFAULT '',
+    person_name       TEXT,
+    company           TEXT,
+    role_title        TEXT,
+    platform          TEXT,
+    profile_url       TEXT,
+    message_content   TEXT,
+    sent_at           TIMESTAMPTZ,
+    reply_status      TEXT,
+    reply_at          TIMESTAMPTZ,
+    job_title         TEXT,
+    job_url           TEXT,
+    application_status TEXT,
+    applied_at        TIMESTAMPTZ,
+    resume_version    TEXT,
+    fit_score         INTEGER,
+    source            TEXT,
+    notes             TEXT,
+    is_marked         BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_task_notes_task_id
     ON task_notes (task_id, updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_task_notes_note_type
+    ON task_notes (note_type);
+
+CREATE INDEX IF NOT EXISTS idx_task_notes_company
+    ON task_notes (company);
+
+CREATE INDEX IF NOT EXISTS idx_task_notes_applied_at
+    ON task_notes (applied_at);
+
+CREATE INDEX IF NOT EXISTS idx_task_notes_sent_at
+    ON task_notes (sent_at);
+
+CREATE INDEX IF NOT EXISTS idx_task_notes_is_marked
+    ON task_notes (is_marked)
+    WHERE is_marked = TRUE;
 
 CREATE OR REPLACE FUNCTION task_notes_set_updated_at()
 RETURNS TRIGGER AS $$

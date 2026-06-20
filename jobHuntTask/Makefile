@@ -178,6 +178,16 @@ migrate-job-fit-engine: wait-db ## Personalized job fit engine columns
 	docker compose exec -T postgres psql -U $${DB_USER:-jobhunt} -d $${DB_NAME:-jobhunt} -v ON_ERROR_STOP=1 \
 		< migrations/job_fit_engine.sql
 
+.PHONY: migrate-task-notes-structured
+migrate-task-notes-structured: wait-db ## Structured task note types for job hunt dashboard
+	docker compose exec -T postgres psql -U $${DB_USER:-jobhunt} -d $${DB_NAME:-jobhunt} -v ON_ERROR_STOP=1 \
+		< migrations/task_notes_structured.sql
+
+.PHONY: migrate-task-notes-marked
+migrate-task-notes-marked: wait-db ## Pin task note to tasks page header
+	docker compose exec -T postgres psql -U $${DB_USER:-jobhunt} -d $${DB_NAME:-jobhunt} -v ON_ERROR_STOP=1 \
+		< migrations/task_notes_marked.sql
+
 .PHONY: migrate-local
 migrate-local: migrate-all-local ## Alias: full schema via host psql
 

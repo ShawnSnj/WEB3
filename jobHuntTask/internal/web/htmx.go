@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"mime"
 	"net/http"
 	"strings"
 
@@ -58,4 +59,21 @@ func (rd *Renderer) renderRetryState(c *gin.Context, message, url, target, swap 
 // escapeJSONString is a minimal escaper for toast messages in headers.
 func escapeJSONString(s string) string {
 	return strings.ReplaceAll(s, `"`, `'`)
+}
+
+// parseNoteRequestForm reads POST/PATCH note form bodies. Browsers send
+// FormData as multipart/form-data, which requires ParseMultipartForm —
+// ParseForm alone does not populate fields for PATCH multipart requests.
+func parseNoteRequestForm(c *gin.Context) (map[string][]string, error) {
+	ct, _, _ := mime.ParseMediaType(c.GetHeader("Content-Type"))
+	if strings.HasPrefix(ct, "multipart/") {
+		if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+			return nil, err
+		}
+		return c.Request.MultipartForm.Value, nil
+	}
+	if err := c.Request.ParseForm(); err != nil {
+		return nil, err
+	}
+	return c.Request.PostForm, nil
 }

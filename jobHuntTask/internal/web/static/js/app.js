@@ -304,6 +304,7 @@
         if (window.htmx && typeof htmx.process === 'function') {
             htmx.process(slot);
         }
+        initNoteTypeFields(slot);
         const firstInput = slot.querySelector('input, textarea, select');
         if (firstInput) firstInput.focus();
     }
@@ -434,7 +435,7 @@
         });
     }
 
-    function swapNotesPanel(html) {
+    function swapNotesPanel(html, selectedNoteId) {
         const panel = document.getElementById('task-notes-panel');
         if (!panel || !html || !html.trim()) return;
         const tpl = document.createElement('template');
@@ -445,8 +446,13 @@
         } else {
             panel.innerHTML = html;
         }
+        const modal = document.getElementById('task-modal');
         if (window.htmx && typeof htmx.process === 'function') {
-            htmx.process(document.getElementById('task-modal') || document.body);
+            htmx.process(modal || document.body);
+        }
+        initNoteTypeFields(document.getElementById('task-notes-panel'));
+        if (selectedNoteId) {
+            highlightNoteRow(selectedNoteId);
         }
     }
 
@@ -457,7 +463,8 @@
         if (window.htmx && typeof htmx.process === 'function') {
             htmx.process(pane);
         }
-        const input = pane.querySelector('input[name="title"]');
+        initNoteTypeFields(pane);
+        const input = pane.querySelector('[data-note-type-select]');
         if (input) input.focus();
     }
 
@@ -535,6 +542,8 @@
         const mode = form.dataset.mode || 'create';
         if (!taskId) return;
 
+        prepareNoteFormFields(form);
+
         const url = mode === 'edit' && noteId
             ? '/tasks/' + encodeURIComponent(taskId) + '/notes/' + encodeURIComponent(noteId)
             : '/tasks/' + encodeURIComponent(taskId) + '/notes';
@@ -545,14 +554,20 @@
         pendingRequests++;
         setGlobalLoading(true);
 
+        var body = new URLSearchParams();
+        new FormData(form).forEach(function (value, key) {
+            body.append(key, value);
+        });
+
         fetch(url, {
             method: method,
             credentials: 'same-origin',
             headers: {
                 'HX-Request': 'true',
                 'Accept': 'text/html',
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new FormData(form),
+            body: body.toString(),
         }).then(function (resp) {
             return resp.text().then(function (html) {
                 return {
@@ -574,7 +589,7 @@
                 }
                 return;
             }
-            swapNotesPanel(result.html);
+            swapNotesPanel(result.html, noteId || form.dataset.noteId);
         }).catch(function () {
             showToast({ tone: 'danger', message: 'Network error — check your connection.' });
         }).finally(function () {
@@ -614,7 +629,7 @@
                 showToast({ tone: 'danger', message: 'Could not delete the note.' });
                 return;
             }
-            swapNotesPanel(result.html);
+            swapNotesPanel(result.html, null);
         }).catch(function () {
             showToast({ tone: 'danger', message: 'Network error — check your connection.' });
         }).finally(function () {
@@ -623,6 +638,49 @@
             if (pendingRequests === 0) setGlobalLoading(false);
         });
     }
+
+    // ------------------------------------------------------------------
+    // 6c. Structured task note fields
+    // ------------------------------------------------------------------
+
+    function initNoteTypeFields(root) {
+        const scope = root || document;
+        scope.querySelectorAll('[data-note-type-select]').forEach(function (sel) {
+            if (sel.dataset.noteTypeBound) return;
+            sel.dataset.noteTypeBound = '1';
+            sel.addEventListener('change', function () {
+                toggleNoteTypeFields(sel.closest('form') || sel.closest('.task-note-detail'));
+            });
+            toggleNoteTypeFields(sel.closest('form') || sel.closest('.task-note-detail'));
+        });
+    }
+
+    function toggleNoteTypeFields(container) {
+        if (!container) return;
+        const sel = container.querySelector('[data-note-type-select]');
+        const noteType = sel ? sel.value : 'GENERAL_NOTE';
+        container.querySelectorAll('[data-note-fields]').forEach(function (block) {
+            const types = (block.getAttribute('data-note-fields') || '').split(',');
+            const show = types.indexOf(noteType) !== -1;
+            block.hidden = !show;
+            block.querySelectorAll('input, select, textarea').forEach(function (input) {
+                input.disabled = !show;
+            });
+        });
+    }
+
+    function prepareNoteFormFields(form) {
+        if (!form) return;
+        toggleNoteTypeFields(form);
+    }
+
+    document.body.addEventListener('click', function (e) {
+        const card = e.target.closest('.job-hunt-card');
+        if (!card) return;
+        document.querySelectorAll('.job-hunt-card').forEach(function (c) {
+            c.classList.toggle('job-hunt-card--active', c === card);
+        });
+    });
 
     // ------------------------------------------------------------------
     // 7. Optimistic UI
@@ -824,7 +882,8 @@
         if (window.htmx && typeof htmx.process === 'function') {
             htmx.process(target);
         }
-        var titleInput = target.querySelector('input[name="title"]');
+        initNoteTypeFields(target);
+        var titleInput = target.querySelector('[data-note-type-select]');
         if (titleInput) titleInput.focus();
     });
 

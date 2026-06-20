@@ -28,6 +28,7 @@ type Deps struct {
 	TaskSessionService *service.TaskSessionService
 	MetricsService     *service.MetricsService
 	SuggestionService  *service.SuggestionService
+	TaskNoteService    *service.TaskNoteService
 	CRMService         *crmsvc.CRM
 }
 
@@ -66,6 +67,8 @@ func NewRouter(d Deps) *gin.Engine {
 		newCRMHandler(d.CRMService).register(v1)
 		registerJobsAlias(v1, d.CRMService)
 	}
+
+	registerJobHuntDashboard(r, d.TaskNoteService)
 
 	// CORS for Next.js CRM frontend
 	r.Use(crmCORS(d.Config))

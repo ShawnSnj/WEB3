@@ -60,6 +60,7 @@ func NewTasksHandler(
 func (h *TasksHandler) Register(r *gin.Engine) {
 	r.GET("/tasks", h.page)
 	g := r.Group("/tasks")
+	g.GET("/marked-note", h.markedNotePanel)
 	g.GET("/list", h.list)
 	g.GET("/tabs", h.tabs)
 	g.GET("/import/form", h.importForm)
@@ -79,6 +80,7 @@ func (h *TasksHandler) Register(r *gin.Engine) {
 	g.POST("/bulk/complete", h.bulkComplete)
 	g.POST("/bulk/delete", h.bulkDelete)
 	h.registerNotesRoutes(g)
+	h.registerJobHuntRoutes(g)
 }
 
 // ---------------------------------------------------------------------------
@@ -348,6 +350,8 @@ type TasksPageVM struct {
 	List        TasksListVM
 	Counts      TasksCountsVM
 	Duplicates  []DuplicateTaskVM
+	JobHunt     JobHuntDashboardVM
+	MarkedNote  MarkedNotePanelVM
 	Categories  []model.Category
 	Priorities  []model.Priority
 	Statuses    []model.Status
@@ -464,6 +468,8 @@ func (h *TasksHandler) buildPage(ctx context.Context, q tasksQuery) TasksPageVM 
 		List:       h.buildList(ctx, q),
 		Counts:     h.buildCounts(ctx),
 		Duplicates: h.buildDuplicateWarnings(ctx),
+		JobHunt:    h.buildJobHuntDashboard(ctx),
+		MarkedNote: h.buildMarkedNotePanel(ctx),
 		Categories: model.AllCategories(),
 		Priorities: model.AllPriorities(),
 		Statuses: []model.Status{

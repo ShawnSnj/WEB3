@@ -1,0 +1,285 @@
+{{- /*
+  job_hunt_dashboard — progress cards on the tasks page.
+  Data: web.JobHuntDashboardVM
+*/ -}}
+{{define "job_hunt_dashboard"}}
+<section id="job-hunt-progress" class="job-hunt-progress" aria-labelledby="job-hunt-progress-title">
+    <div class="job-hunt-progress-head">
+        <h3 id="job-hunt-progress-title" class="job-hunt-progress-title">Job Hunt Progress</h3>
+    </div>
+
+    <div class="job-hunt-cards">
+        <button type="button" class="job-hunt-card"
+                data-job-hunt-tab="dms"
+                hx-get="/tasks/job-hunt/dms"
+                hx-target="#job-hunt-detail-host"
+                hx-swap="innerHTML">
+            <span class="job-hunt-card-label">Total DMs</span>
+            <span class="job-hunt-card-value">{{.Summary.TotalDMs}}</span>
+        </button>
+        <button type="button" class="job-hunt-card"
+                data-job-hunt-tab="applications"
+                hx-get="/tasks/job-hunt/applications"
+                hx-target="#job-hunt-detail-host"
+                hx-swap="innerHTML">
+            <span class="job-hunt-card-label">Total Applications</span>
+            <span class="job-hunt-card-value">{{.Summary.TotalApplications}}</span>
+        </button>
+        <button type="button" class="job-hunt-card"
+                data-job-hunt-tab="dm_tasks"
+                hx-get="/tasks/job-hunt/dm-tasks"
+                hx-target="#job-hunt-detail-host"
+                hx-swap="innerHTML">
+            <span class="job-hunt-card-label">DM Tasks</span>
+            <span class="job-hunt-card-value">{{.Summary.DMTasks}}</span>
+        </button>
+        <button type="button" class="job-hunt-card"
+                data-job-hunt-tab="application_tasks"
+                hx-get="/tasks/job-hunt/application-tasks"
+                hx-target="#job-hunt-detail-host"
+                hx-swap="innerHTML">
+            <span class="job-hunt-card-label">Application Tasks</span>
+            <span class="job-hunt-card-value">{{.Summary.ApplicationTasks}}</span>
+        </button>
+    </div>
+
+    <div id="job-hunt-detail-host" class="job-hunt-detail-host"></div>
+</section>
+{{end}}
+
+{{define "job_hunt_dms_table"}}
+<div class="job-hunt-detail-panel" data-active-tab="{{.ActiveTab}}">
+    <h4 class="job-hunt-detail-title">DMs</h4>
+    {{if .Empty}}
+    <p class="muted job-hunt-empty">No DM notes yet. Add a DM note from a task.</p>
+    {{else}}
+    <div class="job-hunt-table-wrap">
+        <table class="job-hunt-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Person</th>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Platform</th>
+                    <th>Reply Status</th>
+                    <th>Task Title</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Rows}}
+                <tr class="job-hunt-row job-hunt-row--clickable"
+                    tabindex="0"
+                    role="button"
+                    data-job-hunt-note-id="{{.ID}}"
+                    hx-get="/tasks/job-hunt/notes/{{.ID}}"
+                    hx-target="#task-modal"
+                    hx-swap="innerHTML">
+                    <td>{{.DateLabel}}</td>
+                    <td>{{.PersonName}}</td>
+                    <td>{{.Company}}</td>
+                    <td>{{.RoleTitle}}</td>
+                    <td>{{.Platform}}</td>
+                    <td>{{.ReplyLabel}}</td>
+                    <td>{{.TaskTitle}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+{{define "job_hunt_apps_table"}}
+<div class="job-hunt-detail-panel" data-active-tab="{{.ActiveTab}}">
+    <h4 class="job-hunt-detail-title">Applications</h4>
+    {{if .Empty}}
+    <p class="muted job-hunt-empty">No application notes yet. Add a job application note from a task.</p>
+    {{else}}
+    <div class="job-hunt-table-wrap">
+        <table class="job-hunt-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Company</th>
+                    <th>Job Title</th>
+                    <th>Status</th>
+                    <th>Fit Score</th>
+                    <th>Source</th>
+                    <th>Task Title</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Rows}}
+                <tr class="job-hunt-row job-hunt-row--clickable"
+                    tabindex="0"
+                    role="button"
+                    data-job-hunt-note-id="{{.ID}}"
+                    hx-get="/tasks/job-hunt/notes/{{.ID}}"
+                    hx-target="#task-modal"
+                    hx-swap="innerHTML">
+                    <td>{{.DateLabel}}</td>
+                    <td>{{.Company}}</td>
+                    <td>{{.JobTitle}}</td>
+                    <td>{{.StatusLabel}}</td>
+                    <td>{{.FitScore}}</td>
+                    <td>{{.Source}}</td>
+                    <td>{{.TaskTitle}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+{{define "job_hunt_tasks_table"}}
+<div class="job-hunt-detail-panel" data-active-tab="{{.ActiveTab}}">
+    <h4 class="job-hunt-detail-title">{{if eq .Kind "application"}}Application Tasks{{else}}DM Tasks{{end}}</h4>
+    {{if .Empty}}
+    <p class="muted job-hunt-empty">No matching tasks found.</p>
+    {{else}}
+    <div class="job-hunt-table-wrap">
+        <table class="job-hunt-table">
+            <thead>
+                <tr>
+                    <th>Due Date</th>
+                    <th>Task Title</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Est.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Rows}}
+                <tr class="job-hunt-row job-hunt-row--clickable"
+                    tabindex="0"
+                    role="button"
+                    data-job-hunt-task-id="{{.ID}}"
+                    hx-get="/tasks/job-hunt/tasks/{{.ID}}"
+                    hx-target="#task-modal"
+                    hx-swap="innerHTML">
+                    <td>{{.DueDateLabel}}</td>
+                    <td>{{.Title}}</td>
+                    <td>{{.StatusLabel}}</td>
+                    <td>{{.PriorityLabel}}</td>
+                    <td>{{.EstimatedLabel}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+{{define "job_hunt_dm_detail_modal"}}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="jh-dm-detail-title" tabindex="-1">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel modal-panel--wide">
+        <header class="modal-head">
+            <h2 id="jh-dm-detail-title" class="modal-title">DM Detail</h2>
+            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                {{template "icon" (dict "name" "x")}}
+            </button>
+        </header>
+        <div class="job-hunt-detail-grid">
+            <dl class="detail-dl">
+                <dt>Person Name</dt><dd>{{.PersonName}}</dd>
+                <dt>Company</dt><dd>{{.Company}}</dd>
+                <dt>Role Title</dt><dd>{{.RoleTitle}}</dd>
+                <dt>Platform</dt><dd>{{.Platform}}</dd>
+                <dt>Profile URL</dt><dd>{{if ne .ProfileURL "—"}}<a href="{{.ProfileURL}}" target="_blank" rel="noopener">{{.ProfileURL}}</a>{{else}}—{{end}}</dd>
+                <dt>Message Content</dt><dd class="detail-pre">{{.MessageContent}}</dd>
+                <dt>Sent At</dt><dd>{{.SentAtLabel}}</dd>
+                <dt>Reply Status</dt><dd>{{.ReplyLabel}}</dd>
+                <dt>Reply At</dt><dd>{{.ReplyAtLabel}}</dd>
+                <dt>Related Task</dt><dd>{{.TaskTitle}}</dd>
+                <dt>Notes</dt><dd class="detail-pre">{{.Notes}}</dd>
+                <dt>Created At</dt><dd>{{.CreatedAtLabel}}</dd>
+                <dt>Updated At</dt><dd>{{.UpdatedAtLabel}}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "job_hunt_app_detail_modal"}}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="jh-app-detail-title" tabindex="-1">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel modal-panel--wide">
+        <header class="modal-head">
+            <h2 id="jh-app-detail-title" class="modal-title">Application Detail</h2>
+            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                {{template "icon" (dict "name" "x")}}
+            </button>
+        </header>
+        <div class="job-hunt-detail-grid">
+            <dl class="detail-dl">
+                <dt>Company</dt><dd>{{.Company}}</dd>
+                <dt>Job Title</dt><dd>{{.JobTitle}}</dd>
+                <dt>Job URL</dt><dd>{{if ne .JobURL "—"}}<a href="{{.JobURL}}" target="_blank" rel="noopener">{{.JobURL}}</a>{{else}}—{{end}}</dd>
+                <dt>Application Status</dt><dd>{{.AppStatusLabel}}</dd>
+                <dt>Applied At</dt><dd>{{.AppliedAtLabel}}</dd>
+                <dt>Resume Version</dt><dd>{{.ResumeVersion}}</dd>
+                <dt>Fit Score</dt><dd>{{.FitScore}}</dd>
+                <dt>Source</dt><dd>{{.Source}}</dd>
+                <dt>Related Task</dt><dd>{{.TaskTitle}}</dd>
+                <dt>Notes</dt><dd class="detail-pre">{{.Notes}}</dd>
+                <dt>Created At</dt><dd>{{.CreatedAtLabel}}</dd>
+                <dt>Updated At</dt><dd>{{.UpdatedAtLabel}}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "job_hunt_generic_note_modal"}}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="jh-note-detail-title" tabindex="-1">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel">
+        <header class="modal-head">
+            <h2 id="jh-note-detail-title" class="modal-title">{{.NoteTypeLabel}}</h2>
+            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                {{template "icon" (dict "name" "x")}}
+            </button>
+        </header>
+        <dl class="detail-dl">
+            <dt>Related Task</dt><dd>{{.TaskTitle}}</dd>
+            <dt>Notes</dt><dd class="detail-pre">{{.Notes}}</dd>
+            <dt>Created At</dt><dd>{{.CreatedAtLabel}}</dd>
+            <dt>Updated At</dt><dd>{{.UpdatedAtLabel}}</dd>
+        </dl>
+    </div>
+</div>
+{{end}}
+
+{{define "job_hunt_task_detail_modal"}}
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="jh-task-detail-title" tabindex="-1">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-panel">
+        <header class="modal-head">
+            <h2 id="jh-task-detail-title" class="modal-title">Task Detail</h2>
+            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                {{template "icon" (dict "name" "x")}}
+            </button>
+        </header>
+        <dl class="detail-dl">
+            <dt>Title</dt><dd>{{.Title}}</dd>
+            <dt>Due Date</dt><dd>{{.DueDateLabel}}</dd>
+            <dt>Status</dt><dd>{{.StatusLabel}}</dd>
+            <dt>Priority</dt><dd>{{.PriorityLabel}}</dd>
+            <dt>Estimated</dt><dd>{{.EstimatedLabel}}</dd>
+            <dt>Category</dt><dd>{{.CategoryLabel}}</dd>
+        </dl>
+        <footer class="modal-foot">
+            <button type="button" class="btn btn-ghost btn-sm"
+                    data-load-task-notes="/tasks/{{.ID}}/notes">
+                Open notes
+            </button>
+        </footer>
+    </div>
+</div>
+{{end}}

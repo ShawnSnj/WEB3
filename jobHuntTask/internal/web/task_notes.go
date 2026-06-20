@@ -29,30 +29,58 @@ type TaskNotesModalVM struct {
 }
 
 type TaskNotesTableVM struct {
-	TaskID    string
-	TaskTitle string
-	Notes     []TaskNoteRowVM
+	TaskID     string
+	TaskTitle  string
+	Notes      []TaskNoteRowVM
 	SelectedID string
-	Empty     bool
+	Empty      bool
 }
 
 type TaskNoteRowVM struct {
-	ID            string
-	TaskID        string
-	TaskTitle     string
-	Title         string
-	Content       string
+	ID             string
+	TaskID         string
+	TaskTitle      string
+	NoteType       string
+	NoteTypeLabel  string
+	IsMarked       bool
+	Title          string
+	Content        string
 	ContentPreview string
-	UpdatedLabel  string
+	UpdatedLabel   string
 }
 
 type TaskNoteDetailVM struct {
 	ID        string
 	TaskID    string
 	TaskTitle string
+	NoteType  string
 	Title     string
 	Content   string
+	Notes     string
 	Error     string
+
+	PersonName        string
+	Company           string
+	RoleTitle         string
+	Platform          string
+	ProfileURL        string
+	MessageContent    string
+	SentAt            string
+	ReplyStatus       string
+	ReplyAt           string
+	JobTitle          string
+	JobURL            string
+	ApplicationStatus string
+	AppliedAt         string
+	ResumeVersion     string
+	FitScore          string
+	Source            string
+
+	NoteTypes            []model.NoteType
+	ReplyStatuses        []model.ReplyStatus
+	ApplicationStatuses  []model.ApplicationStatus
+	ApplicationSources   []model.ApplicationSource
+	IsMarked             bool
 }
 
 // ---------------------------------------------------------------------------
@@ -67,6 +95,7 @@ func (h *TasksHandler) registerNotesRoutes(g *gin.RouterGroup) {
 	g.POST("/:id/notes", h.noteCreate)
 	g.PATCH("/:id/notes/:noteId", h.noteUpdate)
 	g.DELETE("/:id/notes/:noteId", h.noteDelete)
+	g.POST("/:id/notes/:noteId/mark", h.noteMark)
 }
 
 func (h *TasksHandler) notesModal(c *gin.Context) {
@@ -80,7 +109,7 @@ func (h *TasksHandler) notesModal(c *gin.Context) {
 		h.notFoundOrErr(c, err)
 		return
 	}
-	vm := h.buildNotesModal(ctx, t, "")
+	vm := h.buildNotesModal(ctx, t, c.Query("selected"))
 	h.rd.RenderPartial(c, "task_notes_modal", vm)
 }
 
@@ -110,10 +139,9 @@ func (h *TasksHandler) noteNewForm(c *gin.Context) {
 		h.notFoundOrErr(c, err)
 		return
 	}
-	h.rd.RenderPartial(c, "task_note_detail", TaskNoteDetailVM{
-		TaskID:    taskID.String(),
-		TaskTitle: t.Title,
-	})
+	vm := emptyNoteFormVM(taskID.String(), t.Title)
+	vm.NoteType = string(model.NoteTypeGeneral)
+	h.rd.RenderPartial(c, "task_note_detail", vm)
 }
 
 func (h *TasksHandler) noteDetail(c *gin.Context) {
@@ -148,7 +176,8 @@ func (h *TasksHandler) noteCreate(c *gin.Context) {
 		c.String(http.StatusServiceUnavailable, "notes unavailable")
 		return
 	}
-	if err := c.Request.ParseForm(); err != nil {
+	form, err := parseNoteRequestForm(c)
+	if err != nil {
 		c.String(http.StatusBadRequest, "bad form")
 		return
 	}
@@ -158,25 +187,18 @@ func (h *TasksHandler) noteCreate(c *gin.Context) {
 		h.notFoundOrErr(c, err)
 		return
 	}
-	n, err := h.notes.Create(ctx, service.CreateTaskNoteInput{
-		TaskID:  taskID,
-		Title:   c.PostForm("title"),
-		Content: c.PostForm("content"),
-	})
+	in, _ := service.ParseTaskNoteForm(taskID, form)
+	n, err := h.notes.Create(ctx, in)
 	if err != nil {
 		setToast(c, "warning", noteHumanError(err))
 		c.Status(http.StatusUnprocessableEntity)
-		h.rd.RenderPartial(c, "task_note_detail", TaskNoteDetailVM{
-			TaskID:    taskID.String(),
-			TaskTitle: t.Title,
-			Title:     c.PostForm("title"),
-			Content:   c.PostForm("content"),
-			Error:     noteHumanError(err),
-		})
+		vm := noteFormFromPost(taskID.String(), t.Title, form)
+		vm.Error = noteHumanError(err)
+		h.rd.RenderPartial(c, "task_note_detail", vm)
 		return
 	}
 	setToast(c, "success", "Note created")
-	c.Header("HX-Trigger", fmt.Sprintf(`{"task-notes-changed":{"taskId":"%s","noteId":"%s"}}`, taskID, n.ID))
+	c.Header("HX-Trigger", fmt.Sprintf(`{"task-notes-changed":{"taskId":"%s","noteId":"%s"},"job-hunt-dashboard-changed":true,"marked-note-changed":true}`, taskID, n.ID))
 	h.rd.RenderPartial(c, "task_notes_panel", h.buildNotesModal(ctx, t, n.ID.String()))
 }
 
@@ -193,7 +215,8 @@ func (h *TasksHandler) noteUpdate(c *gin.Context) {
 		c.String(http.StatusServiceUnavailable, "notes unavailable")
 		return
 	}
-	if err := c.Request.ParseForm(); err != nil {
+	form, err := parseNoteRequestForm(c)
+	if err != nil {
 		c.String(http.StatusBadRequest, "bad form")
 		return
 	}
@@ -203,28 +226,60 @@ func (h *TasksHandler) noteUpdate(c *gin.Context) {
 		h.notFoundOrErr(c, err)
 		return
 	}
-	title := c.PostForm("title")
-	content := c.PostForm("content")
-	_, err = h.notes.Update(ctx, noteID, service.UpdateTaskNoteInput{
-		Title:   &title,
-		Content: &content,
-	})
+	upd := service.ParseTaskNoteUpdateForm(form)
+	in, _ := service.ParseTaskNoteForm(taskID, form)
+	service.ApplyNoteFormTitleIfEmpty(in, &upd)
+	_, err = h.notes.Update(ctx, noteID, upd)
 	if err != nil {
 		setToast(c, "warning", noteHumanError(err))
 		c.Status(http.StatusUnprocessableEntity)
-		h.rd.RenderPartial(c, "task_note_detail", TaskNoteDetailVM{
-			ID:        noteID.String(),
-			TaskID:    taskID.String(),
-			TaskTitle: t.Title,
-			Title:     title,
-			Content:   content,
-			Error:     noteHumanError(err),
-		})
+		vm := noteFormFromPost(taskID.String(), t.Title, form)
+		vm.ID = noteID.String()
+		vm.Error = noteHumanError(err)
+		h.rd.RenderPartial(c, "task_note_detail", vm)
 		return
 	}
 	setToast(c, "success", "Note saved")
-	c.Header("HX-Trigger", fmt.Sprintf(`{"task-notes-changed":{"taskId":"%s","noteId":"%s"}}`, taskID, noteID))
+	c.Header("HX-Trigger", markedNoteChangedTrigger(taskID.String(), noteID.String()))
 	h.rd.RenderPartial(c, "task_notes_panel", h.buildNotesModal(ctx, t, noteID.String()))
+}
+
+func (h *TasksHandler) noteMark(c *gin.Context) {
+	taskID, ok := h.parseID(c)
+	if !ok {
+		return
+	}
+	noteID, ok := h.parseNoteID(c)
+	if !ok {
+		return
+	}
+	if h.notes == nil {
+		c.String(http.StatusServiceUnavailable, "notes unavailable")
+		return
+	}
+	ctx := c.Request.Context()
+	t, err := h.tasks.Get(ctx, taskID)
+	if err != nil {
+		h.notFoundOrErr(c, err)
+		return
+	}
+	marked, err := h.notes.ToggleMarked(ctx, noteID)
+	if err != nil {
+		h.notFoundOrErr(c, err)
+		return
+	}
+	if marked {
+		setToast(c, "success", "Note pinned to tasks page")
+	} else {
+		setToast(c, "info", "Note unpinned")
+	}
+	c.Header("HX-Trigger", markedNoteChangedTrigger(taskID.String(), noteID.String()))
+	vm, err := h.buildNoteDetail(ctx, t, noteID)
+	if err != nil {
+		h.notFoundOrErr(c, err)
+		return
+	}
+	h.rd.RenderPartial(c, "task_note_detail", vm)
 }
 
 func (h *TasksHandler) noteDelete(c *gin.Context) {
@@ -251,7 +306,7 @@ func (h *TasksHandler) noteDelete(c *gin.Context) {
 		return
 	}
 	setToast(c, "info", "Note deleted")
-	c.Header("HX-Trigger", fmt.Sprintf(`{"task-notes-changed":{"taskId":"%s"}}`, taskID))
+	c.Header("HX-Trigger", fmt.Sprintf(`{"task-notes-changed":{"taskId":"%s"},"job-hunt-dashboard-changed":true,"marked-note-changed":true}`, taskID))
 	h.rd.RenderPartial(c, "task_notes_panel", h.buildNotesModal(ctx, t, ""))
 }
 
@@ -311,17 +366,14 @@ func (h *TasksHandler) buildNoteDetail(ctx context.Context, t *model.Task, noteI
 	if n.TaskID != t.ID {
 		return TaskNoteDetailVM{}, model.ErrTaskNoteNotFound
 	}
-	return TaskNoteDetailVM{
-		ID:        n.ID.String(),
-		TaskID:    t.ID.String(),
-		TaskTitle: t.Title,
-		Title:     n.Title,
-		Content:   n.Content,
-	}, nil
+	return noteDetailFromModel(n, t.Title), nil
 }
 
 func (h *TasksHandler) toNoteRowVM(t *model.Task, n *model.TaskNote, now time.Time) TaskNoteRowVM {
-	preview := strings.TrimSpace(n.Content)
+	preview := strings.TrimSpace(n.EffectiveNotes())
+	if preview == "" {
+		preview = noteRowPreview(n)
+	}
 	if preview == "" {
 		preview = "—"
 	} else if len(preview) > 120 {
@@ -331,11 +383,104 @@ func (h *TasksHandler) toNoteRowVM(t *model.Task, n *model.TaskNote, now time.Ti
 		ID:             n.ID.String(),
 		TaskID:         t.ID.String(),
 		TaskTitle:      t.Title,
+		NoteType:       string(n.NoteType),
+		NoteTypeLabel:  n.NoteType.Label(),
+		IsMarked:       n.IsMarked,
 		Title:          n.Title,
-		Content:        n.Content,
+		Content:        n.EffectiveNotes(),
 		ContentPreview: preview,
 		UpdatedLabel:   formatNoteUpdated(n.UpdatedAt, now),
 	}
+}
+
+func noteRowPreview(n *model.TaskNote) string {
+	switch n.NoteType {
+	case model.NoteTypeDM:
+		return strings.TrimSpace(n.PersonName + " @ " + n.Company)
+	case model.NoteTypeJobApp:
+		return strings.TrimSpace(n.Company + " — " + n.JobTitle)
+	default:
+		return ""
+	}
+}
+
+func emptyNoteFormVM(taskID, taskTitle string) TaskNoteDetailVM {
+	vm := TaskNoteDetailVM{
+		TaskID:              taskID,
+		TaskTitle:           taskTitle,
+		NoteTypes:           model.AllNoteTypes(),
+		ReplyStatuses:       model.AllReplyStatuses(),
+		ApplicationStatuses: model.AllApplicationStatuses(),
+		ApplicationSources:  model.AllApplicationSources(),
+	}
+	return vm
+}
+
+func noteDetailFromModel(n *model.TaskNote, taskTitle string) TaskNoteDetailVM {
+	vm := emptyNoteFormVM(n.TaskID.String(), taskTitle)
+	vm.ID = n.ID.String()
+	vm.NoteType = string(n.NoteType)
+	vm.Title = n.Title
+	vm.Content = n.EffectiveNotes()
+	vm.Notes = n.EffectiveNotes()
+	vm.PersonName = n.PersonName
+	vm.Company = n.Company
+	vm.RoleTitle = n.RoleTitle
+	vm.Platform = n.Platform
+	vm.ProfileURL = n.ProfileURL
+	vm.MessageContent = n.MessageContent
+	vm.SentAt = formatNoteInputTime(n.SentAt)
+	vm.ReplyStatus = string(n.ReplyStatus)
+	vm.ReplyAt = formatNoteInputTime(n.ReplyAt)
+	vm.JobTitle = n.JobTitle
+	vm.JobURL = n.JobURL
+	vm.ApplicationStatus = string(n.ApplicationStatus)
+	vm.AppliedAt = formatNoteInputTime(n.AppliedAt)
+	vm.ResumeVersion = n.ResumeVersion
+	if n.FitScore != nil {
+		vm.FitScore = fmt.Sprintf("%d", *n.FitScore)
+	}
+	vm.Source = string(n.Source)
+	vm.IsMarked = n.IsMarked
+	return vm
+}
+
+func noteFormFromPost(taskID, taskTitle string, form map[string][]string) TaskNoteDetailVM {
+	get := func(k string) string {
+		if v, ok := form[k]; ok && len(v) > 0 {
+			return v[0]
+		}
+		return ""
+	}
+	vm := emptyNoteFormVM(taskID, taskTitle)
+	vm.NoteType = get("note_type")
+	vm.Title = get("title")
+	vm.Content = get("content")
+	vm.Notes = get("notes")
+	vm.PersonName = get("person_name")
+	vm.Company = get("company")
+	vm.RoleTitle = get("role_title")
+	vm.Platform = get("platform")
+	vm.ProfileURL = get("profile_url")
+	vm.MessageContent = get("message_content")
+	vm.SentAt = get("sent_at")
+	vm.ReplyStatus = get("reply_status")
+	vm.ReplyAt = get("reply_at")
+	vm.JobTitle = get("job_title")
+	vm.JobURL = get("job_url")
+	vm.ApplicationStatus = get("application_status")
+	vm.AppliedAt = get("applied_at")
+	vm.ResumeVersion = get("resume_version")
+	vm.FitScore = get("fit_score")
+	vm.Source = get("source")
+	return vm
+}
+
+func formatNoteInputTime(t *time.Time) string {
+	if t == nil || t.IsZero() {
+		return ""
+	}
+	return t.Format("2006-01-02T15:04")
 }
 
 func formatNoteUpdated(at, now time.Time) string {
@@ -370,6 +515,8 @@ func noteHumanError(err error) string {
 	switch {
 	case errors.Is(err, model.ErrTaskNoteTitleEmpty):
 		return "Title is required."
+	case errors.Is(err, model.ErrInvalidNoteType):
+		return "Invalid note type."
 	case errors.Is(err, model.ErrTaskNotFound):
 		return "Task not found."
 	case errors.Is(err, model.ErrTaskNoteNotFound):

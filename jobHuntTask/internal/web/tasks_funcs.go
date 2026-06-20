@@ -2,6 +2,7 @@ package web
 
 import (
 	"html/template"
+	"strings"
 
 	"github.com/shawn/jobhunttask/internal/model"
 )
@@ -52,5 +53,20 @@ func tasksFuncMap() template.FuncMap {
 			}
 			return d.ID
 		},
+		"showNoteFields": showNoteFields,
 	}
+}
+
+// showNoteFields reports whether the current note type uses a field group.
+func showNoteFields(currentNoteType string, fieldSpec string) bool {
+	current := strings.TrimSpace(currentNoteType)
+	if current == "" {
+		current = string(model.NoteTypeGeneral)
+	}
+	for _, part := range strings.Split(fieldSpec, ",") {
+		if strings.TrimSpace(part) == current {
+			return true
+		}
+	}
+	return false
 }

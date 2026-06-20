@@ -36,7 +36,7 @@
                         hx-target="#task-note-detail-pane"
                         hx-swap="innerHTML">
                     {{template "icon" (dict "name" "plus")}}
-                    <span>New note</span>
+                    <span>Add Note</span>
                 </button>
             </div>
             {{template "task_notes_table" (dict "TaskID" .TaskID "TaskTitle" .TaskTitle "Notes" .Notes "SelectedID" (noteSelectedID .Selected) "Empty" .Empty)}}
@@ -57,12 +57,13 @@
 <div id="task-notes-table-wrap" class="task-notes-table-wrap">
     {{if .Empty}}
     <div class="task-notes-empty muted">
-        <p>No notes yet. Create one to capture context, links, or follow-ups.</p>
+        <p>No notes yet. Add a note to track DMs, applications, or context.</p>
     </div>
     {{else}}
     <table class="task-notes-table">
         <thead>
             <tr>
+                <th class="th-type">Type</th>
                 <th class="th-title">Title</th>
                 <th>Content</th>
                 <th class="th-updated">Updated</th>
@@ -80,9 +81,10 @@
                 hx-get="/tasks/{{.TaskID}}/notes/{{.ID}}"
                 hx-target="#task-note-detail-pane"
                 hx-swap="innerHTML">
+                <td class="td-type"><span class="chip chip--soft">{{.NoteTypeLabel}}</span></td>
                 <td class="td-title">
                     <span class="task-note-title-link">{{.Title}}</span>
-                    <div class="task-note-task-title muted">{{.TaskTitle}}</div>
+                    {{if .IsMarked}}<span class="marked-note-badge" title="Pinned to tasks page">{{template "icon" (dict "name" "star-filled")}}</span>{{end}}
                 </td>
                 <td class="td-content muted">{{.ContentPreview}}</td>
                 <td class="td-updated muted">{{.UpdatedLabel}}</td>
@@ -96,7 +98,7 @@
 
 {{define "task_note_detail_empty"}}
 <div class="task-note-detail task-note-detail--empty">
-    <p class="muted">Select a note title to view and edit its content, or create a new note.</p>
+    <p class="muted">Select a note to view details, or add a new note.</p>
 </div>
 {{end}}
 
@@ -112,19 +114,99 @@
           {{if .ID}}data-note-id="{{.ID}}" data-mode="edit"{{else}}data-mode="create"{{end}}>
 
         <label class="field">
-            <span class="field-label">Title</span>
-            <input type="text" name="title" required maxlength="200"
-                   value="{{.Title}}" placeholder="Short label for this note">
+            <span class="field-label">Note Type</span>
+            <select name="note_type" data-note-type-select required>
+                {{range .NoteTypes}}
+                <option value="{{.}}" {{if eq $.NoteType (printf "%s" .)}}selected{{end}}>{{.Label}}</option>
+                {{end}}
+            </select>
         </label>
 
-        <label class="field">
-            <span class="field-label">Content</span>
-            <textarea name="content" rows="12" maxlength="8000"
-                      placeholder="Write details, links, or follow-up items…">{{.Content}}</textarea>
-        </label>
+        <div class="note-type-fields" data-note-fields="DM"{{if not (showNoteFields .NoteType "DM")}} hidden{{end}}>
+            <label class="field"><span class="field-label">Person name</span>
+                <input type="text" name="person_name" value="{{.PersonName}}" maxlength="200"></label>
+            <label class="field"><span class="field-label">Company</span>
+                <input type="text" name="company" value="{{.Company}}" maxlength="200"></label>
+            <label class="field"><span class="field-label">Role title</span>
+                <input type="text" name="role_title" value="{{.RoleTitle}}" maxlength="200"></label>
+            <label class="field"><span class="field-label">Platform</span>
+                <input type="text" name="platform" value="{{.Platform}}" maxlength="100" placeholder="LinkedIn, X, email…"></label>
+            <label class="field"><span class="field-label">Profile URL</span>
+                <input type="url" name="profile_url" value="{{.ProfileURL}}" maxlength="500"></label>
+            <label class="field"><span class="field-label">Message content</span>
+                <textarea name="message_content" rows="4" maxlength="4000">{{.MessageContent}}</textarea></label>
+            <label class="field"><span class="field-label">Sent at</span>
+                <input type="datetime-local" name="sent_at" value="{{.SentAt}}"></label>
+            <label class="field"><span class="field-label">Reply status</span>
+                <select name="reply_status">
+                    <option value="">—</option>
+                    {{range .ReplyStatuses}}
+                    <option value="{{.}}" {{if eq $.ReplyStatus (printf "%s" .)}}selected{{end}}>{{.Label}}</option>
+                    {{end}}
+                </select></label>
+            <label class="field"><span class="field-label">Reply at</span>
+                <input type="datetime-local" name="reply_at" value="{{.ReplyAt}}"></label>
+            <label class="field">
+                <span class="field-label">Notes</span>
+                <textarea name="notes" rows="4" maxlength="4000" placeholder="Additional context…">{{.Notes}}</textarea>
+            </label>
+        </div>
+
+        <div class="note-type-fields" data-note-fields="JOB_APPLICATION"{{if not (showNoteFields .NoteType "JOB_APPLICATION")}} hidden{{end}}>
+            <label class="field"><span class="field-label">Company</span>
+                <input type="text" name="company" value="{{.Company}}" maxlength="200"></label>
+            <label class="field"><span class="field-label">Job title</span>
+                <input type="text" name="job_title" value="{{.JobTitle}}" maxlength="200"></label>
+            <label class="field"><span class="field-label">Job URL</span>
+                <input type="url" name="job_url" value="{{.JobURL}}" maxlength="500"></label>
+            <label class="field"><span class="field-label">Application status</span>
+                <select name="application_status">
+                    <option value="">—</option>
+                    {{range .ApplicationStatuses}}
+                    <option value="{{.}}" {{if eq $.ApplicationStatus (printf "%s" .)}}selected{{end}}>{{.Label}}</option>
+                    {{end}}
+                </select></label>
+            <label class="field"><span class="field-label">Applied at</span>
+                <input type="datetime-local" name="applied_at" value="{{.AppliedAt}}"></label>
+            <label class="field"><span class="field-label">Resume version</span>
+                <input type="text" name="resume_version" value="{{.ResumeVersion}}" maxlength="100"></label>
+            <label class="field"><span class="field-label">Fit score</span>
+                <input type="number" name="fit_score" min="0" max="100" step="1" value="{{.FitScore}}"></label>
+            <label class="field"><span class="field-label">Source</span>
+                <select name="source">
+                    <option value="">—</option>
+                    {{range .ApplicationSources}}
+                    <option value="{{.}}" {{if eq $.Source (printf "%s" .)}}selected{{end}}>{{.}}</option>
+                    {{end}}
+                </select></label>
+            <label class="field">
+                <span class="field-label">Notes</span>
+                <textarea name="notes" rows="4" maxlength="4000" placeholder="Additional context…">{{.Notes}}</textarea>
+            </label>
+        </div>
+
+        <div class="note-type-fields" data-note-fields="GENERAL_NOTE,LEARNING_NOTE,REVIEW_NOTE"{{if not (showNoteFields .NoteType "GENERAL_NOTE,LEARNING_NOTE,REVIEW_NOTE")}} hidden{{end}}>
+            <label class="field">
+                <span class="field-label">Title</span>
+                <input type="text" name="title" value="{{.Title}}" maxlength="200"
+                       placeholder="Short label for this note">
+            </label>
+            <label class="field">
+                <span class="field-label">Notes</span>
+                <textarea name="notes" rows="10" maxlength="8000"
+                          placeholder="Write details, links, or follow-up items…">{{.Notes}}</textarea>
+            </label>
+        </div>
 
         <footer class="task-note-detail-foot">
             {{if .ID}}
+            <button type="button" class="btn btn-ghost btn-sm{{if .IsMarked}} btn-marked-active{{end}}"
+                    hx-post="/tasks/{{.TaskID}}/notes/{{.ID}}/mark"
+                    hx-target="#task-note-detail-pane"
+                    hx-swap="innerHTML">
+                {{template "icon" (dict "name" "star-filled")}}
+                <span>{{if .IsMarked}}Unpin from tasks page{{else}}Pin to tasks page{{end}}</span>
+            </button>
             <button type="button" class="btn btn-danger-ghost btn-sm"
                     data-task-note-delete
                     data-task-id="{{.TaskID}}"
@@ -137,7 +219,7 @@
             <div class="task-note-detail-actions">
                 <button type="submit" class="btn btn-primary btn-sm">
                     {{template "htmx_spinner" .}}
-                    <span>{{if .ID}}Save changes{{else}}Create note{{end}}</span>
+                    <span>{{if .ID}}Save changes{{else}}Add Note{{end}}</span>
                 </button>
             </div>
         </footer>

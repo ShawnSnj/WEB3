@@ -1,28 +1,36 @@
 {{define "content"}}
 {{- $q := .Data.Query -}}
-<div class="page-header">
-    <div>
+<div class="page-header page-header--tasks">
+    <div class="page-header-row">
         <h2 class="page-title">Tasks</h2>
-        <p class="muted page-subtitle">Plan, execute, and carry over what matters today.</p>
+        <div class="page-actions">
+            <button type="button" class="btn btn-ghost"
+                    hx-get="/tasks/import/form"
+                    hx-target="#task-modal"
+                    hx-swap="innerHTML"
+                    aria-haspopup="dialog">
+                {{template "icon" (dict "name" "inbox")}}
+                <span>Import</span>
+            </button>
+            <button type="button" class="btn btn-primary"
+                    data-shortcut="new-task"
+                    data-load-task-form="/tasks/form"
+                    aria-haspopup="dialog">
+                {{template "htmx_spinner" .}}
+                {{template "icon" (dict "name" "plus")}}
+                <span>New task</span>
+            </button>
+        </div>
     </div>
-    <div class="page-actions">
-        <button type="button" class="btn btn-ghost"
-                hx-get="/tasks/import/form"
-                hx-target="#task-modal"
-                hx-swap="innerHTML"
-                aria-haspopup="dialog">
-            {{template "icon" (dict "name" "inbox")}}
-            <span>Import</span>
-        </button>
-        <button type="button" class="btn btn-primary"
-                data-shortcut="new-task"
-                data-load-task-form="/tasks/form"
-                aria-haspopup="dialog">
-            {{template "htmx_spinner" .}}
-            {{template "icon" (dict "name" "plus")}}
-            <span>New task</span>
-        </button>
-    </div>
+    <p class="muted page-subtitle">Plan, execute, and carry over what matters today.</p>
+</div>
+
+<div id="job-hunt-dashboard-host"
+     hx-get="/tasks/job-hunt/summary"
+     hx-trigger="job-hunt-dashboard-changed from:body"
+     hx-target="#job-hunt-dashboard-host"
+     hx-swap="innerHTML">
+    {{template "job_hunt_dashboard" .Data.JobHunt}}
 </div>
 
 <div id="tasks-tabs-host"
@@ -34,6 +42,16 @@
     {{template "tasks_tabs" .Data}}
 </div>
 {{template "tasks_filter_bar" .Data}}
+
+<div id="marked-note-host"
+     class="pinned-note-banner"
+     hx-get="/tasks/marked-note"
+     hx-trigger="marked-note-changed from:body"
+     hx-target="#marked-note-panel"
+     hx-swap="outerHTML">
+    {{template "marked_note_panel" .Data.MarkedNote}}
+</div>
+
 {{template "tasks_bulk_bar" .Data}}
 
 <div id="tasks-list-host"

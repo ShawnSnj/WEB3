@@ -9,26 +9,323 @@ PostgreSQL.
 
 ---
 
+## Quick start (local dev)
+
+One command after setup:
+
+```bash
+cp .env.example .env
+make migrate-all   # first time only — creates tables in postgres
+make run           # starts postgres (docker) if needed, builds CRM UI, runs server
+```
+
+Open **http://localhost:8082/tasks** (task tracker) or **http://localhost:8082/crm/** (Job Hunt CRM).
+
+Skip the CRM rebuild on repeat runs:
+
+```bash
+make run-server    # same as make run, but no npm build
+```
+
+---
+
 ## AI Job Hunt CRM
 
 A personal recruiter layer on top of the task tracker: automatic job collection,
 AI/heuristic fit scoring, daily brief (1 apply + 2 outreach + 1 skill), application
 pipeline, resume analysis, skill gaps, weekly review, and career coach.
 
-See **[docs/CRM.md](docs/CRM.md)** for full architecture and API.
+See **[docs/CRM.md](docs/CRM.md)** for CRM-specific API and pipeline details.
 
 ```bash
-make integrate       # ONE command: postgres + kafka + migrate + unified server
-make integrate-up    # full docker stack (API + worker + CRM UI)
+make integrate       # postgres + kafka + migrate + unified server (no app container)
+make integrate-up    # full docker stack (app + worker + postgres + kafka)
 make migrate-all     # apply tasks + CRM tables to existing postgres
 make crm-collect     # fetch & score jobs
-make frontend-dev    # Next.js CRM UI (API already on :8082)
+make frontend-dev    # Next.js CRM UI on :3000 (dev only; production uses /crm/)
 ```
 
 Both systems share **one PostgreSQL database** (`jobhunt`) with separate table groups.
 One Go process (`cmd/server`) serves the task tracker UI, REST API, and CRM API.
 
 Set `OPENAI_API_KEY` for GPT-powered matching and outreach (heuristics work without it).
+
+---
+
+## Architecture & code patterns
+
+This is a **layered monolith**: one deployable binary, clear separation of concerns,
+no business logic in `main` or HTTP handlers.
+
+```
+Browser / API client
+        │
+        ▼
+┌───────────────────────────────────────────────────────┐
+│  Gin router (internal/api)                            │
+│  ├── /api/v1/*     REST JSON (integrations, CRM API)  │
+│  ├── /dashboard, /tasks, …   HTMX pages (internal/web) │
+│  ├── /crm/*        embedded Next.js static export     │
+│  └── /healthz, /readyz                                │
+└───────────────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────┐     ┌──────────────────┐
+│  service/        │     │  crm/service/    │  ← business rules, orchestration
+│  (tasks, reviews,│     │  (collect, score,│
+│   metrics, …)    │     │   brief, AI)     │
+└────────┬─────────┘     └────────┬─────────┘
+         │                        │
+         ▼                        ▼
+┌──────────────────┐     ┌──────────────────┐
+│  repository/     │     │  crm/repository/ │  ← SQL via pgx
+└────────┬─────────┘     └────────┬─────────┘
+         │                        │
+         └────────────┬───────────┘
+                      ▼
+              PostgreSQL (jobhunt)
+                      ▲
+         ┌────────────┴───────────┐
+         │  scheduler/ (cron)     │  ← reminders, rollover, CRM pipeline
+         │  crm-worker (optional) │  ← Kafka consumer for async scoring
+         └────────────────────────┘
+```
+
+**Layer rules**
+
+| Layer | Package | Responsibility |
+| ----- | ------- | ---------------- |
+| Entrypoint | `cmd/server` | Load config, wire dependencies, start HTTP + scheduler, graceful shutdown — **no domain logic** |
+| HTTP (JSON) | `internal/api` | Parse requests, call services, return JSON |
+| HTTP (HTML) | `internal/web` | Server-rendered templates + HTMX partials + static assets |
+| Business logic | `internal/service`, `internal/crm/service` | Rules, validation, orchestration |
+| Data access | `internal/repository`, `internal/crm/repository` | PostgreSQL queries only |
+| Domain | `internal/model`, `internal/crm/model` | Entities and enums |
+| Infrastructure | `internal/config`, `internal/database`, `internal/scheduler` | Cross-cutting concerns |
+
+**UI split**
+
+| Surface | Tech | Served from |
+| ------- | ---- | ----------- |
+| Task tracker | `html/template` + HTMX + embedded CSS/JS | Go binary (`internal/web/`) |
+| Job Hunt CRM | Next.js 15 static export | Built into `internal/web/static/crm/`, served at `/crm/` |
+
+The CRM frontend is **not** a separate process in production — `make run` / `make build` compiles it into the Go binary.
+
+---
+
+## How `make run` works
+
+`make run` is the default local dev workflow. It chains four steps:
+
+```
+make run
+  │
+  ├─ ensure-db
+  │    ├─ Read DB_HOST / DB_PORT from .env
+  │    ├─ pg_isready → already up? continue
+  │    └─ else → make db-up  (docker compose up -d postgres)
+  │              → make wait-db  (poll until postgres accepts connections)
+  │
+  ├─ check-port
+  │    └─ Fail if HTTP_PORT (default 8082) is already in use
+  │
+  ├─ build-crm
+  │    └─ npm run build in frontend/ → copy static files to internal/web/static/crm/
+  │
+  └─ go run ./cmd/server
+       └─ Connect to postgres at localhost:DB_PORT, listen on :8082
+```
+
+**Important env vars for DB connectivity**
+
+| Variable | Purpose |
+| -------- | ------- |
+| `DB_HOST` | Host the Go app connects to (`localhost` when app runs on your machine) |
+| `DB_PORT` | Port the Go app connects to — must match the published docker port |
+| `DB_HOST_PORT` | Port postgres is published on your machine (docker-compose `ports:` mapping) |
+
+For `make run`, keep **`DB_PORT` = `DB_HOST_PORT`**. Example if another project uses 5432:
+
+```env
+DB_HOST_PORT=5433
+DB_PORT=5433
+```
+
+Inside docker-compose, the `app` container always uses `DB_HOST=postgres` and `DB_PORT=5432` (internal network) — never `DB_HOST_PORT`.
+
+**First-time database setup**
+
+- **Brand-new docker volume:** postgres auto-runs `migrations/deploy.sql` on first container start (mounted into `/docker-entrypoint-initdb.d/`).
+- **Existing volume or local postgres:** run `make migrate-all` once to apply (or update) the schema. The file is idempotent (`IF NOT EXISTS`).
+
+---
+
+## Docker
+
+`docker-compose.yml` defines four services. You rarely need all of them for day-to-day dev.
+
+| Service | Image / build | Role | Typical dev usage |
+| ------- | ------------- | ---- | ----------------- |
+| **postgres** | `postgres:16-alpine` | Primary database | Always — started by `make run` via `ensure-db` |
+| **app** | `Dockerfile` (multi-stage Go + CRM) | Unified server in a container | `make up` / `make integrate-up` |
+| **redpanda** | Kafka-compatible broker | Async CRM job scoring queue | `make integrate` / `make integrate-up` |
+| **crm-worker** | `Dockerfile.crm-worker` | Consumes Kafka, scores jobs | `make integrate-up` only |
+
+### How the Docker files relate
+
+Four files work together — each has a distinct job:
+
+| File | Role |
+| ---- | ---- |
+| **`docker-compose.yml`** | Orchestrator — defines which containers run, ports, env vars, volumes, and service dependencies |
+| **`Dockerfile`** | Build recipe for the **`app`** service (`cmd/server` + embedded CRM UI at `/crm/`) |
+| **`Dockerfile.crm-worker`** | Build recipe for the **`crm-worker`** service (`cmd/crm-worker` — Kafka consumer only) |
+| **`Makefile`** | Shortcuts — wraps `docker compose` and local dev; picks which parts of the stack to start |
+
+```
+Makefile  ──calls──▶  docker compose  ──reads──▶  docker-compose.yml
+                              │                        │
+                              │                        ├── postgres, redpanda  (official images)
+                              │                        ├── app                 (builds from Dockerfile)
+                              │                        └── crm-worker          (builds from Dockerfile.crm-worker)
+                              │
+                              └── also runs go/npm on your host (make run) without building the app image
+```
+
+**Service wiring inside compose:**
+
+```
+postgres ──┬── app (Dockerfile)
+           │      │  HTTP :8082, cron scheduler, publishes to Kafka
+redpanda ──┤      │
+           │      └──► crm.jobs.ingested (Kafka topic)
+           │
+           └── crm-worker (Dockerfile.crm-worker)
+                  └── reads Kafka, scores jobs, writes to postgres
+```
+
+**`Dockerfile`** (main app) — three stages:
+
+1. **crm** — `npm run build` in `frontend/`
+2. **builder** — embed CRM static files, `go build ./cmd/server`
+3. **runtime** — `distroless/static`, non-root, port 8082
+
+**`Dockerfile.crm-worker`** — lighter image: builds only `./cmd/crm-worker`, no UI, no HTTP server.
+
+**Which Makefile targets use which files:**
+
+| Target | Compose services | Dockerfiles |
+| ------ | ---------------- | ----------- |
+| `make db-up` | `postgres` only | none |
+| `make run` | `postgres` only (if not already up) | none — app runs via `go run` on host |
+| `make integrate` | `postgres` + `redpanda` | none — app runs via `go run` on host |
+| `make up` / `make integrate-up` | all four | **both** Dockerfiles |
+| `make docker-build` | none (build image only) | `Dockerfile` only |
+
+**Two dev paths:**
+
+```
+Path A — make run (hybrid, recommended)
+────────────────────────────────────────
+  Your machine                         Docker
+  ┌──────────────────┐                ┌──────────────┐
+  │ go run ./cmd/server │──localhost──▶│ postgres     │
+  │ :8082            │   :DB_PORT     └──────────────┘
+  └──────────────────┘
+  Dockerfile not used for the app
+
+
+Path B — make up (full docker)
+──────────────────────────────
+  Docker internal network
+  ┌──────────┐     ┌─────────────┐     ┌────────────┐
+  │ postgres │◀────│ app         │────▶│ redpanda   │
+  └────▲─────┘     │ (Dockerfile)│     └─────┬──────┘
+       │           └─────────────┘           │
+       └──────── crm-worker (Dockerfile.crm-worker)
+  Host :8082 → app container
+```
+
+### Postgres container
+
+```yaml
+postgres:
+  ports: "${DB_HOST_PORT:-5432}:5432"          # host → container
+  volumes:
+    - jobhunt_pgdata:/var/lib/postgresql/data   # persistent data
+    - ./migrations/deploy.sql → initdb script   # runs ONLY on first empty volume
+```
+
+Flow on **first** `docker compose up -d postgres`:
+
+1. Docker creates the `jobhunt_pgdata` volume.
+2. Postgres initializes the `jobhunt` database.
+3. `deploy.sql` runs automatically — tasks + CRM tables, indexes, enums.
+4. Postgres listens on container port 5432, published to your host at `DB_HOST_PORT`.
+
+On **subsequent** starts, the volume already has data — init scripts are skipped. Use `make migrate-all` to apply schema changes.
+
+Useful commands:
+
+```bash
+make db-up      # start postgres only
+make wait-db    # block until postgres is ready
+make psql       # interactive shell inside the container
+make down       # stop all compose services
+```
+
+### App container (`make up`)
+
+See **How the Docker files relate** above for the full build pipeline. The running `app` container connects to `postgres:5432` on the docker network (not `localhost`).
+
+### Two ways to run the stack
+
+| Mode | Command | What runs where |
+| ---- | ------- | ---------------- |
+| **Hybrid (recommended for dev)** | `make run` | Postgres in Docker; Go app + scheduler on your host (hot reload via `go run`) |
+| **Full Docker** | `make up` or `make integrate-up` | Postgres + app (+ kafka + worker) all in containers |
+
+```bash
+# Hybrid — edit Go/templates, restart make run
+make run
+
+# Full docker — production-like, no local Go needed
+make up
+make health && make ready
+```
+
+If port 8082 is taken by the docker `app` container, either use it directly or run `make stop-app` before `make run`.
+
+---
+
+## Project layout
+
+```
+cmd/
+  server/              Main entrypoint — wiring only
+  crm-worker/          Kafka consumer for async job scoring
+  dedupe-tasks/        CLI: remove duplicate tasks
+  reschedule-tasks/    CLI: spread overdue tasks across future days
+internal/
+  api/                 REST handlers + /api/v1 routing (thin HTTP layer)
+  web/                 HTMX pages, templates, embedded static + CRM assets
+  service/             Task tracker business logic
+  repository/          PostgreSQL access (tasks domain)
+  model/               Domain entities
+  crm/                 CRM subsystem (aggregator, AI, kafka, engines)
+  scheduler/           Cron jobs (reminders, rollover, CRM pipeline)
+  config/              Typed environment configuration
+  database/            pgx pool lifecycle
+frontend/              Next.js CRM — output copied into internal/web/static/crm/
+migrations/
+  deploy.sql           Single idempotent schema (tasks + CRM) — use for deploy
+  *.sql                Incremental migrations (also folded into deploy.sql)
+docker-compose.yml     postgres, redpanda, app, crm-worker
+Dockerfile             Multi-stage build → app (cmd/server + CRM UI)
+Dockerfile.crm-worker  Build → crm-worker (Kafka consumer)
+Makefile               run, db-up, migrate-all, integrate, …
+```
 
 ---
 
@@ -50,139 +347,116 @@ Set `OPENAI_API_KEY` for GPT-powered matching and outreach (heuristics work with
 
 ---
 
-## Project layout
-
-```
-cmd/server/              Entrypoint — wires config, DB, HTTP, scheduler, web UI
-internal/
-  api/                   REST handlers + `/api/v1` routing
-  config/                Typed environment configuration
-  database/              pgx pool lifecycle
-  model/                 Domain entities and invariants
-  repository/            PostgreSQL data access
-  service/               Business logic (tasks, reviews, metrics, reminders…)
-  scheduler/             Cron jobs (reminders, overdue scan, auto carry-over)
-  suggestion/            Rule-based coaching engine
-  web/                   Server-rendered pages, static assets, HTMX handlers
-migrations/
-  deploy.sql             Single idempotent schema (use this to deploy)
-  versions/              Historical incremental migrations (reference only)
-```
-
----
-
-## Quick start
-
-### Prerequisites
+## Prerequisites
 
 - Go 1.25+
-- Docker & Docker Compose (recommended)
+- Docker Desktop (recommended — postgres starts automatically via `make run`)
+- Node.js 22+ (for CRM UI build on first `make run`)
 - `make`, `curl`, `jq` (optional, for health checks)
-
-### 1. Configure
-
-```bash
-cp .env.example .env
-# Edit DB_HOST_PORT if 5432 is already taken locally
-```
-
-### 2. Run with Docker (recommended)
-
-```bash
-make up        # build app image, start postgres + app
-make health    # → {"status":"ok"}
-make ready     # → {"status":"ready"} (checks DB)
-```
-
-Postgres runs the schema automatically on **first** container init via
-`migrations/deploy.sql`. Open the UI at **http://localhost:8082/dashboard**.
-
-```bash
-make logs      # tail application logs
-make psql      # interactive postgres shell
-make down      # stop stack
-```
-
-### 3. Run locally (app on host, DB in Docker)
-
-```bash
-docker compose up -d postgres
-make migrate   # apply deploy.sql if the volume already existed without schema
-make run
-```
-
-Verify:
-
-```bash
-curl http://localhost:8082/healthz
-curl http://localhost:8082/readyz
-```
-
-### 4. Tests
-
-```bash
-make test      # race detector, all packages
-make vet
-```
 
 ---
 
 ## Deployment
 
-### Database schema
+### Overview
 
-Use the **single deploy file** — idempotent, safe to re-run:
+| Target | Steps | Best for |
+| ------ | ----- | -------- |
+| **Local dev** | `cp .env.example .env` → `make migrate-all` → `make run` | Daily development |
+| **Docker (single host)** | `make docker-build` → `docker compose up -d` | Staging / small VPS |
+| **Binary + managed DB** | `make build` → ship `bin/server` → set `DATABASE_URL` | Production with RDS/Cloud SQL |
 
-```bash
-# Dockerised postgres (this project)
-make migrate
+All paths use the same schema file: **`migrations/deploy.sql`** (idempotent).
 
-# Any postgres (production, managed DB, local psql)
-export DATABASE_URL="postgres://user:pass@host:5432/jobhunt?sslmode=require"
-make migrate-local
-# or:
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/deploy.sql
-```
+### 1. Local development (hybrid)
 
-**Fresh Docker volume:** schema is applied automatically when postgres starts
-for the first time (`docker-compose.yml` mounts `deploy.sql` into initdb).
-
-**Existing database** that was created from old split migrations: `deploy.sql`
-uses `IF NOT EXISTS` — running it is safe and will add any missing objects.
-
-Historical step-by-step SQL files are archived under `migrations/versions/`.
-
-### Application (Docker)
+Postgres runs in Docker; the Go app runs on your machine.
 
 ```bash
 cp .env.example .env
-# Set APP_ENV=production, strong DB_PASSWORD, LOG_FORMAT=json
+# Optional: set DB_HOST_PORT if 5432 is taken (and DB_PORT to match)
 
-make docker-build
-docker compose up -d
+make migrate-all   # first time, or after schema changes
+make run           # ensure-db → build-crm → go run
 ```
 
-Production checklist:
+Verify:
+
+```bash
+curl http://localhost:8082/healthz   # liveness
+curl http://localhost:8082/readyz    # postgres reachable
+```
+
+### 2. Full Docker stack
+
+Everything runs in containers — no local Go or Node required after the image is built.
+
+```bash
+cp .env.example .env
+# Set APP_ENV=production, strong DB_PASSWORD, LOG_FORMAT=json for prod
+
+make up            # build image + start postgres, redpanda, app, crm-worker
+make migrate-all   # safe on existing volumes; required if volume predates a schema change
+make health && make ready
+```
+
+Or use the integrated targets:
+
+```bash
+make integrate-up  # docker compose up -d --build + migrate-all
+make integrate     # postgres + kafka only, then go run on host (no app container)
+```
+
+Open **http://localhost:8082/dashboard** (tasks) and **http://localhost:8082/crm/** (CRM).
+
+```bash
+make logs          # tail app container logs
+make psql          # postgres shell
+make down          # stop stack (volume persists)
+```
+
+### 3. Database schema
+
+```bash
+# Docker postgres (this project)
+make migrate-all
+
+# Any postgres — reads DATABASE_URL or DB_* from .env
+make migrate-all-local
+
+# Or pipe deploy.sql directly
+export DATABASE_URL="postgres://user:pass@host:5432/jobhunt?sslmode=require"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/deploy.sql
+```
+
+**Fresh docker volume:** schema applied automatically on first postgres start (`deploy.sql` mounted into `docker-entrypoint-initdb.d/`).
+
+**Existing database:** `deploy.sql` uses `IF NOT EXISTS` — safe to re-run. Incremental files under `migrations/*.sql` exist for targeted upgrades; `make migrate-task-notes-structured` etc. apply individual migrations when needed.
+
+### 4. Production binary (no Docker for the app)
+
+```bash
+make build                     # builds CRM UI + compiles → bin/server
+export DATABASE_URL=postgres://user:pass@db-host:5432/jobhunt?sslmode=require
+export APP_ENV=production
+./bin/server
+```
+
+The binary embeds the task tracker UI, static assets, and CRM at `/crm/` — no separate frontend server.
+
+### Production checklist
 
 | Item | Notes |
 | ---- | ----- |
 | `APP_ENV=production` | Enables Gin release mode |
+| `DATABASE_URL` | Preferred over discrete `DB_*` fields |
 | `DB_SSLMODE=require` | When connecting to managed Postgres |
-| `DATABASE_URL` | Preferred over discrete DB_* fields |
-| `SCHEDULER_TZ` | Match your local timezone for cron jobs |
+| `SCHEDULER_TZ` / `APP_TIMEZONE` | Match your timezone for midnight rollover and cron |
+| `OPENAI_API_KEY` | Optional; CRM heuristics work without it |
 | Secrets | Never commit `.env`; rotate `DB_PASSWORD` |
 | Health probes | `GET /healthz` (liveness), `GET /readyz` (DB readiness) |
-| Port | App listens on **8082** by default |
-
-### Application (binary)
-
-```bash
-make build                     # → bin/server
-export DATABASE_URL=postgres://...
-./bin/server
-```
-
-The binary embeds the web UI and static assets — no separate frontend build.
+| Port | App listens on **8082** by default (`HTTP_PORT`) |
+| Kafka | Set `KAFKA_BROKERS` for async CRM scoring; leave empty to disable |
 
 ### Cron schedule (override via env)
 
@@ -193,8 +467,17 @@ The binary embeds the web UI and static assets — no separate frontend build.
 | `CRON_WEEKLY_REVIEW` | `0 20 * * 0` | Enqueue Sunday weekly review reminder |
 | `CRON_OVERDUE_SCANNER` | `*/15 * * * *` | Flag overdue tasks → reminder queue |
 | `CRON_AUTO_CARRY_OVER` | `5 0 * * *` | Roll unfinished tasks to next day |
+| `CRON_DAILY_ROLLOVER` | `0 0 * * *` | Yesterday pending → missed; today → pending |
 | `CRON_REMINDER_DISPATCHER` | `* * * * *` | Deliver pending reminders |
+| `CRON_CRM_DAILY_PIPELINE` | `0 7 * * *` | CRM collect → score → daily brief |
 | `SCHEDULER_ENABLED` | `true` | Master switch for all cron jobs |
+
+### Tests
+
+```bash
+make test      # race detector, all packages
+make vet
+```
 
 ---
 
@@ -317,15 +600,34 @@ suggestion per rule per ISO week:
 ## Makefile reference
 
 ```bash
-make help           # all targets
-make up / down      # docker compose stack
-make run            # local go run
-make build          # compile bin/server
-make test           # unit tests
-make migrate        # apply deploy.sql (docker postgres)
-make migrate-local  # apply deploy.sql (host psql)
-make health / ready # probe endpoints
-make psql           # postgres shell in container
+make help              # all targets
+
+# Local dev
+make run               # ensure-db + build-crm + go run (recommended)
+make run-server        # ensure-db + go run (skip CRM rebuild)
+make db-up             # docker compose up -d postgres
+make stop-app          # stop docker app container (free port 8082)
+
+# Docker
+make up / down         # full compose stack
+make integrate         # postgres + kafka + migrate + go run on host
+make integrate-up      # full docker stack + migrate
+
+# Build & test
+make build             # CRM UI + bin/server
+make build-crm         # Next.js → internal/web/static/crm only
+make test / vet
+
+# Database
+make migrate-all       # apply deploy.sql via docker postgres
+make migrate-all-local # apply deploy.sql via host psql
+make psql              # postgres shell in container
+make wait-db           # poll until postgres is ready
+
+# Ops
+make health / ready    # probe /healthz and /readyz
+make crm-collect       # POST /api/v1/crm/collect
+make frontend-dev      # Next.js dev server on :3000
 ```
 
 ---

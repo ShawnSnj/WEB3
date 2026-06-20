@@ -301,7 +301,36 @@ img, svg { display: block; max-width: 100%; }
     justify-content: space-between;
     gap: var(--space-5);
     margin-bottom: var(--space-8);
-    flex-wrap: wrap;
+}
+.page-header--tasks {
+    display: block;
+    margin-bottom: var(--space-4);
+}
+.page-header--tasks .page-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+.page-header--tasks .page-title {
+    flex: 0 0 auto;
+    margin: 0;
+}
+.page-header--tasks .page-subtitle {
+    margin-top: var(--space-1);
+}
+.page-header--tasks .page-actions {
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+}
+.pinned-note-banner {
+    width: 100%;
+    margin-bottom: var(--space-3);
+}
+.pinned-note-banner:not(:has(.marked-note-card)) {
+    display: none;
 }
 .page-title {
     font-size: 22px;
@@ -309,6 +338,94 @@ img, svg { display: block; max-width: 100%; }
     letter-spacing: -0.03em;
 }
 .page-subtitle { margin-top: var(--space-1); font-size: 13.5px; }
+.page-actions {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+/* ---------- Marked note panel ------------------------------------ */
+
+.marked-note-panel {
+    width: 100%;
+}
+.marked-note-panel:empty,
+.marked-note-panel:not(:has(.marked-note-card)) {
+    display: none;
+}
+.marked-note-card {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.06));
+}
+.pinned-note-banner .marked-note-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+.pinned-note-banner .marked-note-head {
+    flex: 0 0 auto;
+    min-width: 220px;
+    max-width: 320px;
+}
+.pinned-note-banner .marked-note-body {
+    flex: 1 1 auto;
+    margin-top: 0;
+    max-height: none;
+    overflow: visible;
+}
+.marked-note-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+.marked-note-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+.marked-note-label .icon { width: 14px; height: 14px; }
+.marked-note-title {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+.marked-note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 4px 0 0;
+    font-size: 11px;
+}
+.marked-note-body {
+    margin-top: var(--space-3);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-muted, var(--text-faint));
+    white-space: pre-wrap;
+}
+.marked-note-badge {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: 4px;
+    color: var(--accent);
+}
+.marked-note-badge .icon { width: 14px; height: 14px; }
+.btn-marked-active { color: var(--accent); border-color: var(--accent); }
 
 /* ---------- Card -------------------------------------------------- */
 
@@ -779,7 +896,27 @@ body.modal-open { overflow: hidden; }
 
     .menu-toggle { display: inline-grid; }
     .content { padding: var(--space-4); }
-    .page-header { gap: var(--space-3); }
+    .page-header:not(.page-header--tasks) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3);
+    }
+}
+
+@media (max-width: 720px) {
+    .page-header--tasks .page-header-row {
+        flex-wrap: wrap;
+        gap: var(--space-3);
+    }
+    .page-header--tasks .page-actions {
+        margin-left: auto;
+    }
+    .pinned-note-banner .marked-note-card {
+        flex-direction: column;
+    }
+    .pinned-note-banner .marked-note-head {
+        max-width: none;
+    }
 }
 
 @media (max-width: 480px) {
@@ -2300,6 +2437,117 @@ body.modal-open { overflow: hidden; }
     opacity: 1;
     pointer-events: auto;
 }
+
+/* ---------- Job hunt progress dashboard -------------------------- */
+
+.job-hunt-progress {
+    margin-bottom: var(--space-5);
+    padding: var(--space-4);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+.job-hunt-progress-title {
+    margin: 0 0 var(--space-3);
+    font-size: 15px;
+    font-weight: 600;
+}
+.job-hunt-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-3);
+}
+@media (max-width: 900px) {
+    .job-hunt-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+    .job-hunt-cards { grid-template-columns: 1fr; }
+}
+.job-hunt-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+.job-hunt-card:hover,
+.job-hunt-card--active {
+    border-color: var(--accent);
+    background: var(--surface-hover);
+}
+.job-hunt-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+}
+.job-hunt-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+}
+.job-hunt-detail-host {
+    margin-top: var(--space-4);
+}
+.job-hunt-detail-panel {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-3);
+}
+.job-hunt-detail-title {
+    margin: 0 0 var(--space-3);
+    font-size: 13px;
+    font-weight: 600;
+}
+.job-hunt-table-wrap { overflow-x: auto; }
+.job-hunt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.job-hunt-table th {
+    text-align: left;
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+}
+.job-hunt-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+.job-hunt-row--clickable { cursor: pointer; }
+.job-hunt-row--clickable:hover { background: var(--surface-hover); }
+.job-hunt-empty { margin: 0; font-size: 13px; }
+.detail-dl {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    font-size: 13px;
+}
+.detail-dl dt {
+    margin: 0;
+    color: var(--text-faint);
+    font-weight: 500;
+}
+.detail-dl dd {
+    margin: 0;
+    word-break: break-word;
+}
+.detail-pre { white-space: pre-wrap; }
+.note-type-fields[hidden] { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

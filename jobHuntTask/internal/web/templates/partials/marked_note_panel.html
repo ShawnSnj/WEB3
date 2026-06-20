@@ -1,0 +1,31 @@
+{{- /*
+  marked_note_panel — pinned note shown top-right on the tasks page.
+  Data: web.MarkedNotePanelVM
+*/ -}}
+{{define "marked_note_panel"}}
+<div id="marked-note-panel" class="marked-note-panel">
+    {{if .HasNote}}
+    <article class="marked-note-card" aria-label="Pinned note">
+        <header class="marked-note-head">
+            <div class="marked-note-head-text">
+                <span class="marked-note-label">{{template "icon" (dict "name" "star-filled")}} Pinned note</span>
+                <h3 class="marked-note-title">{{.Title}}</h3>
+                <p class="marked-note-meta muted">
+                    <span class="chip chip--soft">{{.NoteTypeLabel}}</span>
+                    <span>{{.TaskTitle}}</span>
+                </p>
+            </div>
+            <button type="button" class="icon-button marked-note-open"
+                    title="Open note"
+                    data-load-task-notes="/tasks/{{.TaskID}}/notes?selected={{.ID}}"
+                    aria-label="Open pinned note">
+                {{template "icon" (dict "name" "note")}}
+            </button>
+        </header>
+        {{if .Body}}
+        <div class="marked-note-body">{{.Body}}</div>
+        {{end}}
+    </article>
+    {{end}}
+</div>
+{{end}}

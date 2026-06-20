@@ -168,6 +168,9 @@ func run() error {
 		_ = sched.Stop(stopCtx)
 	}()
 
+	taskNoteRepo := repository.NewPostgresTaskNoteRepository(pool)
+	taskNoteSvc := service.NewTaskNoteService(taskNoteRepo, taskRepo)
+
 	// HTTP server
 	router := api.NewRouter(api.Deps{
 		Config:             cfg,
@@ -178,6 +181,7 @@ func run() error {
 		TaskSessionService: sessionSvc,
 		MetricsService:     metricsSvc,
 		SuggestionService:  suggestionSvc,
+		TaskNoteService:    taskNoteSvc,
 		CRMService:         crmService,
 	})
 
@@ -203,9 +207,6 @@ func run() error {
 		log.With(slog.String("component", "dashboard")),
 	)
 	dashboard.Register(router)
-
-	taskNoteRepo := repository.NewPostgresTaskNoteRepository(pool)
-	taskNoteSvc := service.NewTaskNoteService(taskNoteRepo, taskRepo)
 
 	// Wire the data-backed tasks page (full CRUD + state transitions + bulk).
 	tasksPage := web.NewTasksHandler(
