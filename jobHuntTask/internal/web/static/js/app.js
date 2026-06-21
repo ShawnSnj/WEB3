@@ -305,8 +305,98 @@
             htmx.process(slot);
         }
         initNoteTypeFields(slot);
+        bindDraggableModals(slot);
         const firstInput = slot.querySelector('input, textarea, select');
         if (firstInput) firstInput.focus();
+    }
+
+    // ------------------------------------------------------------------
+    // 6a. Draggable modals — drag by header/title bar
+    // ------------------------------------------------------------------
+
+    function clampPanelPosition(panel, left, top) {
+        const minVisible = 48;
+        const w = panel.offsetWidth;
+        return {
+            left: Math.min(Math.max(left, minVisible - w), window.innerWidth - minVisible),
+            top: Math.min(Math.max(top, 0), window.innerHeight - minVisible),
+        };
+    }
+
+    function initDraggablePanel(panel, handle) {
+        if (!panel || !handle || panel.dataset.dragBound) return;
+        panel.dataset.dragBound = '1';
+
+        let dragState = null;
+
+        function finishDrag(e) {
+            if (!dragState) return;
+            dragState = null;
+            handle.classList.remove('is-dragging');
+            if (e && handle.releasePointerCapture) {
+                try { handle.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            }
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+        }
+
+        function onPointerMove(e) {
+            if (!dragState) return;
+            const pos = clampPanelPosition(
+                panel,
+                e.clientX - dragState.offsetX,
+                e.clientY - dragState.offsetY
+            );
+            panel.style.left = pos.left + 'px';
+            panel.style.top = pos.top + 'px';
+        }
+
+        function onPointerUp(e) {
+            finishDrag(e);
+        }
+
+        handle.addEventListener('pointerdown', function (e) {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            if (e.target.closest('button, a, input, select, textarea, label')) return;
+
+            const rect = panel.getBoundingClientRect();
+            if (!panel.classList.contains('is-dragged')) {
+                panel.classList.add('is-dragged');
+                panel.style.width = rect.width + 'px';
+            }
+            panel.style.left = rect.left + 'px';
+            panel.style.top = rect.top + 'px';
+
+            dragState = {
+                offsetX: e.clientX - rect.left,
+                offsetY: e.clientY - rect.top,
+            };
+            handle.classList.add('is-dragging');
+            if (handle.setPointerCapture) handle.setPointerCapture(e.pointerId);
+            e.preventDefault();
+
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp);
+        });
+    }
+
+    function bindDraggableModals(root) {
+        const scope = root && root.querySelectorAll ? root : document;
+        scope.querySelectorAll('.modal').forEach(function (modal) {
+            initDraggablePanel(
+                modal.querySelector('.modal-panel'),
+                modal.querySelector('.modal-head')
+            );
+        });
+        const confirmModal = document.getElementById('confirm-modal');
+        if (confirmModal && (!root || root === document || root.contains(confirmModal))) {
+            initDraggablePanel(
+                confirmModal.querySelector('.confirm-modal-panel'),
+                confirmModal.querySelector('.confirm-modal-title')
+            );
+        }
     }
 
     function openTaskForm(url) {
@@ -985,6 +1075,8 @@
         }
         if (e.detail.target && e.detail.target.id === 'task-modal') {
             bindModalSlot(e.detail.target);
+        } else if (e.detail.target) {
+            bindDraggableModals(e.detail.target);
         }
         syncTaskTimerInterval();
     });
@@ -1333,4 +1425,5 @@
 
     refreshActiveNav();
     syncTaskTimerInterval();
+    bindDraggableModals(document);
 })();

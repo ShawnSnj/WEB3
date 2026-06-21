@@ -255,7 +255,7 @@ func (r *PostgresTaskNoteRepository) ListByNoteType(ctx context.Context, noteTyp
             n.person_name, n.company, n.role_title, n.platform, n.profile_url,
             n.message_content, n.sent_at, n.reply_status, n.reply_at,
             n.job_title, n.job_url, n.application_status, n.applied_at,
-            n.resume_version, n.fit_score, n.source, n.notes,
+            n.resume_version, n.fit_score, n.source, n.notes, n.is_marked,
             n.created_at, n.updated_at,
             t.title AS task_title
         FROM task_notes n

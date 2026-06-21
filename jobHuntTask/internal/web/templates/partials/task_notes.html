@@ -65,7 +65,6 @@
             <tr>
                 <th class="th-type">Type</th>
                 <th class="th-title">Title</th>
-                <th>Content</th>
                 <th class="th-updated">Updated</th>
             </tr>
         </thead>
@@ -86,7 +85,6 @@
                     <span class="task-note-title-link">{{.Title}}</span>
                     {{if .IsMarked}}<span class="marked-note-badge" title="Pinned to tasks page">{{template "icon" (dict "name" "star-filled")}}</span>{{end}}
                 </td>
-                <td class="td-content muted">{{.ContentPreview}}</td>
                 <td class="td-updated muted">{{.UpdatedLabel}}</td>
             </tr>
             {{end}}

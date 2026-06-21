@@ -804,8 +804,8 @@ img, svg { display: block; max-width: 100%; }
 .confirm-modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: none;
 }
 .confirm-modal-panel {
     position: relative;
@@ -817,8 +817,20 @@ img, svg { display: block; max-width: 100%; }
     padding: var(--space-5);
     animation: modal-in 0.18s ease-out;
 }
+.confirm-modal-panel.is-dragged {
+    position: fixed;
+    margin: 0;
+    z-index: 1;
+}
 .confirm-modal.is-open .confirm-modal-panel { animation: modal-in 0.18s ease-out; }
-.confirm-modal-title { font-size: 17px; margin: 0 0 var(--space-2); }
+.confirm-modal-title {
+    font-size: 17px;
+    margin: 0 0 var(--space-2);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+.confirm-modal-title.is-dragging { cursor: grabbing; }
 .confirm-modal-message { margin: 0 0 var(--space-4); line-height: 1.45; }
 .confirm-modal-foot {
     display: flex;
@@ -1630,7 +1642,6 @@ body.modal-open { overflow: hidden; }
 
 /* ---------- Task import ------------------------------------------ */
 
-.modal-panel--wide { width: min(640px, 100%); }
 .import-help {
     display: flex;
     align-items: flex-start;
@@ -1690,8 +1701,8 @@ body.modal-open { overflow: hidden; }
 .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: none;
 }
 .modal-panel {
     position: relative;
@@ -1699,17 +1710,49 @@ body.modal-open { overflow: hidden; }
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.04);
     padding: var(--space-5);
     max-height: calc(100vh - var(--space-4) * 2);
     overflow-y: auto;
+}
+.modal-panel.is-dragged {
+    position: fixed;
+    margin: 0;
+    z-index: 1;
+}
+.modal-panel.modal-panel--wide { width: min(640px, 100%); }
+.modal-panel.modal-panel--detail {
+    width: min(
+        calc(var(--content-max) - var(--space-8) * 2),
+        calc(100vw - var(--sidebar-w) - var(--space-8) * 2)
+    );
+    max-width: calc(100vw - var(--space-4) * 2);
+    max-height: min(85vh, calc(100vh - var(--space-4) * 2));
+}
+.modal-panel.modal-panel--detail .detail-dl {
+    grid-template-columns: minmax(150px, 200px) 1fr;
+    gap: var(--space-3) var(--space-5);
+}
+.modal-panel.modal-panel--detail .detail-pre {
+    line-height: 1.55;
+    max-height: none;
+}
+@media (max-width: 880px) {
+    .modal-panel.modal-panel--detail {
+        width: calc(100vw - var(--space-4) * 2);
+    }
 }
 .modal-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--space-3);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
 }
+.modal-head.is-dragging { cursor: grabbing; }
+.modal-head .icon-button { cursor: pointer; touch-action: auto; }
 .modal-title { font-size: 18px; letter-spacing: -0.01em; margin: 0; }
 .modal-foot {
     display: flex;
@@ -2309,12 +2352,12 @@ body.modal-open { overflow: hidden; }
 
 /* ---------- Task notes modal ----------------------------------- */
 
-.task-notes-modal { width: min(920px, 100%); }
+.modal-panel.task-notes-modal { width: min(1080px, 100%); }
 .task-notes-subtitle { margin: 4px 0 0; font-size: 13px; }
 .task-notes-panel { padding: 0 var(--space-5) var(--space-5); }
 .task-notes-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.3fr) minmax(0, 0.7fr);
     gap: var(--space-4);
     min-height: 360px;
 }
@@ -2365,7 +2408,9 @@ body.modal-open { overflow: hidden; }
     border-bottom: 1px solid var(--border);
     vertical-align: top;
 }
-.task-notes-table tbody tr:last-child td { border-bottom: 0; }
+.task-notes-table .th-type { width: 1%; white-space: nowrap; }
+.task-notes-table .th-updated { width: 1%; white-space: nowrap; }
+.task-notes-table .td-updated { white-space: nowrap; font-size: 12px; }
 .task-notes-row { transition: background 0.12s ease; }
 .task-notes-row--clickable { cursor: pointer; }
 .task-notes-row:hover { background: var(--surface-hover); }
