@@ -181,9 +181,16 @@
     <div class="modal-panel modal-panel--detail">
         <header class="modal-head">
             <h2 id="jh-dm-detail-title" class="modal-title">DM Detail</h2>
-            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
-                {{template "icon" (dict "name" "x")}}
-            </button>
+            <div class="modal-head-actions">
+                <button type="button" class="btn btn-ghost btn-sm"
+                        data-load-task-notes="/tasks/{{.TaskID}}/notes?selected={{.ID}}">
+                    {{template "icon" (dict "name" "edit")}}
+                    <span>Edit note</span>
+                </button>
+                <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                    {{template "icon" (dict "name" "x")}}
+                </button>
+            </div>
         </header>
         <div class="job-hunt-detail-grid">
             <dl class="detail-dl">
@@ -212,9 +219,16 @@
     <div class="modal-panel modal-panel--detail">
         <header class="modal-head">
             <h2 id="jh-app-detail-title" class="modal-title">Application Detail</h2>
-            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
-                {{template "icon" (dict "name" "x")}}
-            </button>
+            <div class="modal-head-actions">
+                <button type="button" class="btn btn-ghost btn-sm"
+                        data-load-task-notes="/tasks/{{.TaskID}}/notes?selected={{.ID}}">
+                    {{template "icon" (dict "name" "edit")}}
+                    <span>Edit note</span>
+                </button>
+                <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                    {{template "icon" (dict "name" "x")}}
+                </button>
+            </div>
         </header>
         <div class="job-hunt-detail-grid">
             <dl class="detail-dl">
@@ -242,9 +256,16 @@
     <div class="modal-panel">
         <header class="modal-head">
             <h2 id="jh-note-detail-title" class="modal-title">{{.NoteTypeLabel}}</h2>
-            <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
-                {{template "icon" (dict "name" "x")}}
-            </button>
+            <div class="modal-head-actions">
+                <button type="button" class="btn btn-ghost btn-sm"
+                        data-load-task-notes="/tasks/{{.TaskID}}/notes?selected={{.ID}}">
+                    {{template "icon" (dict "name" "edit")}}
+                    <span>Edit note</span>
+                </button>
+                <button type="button" class="icon-button" aria-label="Close" data-action="close-modal">
+                    {{template "icon" (dict "name" "x")}}
+                </button>
+            </div>
         </header>
         <dl class="detail-dl">
             <dt>Related Task</dt><dd>{{.TaskTitle}}</dd>

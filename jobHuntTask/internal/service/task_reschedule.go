@@ -125,3 +125,66 @@ func (s *TaskService) RescheduleTodayAndOverdue(ctx context.Context, perDay int)
 
 	return out, nil
 }
+
+// ShiftOverdueTodayUpcoming adds one calendar day to each pending, in-progress,
+// or missed task due on or before the end of the upcoming window (overdue +
+// today + next upcomingDays, matching the Tasks tabs).
+func (s *TaskService) ShiftOverdueTodayUpcoming(ctx context.Context, upcomingDays int) (RescheduleSpreadResult, error) {
+	if upcomingDays <= 0 {
+		upcomingDays = 30
+	}
+
+	var out RescheduleSpreadResult
+	now := s.clock.Now()
+	todayStart := s.cal.StartOfDay(now)
+	cutoff := todayStart.Add(time.Duration(upcomingDays+1) * 24 * time.Hour)
+
+	tasks, err := s.repo.List(ctx, repository.TaskFilter{
+		Statuses: []model.Status{
+			model.StatusPending,
+			model.StatusInProgress,
+			model.StatusMissed,
+		},
+		DueBefore: &cutoff,
+		Limit:     500,
+		OrderBy:   "due_date",
+	})
+	if err != nil {
+		return out, fmt.Errorf("list schedulable tasks: %w", err)
+	}
+
+	pending := model.StatusPending
+	for _, t := range tasks {
+		if t.DueDate == nil {
+			continue
+		}
+		oldDue := s.cal.FormatDate(*t.DueDate)
+		newDue := s.cal.StartOfDay(*t.DueDate).Add(24 * time.Hour)
+
+		u := repository.TaskUpdate{DueDate: &newDue}
+		if t.Status == model.StatusMissed {
+			u.Status = &pending
+		}
+
+		if _, err := s.repo.Update(ctx, t.ID, u); err != nil {
+			out.Errors = append(out.Errors, fmt.Errorf("%s (%s): %w", t.Title, t.ID, err))
+			continue
+		}
+
+		out.Moved++
+		newStatus := t.Status
+		if u.Status != nil {
+			newStatus = *u.Status
+		}
+		out.Plan = append(out.Plan, RescheduleAssignment{
+			TaskID:    t.ID.String(),
+			Title:     t.Title,
+			OldDue:    oldDue,
+			NewDue:    s.cal.FormatDate(newDue),
+			OldStatus: t.Status,
+			NewStatus: newStatus,
+		})
+	}
+
+	return out, nil
+}

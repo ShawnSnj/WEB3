@@ -79,6 +79,7 @@ func (h *TasksHandler) Register(r *gin.Engine) {
 	g.POST("/:id/carry_over", h.carryOver)
 	g.POST("/bulk/complete", h.bulkComplete)
 	g.POST("/bulk/delete", h.bulkDelete)
+	g.POST("/shift-next-day", h.shiftScheduleNextDay)
 	h.registerNotesRoutes(g)
 	h.registerJobHuntRoutes(g)
 }
@@ -960,6 +961,25 @@ func (h *TasksHandler) bulkDelete(c *gin.Context) {
 		}
 	}
 	setToast(c, "info", "Deleted "+strconv.Itoa(done)+" of "+strconv.Itoa(len(ids)))
+	h.triggerTasksChanged(c)
+	c.Status(http.StatusOK)
+}
+
+func (h *TasksHandler) shiftScheduleNextDay(c *gin.Context) {
+	res, err := h.tasks.ShiftOverdueTodayUpcoming(c.Request.Context(), upcomingWindowDays)
+	if err != nil {
+		h.log.Warn("shift schedule", slog.String("err", err.Error()))
+		setToast(c, "danger", "Could not move tasks forward")
+		c.Status(http.StatusOK)
+		return
+	}
+	if len(res.Errors) > 0 {
+		setToast(c, "warning", fmt.Sprintf("Moved %d task(s); %d failed", res.Moved, len(res.Errors)))
+	} else if res.Moved == 0 {
+		setToast(c, "info", "No overdue, today, or upcoming tasks to move")
+	} else {
+		setToast(c, "success", fmt.Sprintf("Moved %d task(s) forward by one day", res.Moved))
+	}
 	h.triggerTasksChanged(c)
 	c.Status(http.StatusOK)
 }

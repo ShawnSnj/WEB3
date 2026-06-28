@@ -5,6 +5,14 @@
         <h2 class="page-title">Tasks</h2>
         <div class="page-actions">
             <button type="button" class="btn btn-ghost"
+                    hx-post="/tasks/shift-next-day"
+                    hx-swap="none"
+                    hx-confirm="Move overdue, today, and upcoming tasks (next 30 days) forward by one day?">
+                {{template "htmx_spinner" .}}
+                {{template "icon" (dict "name" "calendar")}}
+                <span>Push +1 day</span>
+            </button>
+            <button type="button" class="btn btn-ghost"
                     hx-get="/tasks/import/form"
                     hx-target="#task-modal"
                     hx-swap="innerHTML"
